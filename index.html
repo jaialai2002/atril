@@ -151,6 +151,7 @@ body.indice aside { display: none; }
 .obra b { display: block; font: italic 400 24px/1.2 "Times New Roman", Times, "Tinos", serif; }
 .obra span { display: block; margin-top: 3px; color: var(--tenue); font-size: 13px; }
 .marca.vuelve { cursor: pointer; }
+.obras .version { margin: 14px 0 0; font: 11px var(--mono); color: #5c5f66; text-align: center; }
 #avisito { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); background: var(--consola); border: 1px solid var(--surco); color: var(--texto); font-size: 12px; padding: 6px 12px; border-radius: 8px; opacity: 0; pointer-events: none; transition: opacity .2s; z-index: 9; }
 #avisito.ver { opacity: 1; }
 @media (prefers-reduced-motion: reduce) { #hoja { scroll-behavior: auto; } }
@@ -218,6 +219,7 @@ body.indice aside { display: none; }
   const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
   const slug = s => String(s).normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
   function desentidad(s) { const t = document.createElement('textarea'); t.innerHTML = s; return t.value; }
+  const VERSION = '2026.11.15-2';   // se ve al pie del índice: sirve para saber qué programa tiene la web
   const VEROVIO = 'https://cdn.jsdelivr.net/npm/verovio@6.1.0/dist/verovio-toolkit-wasm.js';
   // mismas opciones que el antiguo render.js: con la misma semilla, las dos letras dan los mismos ids
   const OPC = { xmlIdSeed: 1, scale: 40, pageWidth: 2200, pageHeight: 3000, adjustPageHeight: true, breaks: 'auto', footer: 'none', header: 'auto', svgViewBox: true, condenseFirstPage: true, svgHtml5: true, svgRemoveXlink: true, lyricSize: 4.2, pageMarginTop: 40, pageMarginBottom: 20, pageMarginLeft: 40, pageMarginRight: 40 };
@@ -246,7 +248,7 @@ body.indice aside { display: none; }
     const obras = l.obras || [];
     $('paginas').innerHTML = '<div class="obras"><h1>Obras</h1>' + (obras.length ? obras.map(o =>
       '<a class="obra" href="#' + encodeURIComponent(o.id) + '"><b>' + esc(o.obra) + '</b>' + (o.autor ? '<span>' + esc(o.autor) + '</span>' : '') + '</a>').join('')
-      : '<p class="nota">Todavía no hay obras.</p>') + '</div>';
+      : '<p class="nota">Todavía no hay obras.</p>') + '<p class="version">Atril · versión ' + VERSION + '</p></div>';
   }
   const carga = (txt, frac, err) => { $('cargaTxt').textContent = txt; $('cargaRiel').style.width = (frac * 100) + '%'; $('cargando').classList.toggle('error', !!err); };
 
