@@ -1,0 +1,29 @@
+# Atril · atril.sigan.me
+DirectoryIndex index.html
+Options -Indexes
+
+# tipos de archivo (audio de las pistas y partituras)
+AddType audio/mp4 .m4a
+AddType application/vnd.recordare.musicxml+xml .musicxml
+AddType application/json .json
+AddCharset utf-8 .html .json .musicxml
+
+# comprimir lo que es texto (la partitura baja ~6 veces más ligera)
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html application/json application/vnd.recordare.musicxml+xml
+</IfModule>
+
+# el índice, la página y los obra.json siempre al día (sin quedarse con una copia vieja)
+<IfModule mod_headers.c>
+  <FilesMatch "^(index\.html|obras\.json|obra\.json)$">
+    Header set Cache-Control "no-cache"
+  </FilesMatch>
+</IfModule>
+
+# enlace corto: atril.sigan.me/pastorella-in-g  ->  atril.sigan.me/#pastorella-in-g
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteRule ^([a-z0-9-]+)/?$ /#$1 [R=302,NE,L]
+</IfModule>
