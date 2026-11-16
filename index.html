@@ -156,6 +156,8 @@ body.indice aside { display: none; }
 .obra span { display: block; margin-top: 3px; color: var(--tenue); font-size: 13px; }
 .marca.vuelve { cursor: pointer; }
 .obras .version { margin: 14px 0 0; font: 11px var(--mono); color: #5c5f66; text-align: center; }
+#nuevaVersion { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); z-index: 10; display: flex; gap: 12px; align-items: center; background: var(--consola); border: 1px solid var(--laton); color: var(--texto); font-size: 13px; padding: 8px 8px 8px 14px; border-radius: 10px; box-shadow: 0 8px 24px rgba(0,0,0,.4); white-space: nowrap; }
+#nuevaVersion button { background: var(--laton); color: var(--tinta); border: 0; border-radius: 7px; padding: 5px 12px; font: 600 13px var(--cuerpo); cursor: pointer; }
 #avisito { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); background: var(--consola); border: 1px solid var(--surco); color: var(--texto); font-size: 12px; padding: 6px 12px; border-radius: 8px; opacity: 0; pointer-events: none; transition: opacity .2s; z-index: 9; }
 #avisito.ver { opacity: 1; }
 @media (prefers-reduced-motion: reduce) { #hoja { scroll-behavior: auto; } }
@@ -223,7 +225,7 @@ body.indice aside { display: none; }
   const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
   const slug = s => String(s).normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
   function desentidad(s) { const t = document.createElement('textarea'); t.innerHTML = s; return t.value; }
-  const VERSION = '2026.11.16-1';   // se ve al pie del índice: sirve para saber qué programa tiene la web
+  const VERSION = '2026.11.17-1';   // se ve al pie del índice: sirve para saber qué programa tiene la web
   const VEROVIO = 'https://cdn.jsdelivr.net/npm/verovio@6.1.0/dist/verovio-toolkit-wasm.js';
   // mismas opciones que el antiguo render.js: con la misma semilla, las dos letras dan los mismos ids
   const OPC = { xmlIdSeed: 1, scale: 40, pageWidth: 2200, pageHeight: 3000, adjustPageHeight: true, breaks: 'auto', footer: 'none', header: 'auto', svgViewBox: true, condenseFirstPage: true, svgHtml5: true, svgRemoveXlink: true, lyricSize: 4.2, pageMarginTop: 40, pageMarginBottom: 20, pageMarginLeft: 40, pageMarginRight: 40 };
@@ -272,6 +274,8 @@ body.indice aside { display: none; }
   carga('Cargando la obra…', 0);
   const cfg = await pedirJSON(base + 'obra.json');
   PFX = 'atril:' + cfg.id + ':';
+  // la fecha de obra.json cambia con cada versión del Taller: así el navegador no reutiliza partitura ni pistas viejas
+  const ver = cfg.fecha ? '?v=' + encodeURIComponent(cfg.fecha) : '';
   try {   // lo que se guardó con la versión anterior de la Pastorella
     if (cfg.id === 'pastorella-in-g' && !Object.keys(localStorage).some(k => k.startsWith(PFX)))
       Object.keys(localStorage).filter(k => k.startsWith('atril:pastorella:')).forEach(k => localStorage.setItem(PFX + k.slice(17), localStorage.getItem(k)));
@@ -282,7 +286,7 @@ body.indice aside { display: none; }
   // ---------- partitura: Verovio dibuja en el navegador a partir del MusicXML
   carga('Cargando la partitura y Verovio…', .04);
   const [xml] = await Promise.all([
-    fetch(base + cfg.partitura).then(r => { if (!r.ok) throw new Error(cfg.partitura + ': ' + r.status); return r.text(); }),
+    fetch(base + cfg.partitura + ver).then(r => { if (!r.ok) throw new Error(cfg.partitura + ': ' + r.status); return r.text(); }),
     cargarVerovio()]);
   const xmls = { cant: xml.replace(/(<work-title>[^<]*?)\s+-\s+CAT(\s*<\/work-title>)/, '$1$2') };
   const mo = /<miscellaneous-field name="cantamus-letra-original">([\s\S]*?)<\/miscellaneous-field>/.exec(xmls.cant);
@@ -371,7 +375,7 @@ body.indice aside { display: none; }
   const AC = window.AudioContext || window.webkitAudioContext;
   ctx = new AC();
   const maestro = ctx.createGain(); maestro.connect(ctx.destination);
-  const pistas = cfg.pistas.map(p => Object.assign({}, p, { archivo: base + p.archivo, grupo: vozDe(p.id) ? 'Voces' : 'Instrumentos', orig: { vol: p.vol, pan: p.pan, muda: p.muda }, solo: false }));
+  const pistas = cfg.pistas.map(p => Object.assign({}, p, { archivo: base + p.archivo + ver, grupo: vozDe(p.id) ? 'Voces' : 'Instrumentos', orig: { vol: p.vol, pan: p.pan, muda: p.muda }, solo: false }));
   const guardadas = leer('mezcla', null);
   if (guardadas) pistas.forEach(p => { const g = guardadas[p.id]; if (g) Object.assign(p, g); });
   const decodificar = buf => new Promise((ok, mal) => { const r = ctx.decodeAudioData(buf, ok, mal); if (r && r.then) r.then(ok, mal); });
@@ -626,12 +630,27 @@ body.indice aside { display: none; }
   if (ens) { if (pistas.some(p => p.id === ens.voz)) $('miVoz').value = ens.voz; modo = ens.modo || 'todas'; document.querySelectorAll('[data-modo]').forEach(x => x.classList.toggle('on', x.dataset.modo === modo)); }
   $('maestro').value = leer('maestro', 0);
   ponerSeguimiento(['banda', 'voces', 'linea'].includes(seguimiento) ? seguimiento : 'linea', false);
+  // ¿ha cambiado la obra con la pestaña abierta? Se mira cada 3 min y al volver a la pestaña, nunca mientras suena
+  async function mirarVersion() {
+    if (sonando || document.hidden || $('nuevaVersion')) return;
+    try {
+      const o = await pedirJSON(base + 'obra.json');
+      if (o.fecha && o.fecha !== cfg.fecha) {
+        const d = document.createElement('div'); d.id = 'nuevaVersion';
+        d.innerHTML = '<span>Hay una versión nueva de esta obra</span><button>Recargar</button>';
+        d.querySelector('button').onclick = () => location.reload();
+        document.body.appendChild(d);
+      }
+    } catch (e) {}
+  }
+  setInterval(mirarVersion, 3 * 60000);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) mirarVersion(); });
   aplicar();
 
   // ---------- referencia: la mezcla «Todos» de Cantāmus, para comparar
   $('referencia').onclick = async () => {
     const b = $('referencia');
-    if (!bufRef) { b.textContent = 'Cargando la mezcla de Cantāmus…'; try { bufRef = await bajar(base + cfg.referencia, () => {}); } catch (e) { b.textContent = 'No he podido cargarla'; return; } }
+    if (!bufRef) { b.textContent = 'Cargando la mezcla de Cantāmus…'; try { bufRef = await bajar(base + cfg.referencia + ver, () => {}); } catch (e) { b.textContent = 'No he podido cargarla'; return; } }
     referencia = !referencia;
     b.classList.toggle('on', referencia);
     b.textContent = referencia ? 'Sonando la mezcla de Cantāmus · volver al Atril' : 'Escuchar la mezcla de Cantāmus';
