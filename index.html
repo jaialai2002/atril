@@ -132,7 +132,7 @@ input[type=range]::-moz-range-thumb { width: 12px; height: 12px; border: 0; bord
 .luces:focus-visible { box-shadow: 0 0 0 2px var(--laton); }
 .luces svg { display: block; width: 100%; overflow: visible; }
 .tira { gap: 4px 8px; }
-.general { display: grid; gap: 8px; background: rgba(22,24,29,.7); border: 1px solid var(--surco); border-radius: 9px; padding: 8px 10px; }
+.general { display: grid; gap: 8px; background: rgba(22,24,29,.7); border: 1px solid var(--surco); border-radius: 9px; padding: 8px 9px 8px 11px; }   /* mismos márgenes que .tira: los 0 dB quedan en la misma vertical */
 .general .chip { font-size: 11.5px; padding: 5px 8px; }
 .general .nota { font-size: 11px; }
 .seguim { display: grid; grid-template-columns: auto 1fr; gap: 6px 8px; align-items: center; font-size: 11px; color: var(--tenue); }
@@ -208,7 +208,7 @@ body.indice aside { display: none; }
     <div id="tiras"></div>
     <h2>General</h2>
     <div class="general">
-      <div class="mando"><span>Volumen</span><span class="rv" style="--cero:.8"><input type="range" id="maestro" min="-24" max="6" step="0.5" value="0" aria-label="Volumen general"></span><output id="maestroV">0 dB</output></div>
+      <div class="mando"><span>Volumen</span><span class="rv" style="--cero:0.7058823529411765"><input type="range" id="maestro" min="-24" max="10" step="0.5" value="0" aria-label="Volumen general"></span><output id="maestroV">0 dB</output></div>
       <div class="seguim"><span>Seguimiento</span>
         <div class="seg" role="group" aria-label="Seguimiento de la reproducción">
           <button data-seg="banda" title="Banda dorada en todo el sistema">Banda</button>
@@ -234,7 +234,7 @@ body.indice aside { display: none; }
   const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
   const slug = s => String(s).normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
   function desentidad(s) { const t = document.createElement('textarea'); t.innerHTML = s; return t.value; }
-  const VERSION = '2026.11.17-4';   // se ve al pie del índice: sirve para saber qué programa tiene la web
+  const VERSION = '2026.11.17-5';   // se ve al pie del índice: sirve para saber qué programa tiene la web
   const VEROVIO = 'https://cdn.jsdelivr.net/npm/verovio@6.1.0/dist/verovio-toolkit-wasm.js';
   // mismas opciones que el antiguo render.js: con la misma semilla, las dos letras dan los mismos ids
   const OPC = { xmlIdSeed: 1, scale: 40, pageWidth: 2200, pageHeight: 3000, adjustPageHeight: true, breaks: 'auto', footer: 'none', header: 'auto', svgViewBox: true, condenseFirstPage: true, svgHtml5: true, svgRemoveXlink: true, lyricSize: 4.2, pageMarginTop: 40, pageMarginBottom: 20, pageMarginLeft: 40, pageMarginRight: 40 };
@@ -621,7 +621,7 @@ body.indice aside { display: none; }
       p.gan.gain.setTargetAtTime(g, ctx.currentTime, 0.015);
       if (p.pan_) p.pan_.pan.setTargetAtTime(p.pan, ctx.currentTime, 0.015);
     });
-    const m = +$('maestro').value; $('maestro').style.setProperty('--p', ((m + 24) / 30 * 100) + '%'); maestro.gain.setTargetAtTime(db2g(m), ctx.currentTime, 0.015);
+    const m = +$('maestro').value; $('maestro').style.setProperty('--p', ((m + 24) / 34 * 100) + '%'); maestro.gain.setTargetAtTime(db2g(m), ctx.currentTime, 0.015);
     $('maestroV').textContent = (m > 0 ? '+' : '') + m + ' dB';
     calcularColores();
     const g = {}; pistas.forEach(p => g[p.id] = { vol: p.vol, pan: p.pan, muda: p.muda }); guardar('mezcla', g);
