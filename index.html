@@ -119,10 +119,18 @@ aside h2 button { font: 500 11px var(--cuerpo); letter-spacing: 0; text-transfor
 .mando.vol { grid-area: volumen; } .mando.pan { grid-area: balance; }
 .mando output { font: 11px var(--mono); font-variant-numeric: tabular-nums; text-align: right; color: var(--texto); }
 input[type=range] { -webkit-appearance: none; appearance: none; width: 100%; height: 16px; background: transparent; margin: 0; }
-input[type=range]::-webkit-slider-runnable-track { height: 3px; border-radius: 2px; background: var(--surco); }
-input[type=range]::-moz-range-track { height: 3px; border-radius: 2px; background: var(--surco); }
-input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 12px; height: 12px; border-radius: 50%; background: var(--texto); margin-top: -4.5px; box-shadow: 0 0 0 3px rgba(231,228,220,.12); }
-input[type=range]::-moz-range-thumb { width: 12px; height: 12px; border: 0; border-radius: 50%; background: var(--texto); }
+/* volumen: pista visible rellena con el color de la pista hasta la bolita (--c, --p); rayita en 0 dB (--cero) */
+input[type=range]::-webkit-slider-runnable-track { height: 3.5px; border-radius: 2px; background: linear-gradient(to right, var(--c, var(--laton)) var(--p, 0%), #3a3e48 var(--p, 0%)); }
+input[type=range]::-moz-range-track { height: 3.5px; border-radius: 2px; background: linear-gradient(to right, var(--c, var(--laton)) var(--p, 0%), #3a3e48 var(--p, 0%)); }
+input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 12px; height: 12px; border-radius: 50%; background: #f4f2ec; border: 0; margin-top: -4.25px; }
+input[type=range]::-moz-range-thumb { width: 12px; height: 12px; border: 0; border-radius: 50%; background: #f4f2ec; }
+.rv { position: relative; display: block; }
+.rv::before { content: ""; position: absolute; top: 1px; height: 14px; width: 1.5px; background: #6b6f78; left: calc(var(--cero, 50%) - 1px); pointer-events: none; }
+/* balance: barra de luces de 21 casillas; la del marcador, con contorno blanco */
+.luces { display: block; cursor: ew-resize; touch-action: none; border-radius: 4px; outline: none; }
+.luces:focus-visible { box-shadow: 0 0 0 2px var(--laton); }
+.luces svg { display: block; width: 100%; overflow: visible; }
+.tira { gap: 4px 8px; }
 .general { display: grid; gap: 8px; background: rgba(22,24,29,.7); border: 1px solid var(--surco); border-radius: 9px; padding: 8px 10px; }
 .general .chip { font-size: 11.5px; padding: 5px 8px; }
 .general .nota { font-size: 11px; }
@@ -199,7 +207,7 @@ body.indice aside { display: none; }
     <div id="tiras"></div>
     <h2>General</h2>
     <div class="general">
-      <div class="mando"><span>Volumen</span><input type="range" id="maestro" min="-24" max="6" step="0.5" value="0" aria-label="Volumen general"><output id="maestroV">0 dB</output></div>
+      <div class="mando"><span>Volumen</span><span class="rv" style="--cero:80%"><input type="range" id="maestro" min="-24" max="6" step="0.5" value="0" aria-label="Volumen general"></span><output id="maestroV">0 dB</output></div>
       <div class="seguim"><span>Seguimiento</span>
         <div class="seg" role="group" aria-label="Seguimiento de la reproducción">
           <button data-seg="banda" title="Banda dorada en todo el sistema">Banda</button>
@@ -225,7 +233,7 @@ body.indice aside { display: none; }
   const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
   const slug = s => String(s).normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
   function desentidad(s) { const t = document.createElement('textarea'); t.innerHTML = s; return t.value; }
-  const VERSION = '2026.11.17-1';   // se ve al pie del índice: sirve para saber qué programa tiene la web
+  const VERSION = '2026.11.17-2';   // se ve al pie del índice: sirve para saber qué programa tiene la web
   const VEROVIO = 'https://cdn.jsdelivr.net/npm/verovio@6.1.0/dist/verovio-toolkit-wasm.js';
   // mismas opciones que el antiguo render.js: con la misma semilla, las dos letras dan los mismos ids
   const OPC = { xmlIdSeed: 1, scale: 40, pageWidth: 2200, pageHeight: 3000, adjustPageHeight: true, breaks: 'auto', footer: 'none', header: 'auto', svgViewBox: true, condenseFirstPage: true, svgHtml5: true, svgRemoveXlink: true, lyricSize: 4.2, pageMarginTop: 40, pageMarginBottom: 20, pageMarginLeft: 40, pageMarginRight: 40 };
@@ -334,6 +342,8 @@ body.indice aside { display: none; }
   let compasVisto = null, bandas = [], cabeza = null, caja = null, firmaVista = ''; const xNota = new Map();
   // seguimiento y colores por voz (como la Multiconsola): azul = todo; cada voz, el suyo
   let seguimiento = leer('seg', 'linea'), colores = null, firma = '';
+  // colores de las tiras del mezclador (los del usuario; el morado, aclarado para el fondo oscuro); instrumentos en gris claro
+  const COLOR_TIRA = { soprano: '#d42e28', alto: '#9a55d4', tenor: '#e3922f', bajo: '#55ac6b', inst: '#b9b4a8' };
   const COLOR = { todos: '#3f7fe0', soprano: '#e0303f', alto: '#9150d2', tenor: '#f08a1c', bajo: '#2fa65a' };
   const ALFA = { todos: .15, soprano: .17, alto: .17, tenor: .19, bajo: .17 };
   // qué voz es una pista, por su id (slug del nombre), en varios idiomas: es, ca, cs, it, en, de, fr, la… y S/A/T/B
@@ -556,20 +566,40 @@ body.indice aside { display: none; }
     t.innerHTML = '<div class="vu"><i></i></div>' +
       '<div class="nombre"><span>' + p.nombre + '</span></div>' +
       '<div class="botones"><button class="m" title="Silenciar" aria-label="Silenciar ' + p.nombre + '"><svg viewBox="0 0 130 138"><path d=""></path></svg></button><button class="s" title="Solo" aria-label="Solo ' + p.nombre + '">S</button></div>' +
-      '<label class="mando vol"><span>Volumen</span><input type="range" id="vol-' + p.id + '" min="-24" max="10" step="0.5"><output></output></label>' +
-      '<label class="mando pan"><span>Balance</span><input type="range" id="pan-' + p.id + '" min="-1" max="1" step="0.05"><output></output></label>';
+      '<label class="mando vol"><span>Volumen</span><span class="rv" style="--cero:' + (24 / 34 * 100) + '%"><input type="range" id="vol-' + p.id + '" min="-24" max="10" step="0.5"></span><output></output></label>' +
+      '<div class="mando pan"><span>Balance</span><span class="luces" role="slider" tabindex="0" aria-label="Balance ' + esc(p.nombre) + '" aria-valuemin="-100" aria-valuemax="100"><svg viewBox="0 0 200 25"></svg></span><output></output></div>';
     grupos[p.grupo].appendChild(t);
-    Object.assign(p, { el: t, vuEl: t.querySelector('.vu i'), mEl: t.querySelector('.m'), sEl: t.querySelector('.s'), volEl: t.querySelector('.vol input'), panEl: t.querySelector('.pan input') });
+    Object.assign(p, { el: t, vuEl: t.querySelector('.vu i'), mEl: t.querySelector('.m'), sEl: t.querySelector('.s'), volEl: t.querySelector('.vol input'), volOut: t.querySelector('.vol output'), panEl: t.querySelector('.luces'), panOut: t.querySelector('.pan output'), color: COLOR_TIRA[vozDe(p.id)] || COLOR_TIRA.inst });
+    p.volEl.style.setProperty('--c', p.color);
     p.mEl.onclick = () => { p.muda = !p.muda; aplicar(); };
     p.sEl.onclick = e => { const v = !p.solo; if (!(e.metaKey || e.ctrlKey)) pistas.forEach(q => q.solo = false); p.solo = v; aplicar(); };
     p.volEl.oninput = () => { p.vol = +p.volEl.value; aplicar(); };
-    p.panEl.oninput = () => { p.pan = +p.panEl.value; aplicar(); };
+    // balance: pulsar o arrastrar sobre las casillas (pasos de 10 %); flechas del teclado ±10 %
+    const panDesde = e => { const r = p.panEl.getBoundingClientRect(), i = Math.round(((e.clientX - r.left) / r.width * 200 - 2) / (196 / 21) - 0.5); p.pan = Math.max(-1, Math.min(1, (i - 10) / 10)); aplicar(); };
+    p.panEl.addEventListener('pointerdown', e => { p.panEl.setPointerCapture(e.pointerId); panDesde(e); });
+    p.panEl.addEventListener('pointermove', e => { if (p.panEl.hasPointerCapture(e.pointerId)) panDesde(e); });
+    p.panEl.addEventListener('keydown', e => { const d = { ArrowLeft: -0.1, ArrowRight: 0.1 }[e.key]; if (d) { e.preventDefault(); e.stopPropagation(); p.pan = Math.max(-1, Math.min(1, Math.round((p.pan + d) * 10) / 10)); aplicar(); } });
     p.volEl.ondblclick = () => { p.vol = p.orig.vol; aplicar(); };
     p.panEl.ondblclick = () => { p.pan = p.orig.pan; aplicar(); };
     const o = document.createElement('option'); o.value = p.id; o.textContent = p.nombre; $('miVoz').appendChild(o);
   });
   const ALTAVOZ_SI = 'M77.6,68.9c0,17-0.1,34,0,50.9c0,5.3-1.3,9.5-6.6,11.6c-5.3,2.1-9.3,0.1-13-3.6c-9-9.1-18-18.3-27.3-27.1c-1.9-1.8-5-2.8-7.7-3.3c-2.9-0.6-6-0.1-9-0.1C6.4,97.2,0.3,91.7,0,84c-0.4-10.1-0.4-20.3,0.1-30.4c0.4-8.8,6.3-14.6,15-13.8c9.7,1,16.2-2.8,22.3-9.8c6.5-7.4,13.9-13.9,20.7-20.9c3.7-3.8,8-5.4,13.1-3.4c5.3,2.1,6.6,6.5,6.6,11.7C77.7,34.6,77.7,51.8,77.6,68.9C77.7,68.9,77.7,68.9,77.6,68.9z M65.1,20.3c-1.2,1-2,1.5-2.7,2.2c-8,8-16.1,15.9-24,24.1c-3.5,3.6-7.5,5.4-12.4,5.4c-3,0-6.1,0-9,0c-3.4,0-4.8,1-4.7,4.6c0.2,7.3,0.1,14.7,0.1,22c0,6.6,0.5,6.6,6.5,6.6c10.1,0,18,1.9,24.1,10c0.8,1.1,1.8,1.9,2.8,2.9c6.3,6.2,12.6,12.5,19.3,19.2C65.1,84.4,65.1,52.7,65.1,20.3z M120.2,21.4c-2.9-6.3-6.9-12.1-10.8-17.8c-2.7-4-6.8-4.6-9.9-2.1c-2.9,2.3-2.9,5.9,0,9.7c1.2,1.6,2.5,3.1,3.5,4.8c14.7,24,17.1,49.8,11.6,76.9c-2.5,12.4-7.5,23.7-15.5,33.6c-2.6,3.3-2.7,6.6,0.3,9.3c3.2,2.8,6.5,1.7,9.2-1.2c0.6-0.6,1-1.3,1.5-1.9c14.3-18.8,19.2-40.5,19.4-63.6C129.9,52.4,127.2,36.4,120.2,21.4z M95.9,33.5c-3-4-6.8-4.9-9.9-2.7c-3.2,2.3-3.3,5.8-0.2,10c7.5,10.2,9.2,21.8,7.9,34.1c-0.9,8.4-3.6,16.2-9,22.9c-2.4,3.1-1.8,6.6,1.3,8.1c2.1,1.1,5.5,0.2,8.1-0.5c1.2-0.3,2-2.1,2.8-3.3c7.1-10.2,9.5-21.8,9.5-34C106.5,55.5,103.6,43.8,95.9,33.5z';
   const ALTAVOZ_NO = 'M120.2,21.4c-2.9-6.3-6.9-12.1-10.8-17.8c-2.7-4-6.8-4.6-9.9-2.1c-2.9,2.3-2.9,5.9,0,9.7c1.2,1.6,2.5,3.1,3.5,4.8c14.7,24,17.1,49.8,11.6,76.9c-0.7,3.2-1.5,6.3-2.5,9.4l-9.9-9.9c3.1-7.6,4.2-15.7,4.2-24.1c0-12.6-2.9-24.4-10.6-34.7c-3-4-6.8-4.9-9.9-2.7c-3.2,2.3-3.3,5.8-0.2,10c7.5,10.2,9.2,21.8,7.9,34.1c-0.3,2.5-0.7,5-1.4,7.4L77.7,67.6c0-16.7,0-33.4,0-50.2c0-5.2-1.3-9.6-6.6-11.7c-5.1-2-9.3-0.4-13.1,3.4c-6.4,6.5-13.2,12.6-19.3,19.3L17.9,7.6c-2.5-2.5-6.4-2.5-8.9,0c-2.5,2.5-2.5,6.4,0,8.9l106.1,106.5c0.1,0.1,0.2,0.1,0.2,0.2l0.6,0.6c0,0,0-0.1,0-0.1c1.1,0.7,2.3,1.1,3.6,1.1c1.6,0,3.2-0.6,4.4-1.8c2.5-2.5,2.5-6.4,0-8.9l-2.2-2.2c5.5-13.5,7.6-27.9,7.8-43C129.9,52.4,127.2,36.4,120.2,21.4z M62.4,22.5c0.7-0.7,1.4-1.2,2.7-2.2c0,11.6,0,23.1,0,34.6L47.5,37.3C52.5,32.4,57.5,27.4,62.4,22.5z M99.2,126.4c-2.6,3.3-2.7,6.6,0.3,9.3c3.2,2.8,6.5,1.7,9.2-1.2c0.1-0.1,0.2-0.2,0.3-0.3l-8.9-8.9C99.8,125.6,99.5,126,99.2,126.4z M65.1,90.1c0,9,0,18,0,27C58.3,110.4,52,104.2,45.7,98c-0.9-0.9-2-1.8-2.8-2.9c-6-8.1-14-10-24.1-10c-6,0-6.5,0.1-6.5-6.6c0-7.3,0.2-14.7-0.1-22C12.2,52.9,13.6,52,17,52c2.9,0,6-0.1,9,0c0.3,0,0.7,0,1,0l-12-12C6.3,39,0.5,44.9,0.1,53.6C-0.4,63.7-0.4,73.9,0,84c0.3,7.7,6.4,13.1,14.1,13.3c3,0.1,6.1-0.4,9,0.1c2.7,0.5,5.8,1.5,7.7,3.3c9.3,8.8,18.2,18,27.3,27.1c3.7,3.7,7.7,5.7,13,3.6c5.3-2.1,6.7-6.4,6.6-11.6c0-5.7,0-11.4,0-17.2L65.1,90.1z';
+  // barra de luces del balance: 21 casillas (I 100 … C … D 100); se encienden del centro al marcador, más vivas cuanto más lejos
+  function pintarPan(p) {
+    const svg = p.panEl.firstChild, W = 200, P = 2, n = 21, cw = (W - 2 * P) / n, m = Math.round(p.pan * 10) * 10;
+    if (svg.dataset.m === String(m) && svg.dataset.c === p.color) return;
+    svg.dataset.m = m; svg.dataset.c = p.color;
+    let h = '';
+    for (let i = 0; i < n; i++) {
+      const k = -100 + i * 10; if (k === m) continue;
+      const dentro = (m < 0 && k >= m && k <= 0) || (m > 0 && k <= m && k >= 0);
+      h += '<rect x="' + (P + i * cw + 1) + '" y="3" width="' + (cw - 2) + '" height="10" rx="2" fill="' + (dentro ? p.color : '#2c3039') + '"' + (dentro ? ' opacity="' + (0.3 + 0.45 * Math.abs(k) / Math.abs(m)).toFixed(2) + '"' : '') + '/>';
+    }
+    h += '<rect x="' + (P + (m + 100) / 10 * cw + 0.3) + '" y="1" width="' + (cw - 0.6) + '" height="14" rx="2.5" fill="' + p.color + '" stroke="#fff" stroke-width="1.6"/>';
+    [['I', -100], ['50', -50], ['C', 0], ['50', 50], ['D', 100]].forEach(([t, x]) => { h += '<text x="' + (P + (x + 100) / 10 * cw + cw / 2) + '" y="24.5" text-anchor="middle" font-size="8.5" fill="#7d818a">' + t + '</text>'; });
+    svg.innerHTML = h;
+  }
   const txtPan = v => Math.abs(v) < 0.01 ? 'centro' : (v < 0 ? 'I ' : 'D ') + Math.round(Math.abs(v) * 100);
   let modo = 'todas';
   function nivel(p) {
@@ -583,14 +613,14 @@ body.indice aside { display: none; }
   }
   function aplicar() {
     pistas.forEach(p => {
-      p.volEl.value = p.vol; p.volEl.nextElementSibling.textContent = (p.vol <= -24 ? '−∞' : (p.vol > 0 ? '+' : '') + p.vol.toFixed(1).replace('.0', '')) + ' dB';
-      p.panEl.value = p.pan; p.panEl.nextElementSibling.textContent = txtPan(p.pan);
+      p.volEl.value = p.vol; p.volEl.style.setProperty('--p', ((p.vol + 24) / 34 * 100) + '%'); p.volOut.textContent = (p.vol <= -24 ? '−∞' : (p.vol > 0 ? '+' : '') + p.vol.toFixed(1).replace('.0', '')) + ' dB';
+      pintarPan(p); p.panOut.textContent = txtPan(p.pan); p.panEl.setAttribute('aria-valuenow', Math.round(p.pan * 100)); p.panEl.setAttribute('aria-valuetext', txtPan(p.pan));
       p.mEl.classList.toggle('on', p.muda); p.mEl.querySelector('path').setAttribute('d', p.muda ? ALTAVOZ_NO : ALTAVOZ_SI); p.mEl.title = p.muda ? 'Activar el sonido' : 'Silenciar'; p.sEl.classList.toggle('on', p.solo);
       const g = nivel(p); p.el.classList.toggle('callada', g === 0);
       p.gan.gain.setTargetAtTime(g, ctx.currentTime, 0.015);
       if (p.pan_) p.pan_.pan.setTargetAtTime(p.pan, ctx.currentTime, 0.015);
     });
-    const m = +$('maestro').value; maestro.gain.setTargetAtTime(db2g(m), ctx.currentTime, 0.015);
+    const m = +$('maestro').value; $('maestro').style.setProperty('--p', ((m + 24) / 30 * 100) + '%'); maestro.gain.setTargetAtTime(db2g(m), ctx.currentTime, 0.015);
     $('maestroV').textContent = (m > 0 ? '+' : '') + m + ' dB';
     calcularColores();
     const g = {}; pistas.forEach(p => g[p.id] = { vol: p.vol, pan: p.pan, muda: p.muda }); guardar('mezcla', g);
