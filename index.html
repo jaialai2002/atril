@@ -32,6 +32,7 @@ body { background: var(--tinta); color: var(--texto); font: 14px/1.4 var(--cuerp
 button, select, input { font: inherit; color: inherit; }
 button { cursor: pointer; }
 :focus-visible { outline: 2px solid var(--laton); outline-offset: 2px; }
+.seg button:focus-visible { outline-offset: -3px; border-radius: 7px; }   /* dentro del botón: el grupo recorta los bordes y solo asomaba una rayita dorada */
 
 /* ---------- barra de arriba */
 header { display: flex; align-items: center; gap: 14px; padding: 8px 14px; background: var(--consola); border-bottom: 1px solid var(--surco); flex-wrap: nowrap; }
@@ -195,7 +196,6 @@ body.indice aside { display: none; }
   </div>
   <div class="opciones">
     <button class="icono on" id="verMezclador" title="Mezclador (tecla M)" aria-label="Mezclador"><svg viewBox="0 0 20 20"><path d="M5 3v14M10 3v14M15 3v14"/><circle cx="5" cy="12" r="2.2"/><circle cx="10" cy="7" r="2.2"/><circle cx="15" cy="10.5" r="2.2"/></svg></button>
-    <button class="icono on" id="seguir" title="Seguir la música: la partitura avanza sola" aria-label="Seguir la música"><svg viewBox="0 0 20 20"><circle cx="10" cy="10" r="5.5"/><path d="M10 1.5v3.5M10 15v3.5M1.5 10H5M15 10h3.5"/><circle class="lleno" cx="10" cy="10" r="1.6"/></svg></button>
   </div>
 </header>
 <main>
@@ -228,9 +228,14 @@ body.indice aside { display: none; }
           <button data-seg="banda" title="Banda dorada en todo el sistema">Banda</button>
           <button data-seg="linea" title="Línea rojiza que avanza de nota en nota">Línea</button>
         </div>
+        <span>Pasar página</span>
+        <div class="seg" role="group" aria-label="La partitura avanza sola">
+          <button data-seguir="1" title="La partitura se desplaza sola al sistema que suena (tecla S)">Sola</button>
+          <button data-seguir="0" title="La partitura se queda quieta: tú la mueves (tecla S)">A mano</button>
+        </div>
       </div>
       <button class="chip" id="referencia" title="Escuchar la mezcla descargada de Cantāmus, para comparar">Escuchar la mezcla de Cantāmus</button>
-      <p class="nota">Clic en una nota o un compás para ir ahí. <b>Espacio</b> reproduce o para; <b>← →</b> cambian de compás; <b>M</b> pliega el mezclador; <b>B</b> cambia el seguimiento. Doble clic en un control lo devuelve a su valor original.</p>
+      <p class="nota">Clic en una nota o un compás para ir ahí. <b>Espacio</b> reproduce o para; <b>← →</b> cambian de compás; <b>M</b> pliega el mezclador; <b>B</b> cambia el seguimiento; <b>S</b> pasa de página sola o a mano. Doble clic en un control lo devuelve a su valor original.</p>
     </div>
   </aside>
 </main>
@@ -246,7 +251,7 @@ body.indice aside { display: none; }
   const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
   const slug = s => String(s).normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
   function desentidad(s) { const t = document.createElement('textarea'); t.innerHTML = s; return t.value; }
-  const VERSION = '2026.11.17-9';   // se ve al pie del índice: sirve para saber qué programa tiene la web
+  const VERSION = '2026.11.17-10';   // se ve al pie del índice: sirve para saber qué programa tiene la web
   const VEROVIO = 'https://cdn.jsdelivr.net/npm/verovio@6.1.0/dist/verovio-toolkit-wasm.js';
   // mismas opciones que el antiguo render.js: con la misma semilla, las dos letras dan los mismos ids
   const OPC = { xmlIdSeed: 1, scale: 40, pageWidth: 2200, pageHeight: 3000, adjustPageHeight: true, breaks: 'auto', footer: 'none', header: 'auto', svgViewBox: true, condenseFirstPage: true, svgHtml5: true, svgRemoveXlink: true, lyricSize: 4.2, pageMarginTop: 40, pageMarginBottom: 20, pageMarginLeft: 40, pageMarginRight: 40 };
@@ -460,8 +465,17 @@ body.indice aside { display: none; }
   barra.addEventListener('pointerup', () => { barra.onpointermove = null; });
 
   // ---------- pintar: notas que suenan, compás, barra, contador
-  $('seguir').classList.toggle('on', seguir);
-  $('seguir').onclick = () => { seguir = !seguir; guardar('seguir', seguir); $('seguir').classList.toggle('on', seguir); if (seguir) pintar(true); };
+  // «Pasar página» (antes el botón diana de la barra): Sola = la partitura sigue la música; A mano = se queda quieta
+  function ponerSeguir(v, avisar) {
+    seguir = v; guardar('seguir', v);
+    document.querySelectorAll('[data-seguir]').forEach(b => b.classList.toggle('on', (b.dataset.seguir === '1') === v));
+    if (v) pintar(true);
+    if (avisar) aviso(v ? 'La partitura pasa sola' : 'La partitura se queda quieta');
+  }
+  document.querySelectorAll('[data-seguir]').forEach(b => b.onclick = () => ponerSeguir(b.dataset.seguir === '1'));
+  // tras pulsar con el ratón un botón de grupo, suelta el foco: así las teclas (S, B, espacio…) no dejan un marco dorado en el botón que no toca
+  document.addEventListener('click', e => { const b = e.target.closest('.seg button, .chip, .icono'); if (b && e.detail > 0) b.blur(); });
+  ponerSeguir(seguir);
   function pintar(forzar) {
     const s = ahora(), ms = (s - arranque) * 1000;
     const i = ms < 0 ? -1 : indiceEn(ms);
@@ -724,6 +738,7 @@ body.indice aside { display: none; }
     if (e.code === 'Space') { e.preventDefault(); alternar(); }
     else if ((e.key === 'm' || e.key === 'M') && !e.metaKey && !e.ctrlKey && !e.altKey) plegarMezclador();
     else if (e.key === 'L' && e.shiftKey && !e.metaKey && !e.ctrlKey) cambiarLetra();
+    else if ((e.key === 's' || e.key === 'S') && !e.metaKey && !e.ctrlKey && !e.altKey && !e.shiftKey) ponerSeguir(!seguir, true);
     else if ((e.key === 'b' || e.key === 'B') && !e.metaKey && !e.ctrlKey && !e.altKey) { ponerSeguimiento(seguimiento === 'banda' ? 'linea' : 'banda'); aviso('Seguimiento: ' + (seguimiento === 'banda' ? 'banda' : 'línea')); }
     else if (e.key === 'Home') { e.preventDefault(); ir(0); }
     else if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
