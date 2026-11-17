@@ -237,7 +237,7 @@ body.indice aside { display: none; }
   const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
   const slug = s => String(s).normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
   function desentidad(s) { const t = document.createElement('textarea'); t.innerHTML = s; return t.value; }
-  const VERSION = '2026.11.17-6';   // se ve al pie del índice: sirve para saber qué programa tiene la web
+  const VERSION = '2026.11.17-7';   // se ve al pie del índice: sirve para saber qué programa tiene la web
   const VEROVIO = 'https://cdn.jsdelivr.net/npm/verovio@6.1.0/dist/verovio-toolkit-wasm.js';
   // mismas opciones que el antiguo render.js: con la misma semilla, las dos letras dan los mismos ids
   const OPC = { xmlIdSeed: 1, scale: 40, pageWidth: 2200, pageHeight: 3000, adjustPageHeight: true, breaks: 'auto', footer: 'none', header: 'auto', svgViewBox: true, condenseFirstPage: true, svgHtml5: true, svgRemoveXlink: true, lyricSize: 4.2, pageMarginTop: 40, pageMarginBottom: 20, pageMarginLeft: 40, pageMarginRight: 40 };
@@ -304,8 +304,11 @@ body.indice aside { display: none; }
   const mo = /<miscellaneous-field name="cantamus-letra-original">([\s\S]*?)<\/miscellaneous-field>/.exec(xmls.cant);
   if (mo) try { xmls.orig = conLetraOriginal(xmls.cant, JSON.parse(desentidad(mo[1]))); } catch (e) { console.warn('letra original', e); }
   const principal = xmls.orig ? 'orig' : 'cant';
+  // saltos de sistema: si el MusicXML trae los de MuseScore (<print new-system/new-page="yes">), se respetan ('line':
+  // cada salto, también el de página, empieza sistema nuevo; las páginas las corta el Atril). Si no trae, reparto automático.
+  const conSaltos = /new-(system|page)="yes"/.test(xml);
   function dibujar(v) {
-    const tk = new verovio.toolkit(); tk.setOptions(OPC); tk.loadData(xmls[v]);
+    const tk = new verovio.toolkit(); tk.setOptions(Object.assign({}, OPC, { breaks: conSaltos ? 'line' : 'auto' })); tk.loadData(xmls[v]);
     const paginas = []; for (let i = 1, n = tk.getPageCount(); i <= n; i++) paginas.push(tk.renderToSVG(i));
     return { tk, paginas };
   }
