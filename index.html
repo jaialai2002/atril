@@ -104,7 +104,10 @@ aside h2 button { font: 500 11px var(--cuerpo); letter-spacing: 0; text-transfor
 .grupo { display: flex; flex-direction: column; gap: 5px; }
 #tiras { display: flex; flex-direction: column; gap: 10px; }
 .tira { display: grid; grid-template-columns: 1fr auto; grid-template-areas: "nombre botones" "volumen volumen" "balance balance"; gap: 2px 8px; padding: 7px 9px 6px 11px; border-radius: 9px; background: rgba(22,24,29,.7); border: 1px solid var(--surco); position: relative; overflow: hidden; }
-.tira.callada > :not(.botones), .tira.callada .botones .s { opacity: .45; }   /* el altavoz tachado queda a plena intensidad */
+.tira.callada > :not(.botones), .tira.callada .botones .s { opacity: .45; }
+.tira.atenuada > .mando { opacity: .5; }   /* «Resaltar»: las demás voces, de fondo */
+.tira .ajuste { font: 500 10.5px var(--mono); font-style: normal; padding: 1px 5px; border-radius: 4px; border: 1px solid var(--surco); color: var(--tenue); white-space: nowrap; }
+.tira .ajuste.sube { color: var(--c); border-color: var(--c); }   /* el altavoz tachado queda a plena intensidad */
 .tira .nombre { grid-area: nombre; font-weight: 600; font-size: 12.5px; display: flex; align-items: center; gap: 8px; min-width: 0; }
 .tira .nombre span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .tira .vu { position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--surco); }
@@ -199,7 +202,7 @@ body.indice aside { display: none; }
       <select id="miVoz"></select>
       <div class="seg" role="group" aria-label="Modo de ensayo">
         <button data-modo="todas" class="on" title="La mezcla tal como está">Todas</button>
-        <button data-modo="resaltar" title="Tu voz más fuerte y las demás más bajas">Resaltar</button>
+        <button data-modo="resaltar" title="Tu voz +4 dB y todo lo demás −14 dB, de fondo">Resaltar</button>
         <button data-modo="sin" title="Todo menos tu voz: la cantas tú">Sin ella</button>
         <button data-modo="sola" title="Solo tu voz">Sola</button>
       </div>
@@ -234,7 +237,7 @@ body.indice aside { display: none; }
   const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
   const slug = s => String(s).normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
   function desentidad(s) { const t = document.createElement('textarea'); t.innerHTML = s; return t.value; }
-  const VERSION = '2026.11.17-5';   // se ve al pie del índice: sirve para saber qué programa tiene la web
+  const VERSION = '2026.11.17-6';   // se ve al pie del índice: sirve para saber qué programa tiene la web
   const VEROVIO = 'https://cdn.jsdelivr.net/npm/verovio@6.1.0/dist/verovio-toolkit-wasm.js';
   // mismas opciones que el antiguo render.js: con la misma semilla, las dos letras dan los mismos ids
   const OPC = { xmlIdSeed: 1, scale: 40, pageWidth: 2200, pageHeight: 3000, adjustPageHeight: true, breaks: 'auto', footer: 'none', header: 'auto', svgViewBox: true, condenseFirstPage: true, svgHtml5: true, svgRemoveXlink: true, lyricSize: 4.2, pageMarginTop: 40, pageMarginBottom: 20, pageMarginLeft: 40, pageMarginRight: 40 };
@@ -565,13 +568,13 @@ body.indice aside { display: none; }
     if (!grupos[p.grupo]) { const d = document.createElement('div'); d.className = 'grupo'; d.innerHTML = '<h2>' + p.grupo + '</h2>'; $('tiras').appendChild(d); grupos[p.grupo] = d; }
     const t = document.createElement('div'); t.className = 'tira';
     t.innerHTML = '<div class="vu"><i></i></div>' +
-      '<div class="nombre"><span>' + p.nombre + '</span></div>' +
+      '<div class="nombre"><span>' + p.nombre + '</span><em class="ajuste" hidden></em></div>' +
       '<div class="botones"><button class="m" title="Silenciar" aria-label="Silenciar ' + p.nombre + '"><svg viewBox="0 0 130 138"><path d=""></path></svg></button><button class="s" title="Solo" aria-label="Solo ' + p.nombre + '">S</button></div>' +
       '<label class="mando vol"><span>Volumen</span><span class="rv" style="--cero:' + (24 / 34) + '"><input type="range" id="vol-' + p.id + '" min="-24" max="10" step="0.5"></span><output></output></label>' +
       '<div class="mando pan"><span>Balance</span><span class="luces" role="slider" tabindex="0" aria-label="Balance ' + esc(p.nombre) + '" aria-valuemin="-100" aria-valuemax="100"><svg viewBox="0 0 200 25"></svg></span><output></output></div>';
     grupos[p.grupo].appendChild(t);
-    Object.assign(p, { el: t, vuEl: t.querySelector('.vu i'), mEl: t.querySelector('.m'), sEl: t.querySelector('.s'), volEl: t.querySelector('.vol input'), volOut: t.querySelector('.vol output'), panEl: t.querySelector('.luces'), panOut: t.querySelector('.pan output'), color: COLOR_TIRA[vozDe(p.id)] || COLOR_TIRA.inst });
-    p.volEl.style.setProperty('--c', p.color);
+    Object.assign(p, { el: t, vuEl: t.querySelector('.vu i'), mEl: t.querySelector('.m'), sEl: t.querySelector('.s'), volEl: t.querySelector('.vol input'), volOut: t.querySelector('.vol output'), ajEl: t.querySelector('.ajuste'), panEl: t.querySelector('.luces'), panOut: t.querySelector('.pan output'), color: COLOR_TIRA[vozDe(p.id)] || COLOR_TIRA.inst });
+    p.volEl.style.setProperty('--c', p.color); t.style.setProperty('--c', p.color);
     p.mEl.onclick = () => { p.muda = !p.muda; aplicar(); };
     p.sEl.onclick = e => { const v = !p.solo; if (!(e.metaKey || e.ctrlKey)) pistas.forEach(q => q.solo = false); p.solo = v; aplicar(); };
     p.volEl.oninput = () => { p.vol = +p.volEl.value; aplicar(); };
@@ -603,11 +606,13 @@ body.indice aside { display: none; }
   }
   const txtPan = v => Math.abs(v) < 0.01 ? 'centro' : (v < 0 ? 'I ' : 'D ') + Math.round(Math.abs(v) * 100);
   let modo = 'todas';
+  // «Resaltar»: tu voz +4 dB y todo lo demás −14 dB (antes −9: resaltaba poco)
+  const RESALTE = { mia: db2g(4), otras: db2g(-14), txtMia: '+4 dB', txtOtras: '−14 dB' };
   function nivel(p) {
     const yo = $('miVoz').value, hay = pistas.some(q => q.solo);
     if (p.muda || (hay && !p.solo)) return 0;
     let g = db2g(p.vol);
-    if (modo === 'resaltar') g *= p.id === yo ? 1.6 : 0.35;
+    if (modo === 'resaltar') g *= p.id === yo ? RESALTE.mia : RESALTE.otras;
     if (modo === 'sin' && p.id === yo) g = 0;
     if (modo === 'sola' && p.id !== yo) g = 0;
     return g;
@@ -618,6 +623,10 @@ body.indice aside { display: none; }
       pintarPan(p); p.panOut.textContent = txtPan(p.pan); p.panEl.setAttribute('aria-valuenow', Math.round(p.pan * 100)); p.panEl.setAttribute('aria-valuetext', txtPan(p.pan));
       p.mEl.classList.toggle('on', p.muda); p.mEl.querySelector('path').setAttribute('d', p.muda ? ALTAVOZ_NO : ALTAVOZ_SI); p.mEl.title = p.muda ? 'Activar el sonido' : 'Silenciar'; p.sEl.classList.toggle('on', p.solo);
       const g = nivel(p); p.el.classList.toggle('callada', g === 0);
+      // a la vista: en «Resaltar», etiqueta con lo que se sube o se baja y las demás tiras atenuadas
+      const res = modo === 'resaltar' && !referencia && g > 0, mia = p.id === $('miVoz').value;
+      p.ajEl.hidden = !res; p.ajEl.textContent = mia ? RESALTE.txtMia : RESALTE.txtOtras;
+      p.ajEl.classList.toggle('sube', res && mia); p.el.classList.toggle('atenuada', res && !mia);
       p.gan.gain.setTargetAtTime(g, ctx.currentTime, 0.015);
       if (p.pan_) p.pan_.pan.setTargetAtTime(p.pan, ctx.currentTime, 0.015);
     });
