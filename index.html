@@ -61,7 +61,8 @@ header { display: flex; align-items: center; gap: 14px; padding: 8px 14px; backg
 .icono circle.lleno { fill: currentColor; stroke: none; }
 .icono.on { border-color: var(--laton); color: var(--laton); }
 /* icono del mezclador: faders con engranajes del usuario (Settings.svg), relleno; gris claro y latón cuando está abierto */
-.icono svg.ico-ajustes { width: 25px; height: 16px; fill: currentColor; stroke: none; }
+.icono svg.ico-ajustes { width: 31px; height: 19px; fill: currentColor; stroke: none; }
+#verMezclador { width: 40px; }   /* más ancho que los demás botones: el icono es apaisado y tiene que verse bien */
 #verMezclador { color: #c9c6be; }
 #verMezclador.on { color: var(--laton); }
 .mini { display: inline-flex; align-items: center; gap: 5px; font-size: 10.5px; color: var(--tenue); cursor: pointer; margin-right: 4px; user-select: none; }
@@ -255,7 +256,7 @@ body.indice aside { display: none; }
   const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
   const slug = s => String(s).normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
   function desentidad(s) { const t = document.createElement('textarea'); t.innerHTML = s; return t.value; }
-  const VERSION = '2026.11.17-11';   // se ve al pie del índice: sirve para saber qué programa tiene la web
+  const VERSION = '2026.11.17-12';   // se ve al pie del índice: sirve para saber qué programa tiene la web
   const VEROVIO = 'https://cdn.jsdelivr.net/npm/verovio@6.1.0/dist/verovio-toolkit-wasm.js';
   // mismas opciones que el antiguo render.js: con la misma semilla, las dos letras dan los mismos ids
   const OPC = { xmlIdSeed: 1, scale: 40, pageWidth: 2200, pageHeight: 3000, adjustPageHeight: true, breaks: 'auto', footer: 'none', header: 'auto', svgViewBox: true, condenseFirstPage: true, svgHtml5: true, svgRemoveXlink: true, lyricSize: 4.2, pageMarginTop: 40, pageMarginBottom: 20, pageMarginLeft: 40, pageMarginRight: 40 };
