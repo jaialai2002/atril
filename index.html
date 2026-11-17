@@ -125,7 +125,8 @@ input[type=range]::-moz-range-track { height: 3.5px; border-radius: 2px; backgro
 input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 12px; height: 12px; border-radius: 50%; background: #f4f2ec; border: 0; margin-top: -4.25px; }
 input[type=range]::-moz-range-thumb { width: 12px; height: 12px; border: 0; border-radius: 50%; background: #f4f2ec; }
 .rv { position: relative; display: block; }
-.rv::before { content: ""; position: absolute; top: 1px; height: 14px; width: 1.5px; background: #6b6f78; left: calc(var(--cero, 50%) - 1px); pointer-events: none; }
+.rv::before { content: ""; position: absolute; top: 2px; height: 12px; width: 1.5px; background: #6b6f78; left: calc(6px + (100% - 12px) * var(--cero, .5) - .75px); pointer-events: none; }   /* 0 dB: en el centro exacto de la bolita (recorrido = ancho − bolita) */
+.rv input { position: relative; z-index: 1; }   /* la bolita tapa la rayita cuando está en 0 dB */
 /* balance: barra de luces de 21 casillas; la del marcador, con contorno blanco */
 .luces { display: block; cursor: ew-resize; touch-action: none; border-radius: 4px; outline: none; }
 .luces:focus-visible { box-shadow: 0 0 0 2px var(--laton); }
@@ -207,7 +208,7 @@ body.indice aside { display: none; }
     <div id="tiras"></div>
     <h2>General</h2>
     <div class="general">
-      <div class="mando"><span>Volumen</span><span class="rv" style="--cero:80%"><input type="range" id="maestro" min="-24" max="6" step="0.5" value="0" aria-label="Volumen general"></span><output id="maestroV">0 dB</output></div>
+      <div class="mando"><span>Volumen</span><span class="rv" style="--cero:.8"><input type="range" id="maestro" min="-24" max="6" step="0.5" value="0" aria-label="Volumen general"></span><output id="maestroV">0 dB</output></div>
       <div class="seguim"><span>Seguimiento</span>
         <div class="seg" role="group" aria-label="Seguimiento de la reproducción">
           <button data-seg="banda" title="Banda dorada en todo el sistema">Banda</button>
@@ -233,7 +234,7 @@ body.indice aside { display: none; }
   const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
   const slug = s => String(s).normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
   function desentidad(s) { const t = document.createElement('textarea'); t.innerHTML = s; return t.value; }
-  const VERSION = '2026.11.17-3';   // se ve al pie del índice: sirve para saber qué programa tiene la web
+  const VERSION = '2026.11.17-4';   // se ve al pie del índice: sirve para saber qué programa tiene la web
   const VEROVIO = 'https://cdn.jsdelivr.net/npm/verovio@6.1.0/dist/verovio-toolkit-wasm.js';
   // mismas opciones que el antiguo render.js: con la misma semilla, las dos letras dan los mismos ids
   const OPC = { xmlIdSeed: 1, scale: 40, pageWidth: 2200, pageHeight: 3000, adjustPageHeight: true, breaks: 'auto', footer: 'none', header: 'auto', svgViewBox: true, condenseFirstPage: true, svgHtml5: true, svgRemoveXlink: true, lyricSize: 4.2, pageMarginTop: 40, pageMarginBottom: 20, pageMarginLeft: 40, pageMarginRight: 40 };
@@ -566,7 +567,7 @@ body.indice aside { display: none; }
     t.innerHTML = '<div class="vu"><i></i></div>' +
       '<div class="nombre"><span>' + p.nombre + '</span></div>' +
       '<div class="botones"><button class="m" title="Silenciar" aria-label="Silenciar ' + p.nombre + '"><svg viewBox="0 0 130 138"><path d=""></path></svg></button><button class="s" title="Solo" aria-label="Solo ' + p.nombre + '">S</button></div>' +
-      '<label class="mando vol"><span>Volumen</span><span class="rv" style="--cero:' + (24 / 34 * 100) + '%"><input type="range" id="vol-' + p.id + '" min="-24" max="10" step="0.5"></span><output></output></label>' +
+      '<label class="mando vol"><span>Volumen</span><span class="rv" style="--cero:' + (24 / 34) + '"><input type="range" id="vol-' + p.id + '" min="-24" max="10" step="0.5"></span><output></output></label>' +
       '<div class="mando pan"><span>Balance</span><span class="luces" role="slider" tabindex="0" aria-label="Balance ' + esc(p.nombre) + '" aria-valuemin="-100" aria-valuemax="100"><svg viewBox="0 0 200 25"></svg></span><output></output></div>';
     grupos[p.grupo].appendChild(t);
     Object.assign(p, { el: t, vuEl: t.querySelector('.vu i'), mEl: t.querySelector('.m'), sEl: t.querySelector('.s'), volEl: t.querySelector('.vol input'), volOut: t.querySelector('.vol output'), panEl: t.querySelector('.luces'), panOut: t.querySelector('.pan output'), color: COLOR_TIRA[vozDe(p.id)] || COLOR_TIRA.inst });
