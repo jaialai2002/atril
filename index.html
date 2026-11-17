@@ -187,6 +187,62 @@ body.indice aside { display: none; }
 .obras .version { margin: 14px 0 0; font: 11px var(--mono); color: #5c5f66; text-align: center; }
 #nuevaVersion { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); z-index: 10; display: flex; gap: 12px; align-items: center; background: var(--consola); border: 1px solid var(--laton); color: var(--texto); font-size: 13px; padding: 8px 8px 8px 14px; border-radius: 10px; box-shadow: 0 8px 24px rgba(0,0,0,.4); white-space: nowrap; }
 #nuevaVersion button { background: var(--laton); color: var(--tinta); border: 0; border-radius: 7px; padding: 5px 12px; font: 600 13px var(--cuerpo); cursor: pointer; }
+/* ---------- modo manual (?manual#obra): hojas A4 imprimibles; el mezclador va copiado tal cual sobre un panel oscuro */
+@page { size: A4; margin: 0; }
+html.modo-manual { background: #e7e3da; }
+body.modo-manual { background: #e7e3da; color: #1d1f24; overflow: auto; height: auto; display: block; font-family: var(--cuerpo); }
+body.modo-manual > :not(#manual) { display: none !important; }
+#manual { font-size: 10.2pt; line-height: 1.45; color: #1d1f24; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+#manual * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.m-acciones { display: flex; gap: 14px; align-items: center; justify-content: center; padding: 14px; font-size: 12px; color: #5b5f69; }
+.m-acciones button { background: var(--laton); color: var(--tinta); border: 0; border-radius: 8px; padding: 8px 16px; font: 600 13px var(--cuerpo); cursor: pointer; }
+.m-hoja { width: 210mm; min-height: 297mm; margin: 0 auto 14px; background: #fff; padding: 13mm 15mm; box-shadow: 0 4px 18px rgba(0,0,0,.18); }
+#manual h1 { font-size: 21pt; font-weight: 700; margin: 0 0 1.5mm; color: #16181d; }
+#manual .m-hoja > h2 { font-size: 13.5pt; font-weight: 700; margin: 0 0 2.5mm; color: #16181d; display: flex; align-items: center; gap: 2.5mm; letter-spacing: 0; text-transform: none; }
+#manual h3 { font-size: 11pt; margin: 4mm 0 1.2mm; color: #16181d; }
+#manual p { margin: 0 0 2.4mm; }
+.m-n { display: inline-flex; width: 7mm; height: 7mm; border-radius: 50%; background: #c0283f; color: #fff; font-size: 10.5pt; align-items: center; justify-content: center; }
+.m-cab { display: flex; align-items: center; gap: 5mm; border-bottom: 2px solid #d4b064; padding-bottom: 4mm; margin-bottom: 5mm; }
+.m-logo svg { width: 15mm; height: auto; display: block; }
+.m-sub { color: #5b5f69; font-size: 10.5pt; }
+.m-url { font-family: var(--mono); background: #f3efe4; padding: .4mm 1.6mm; border-radius: 1.2mm; font-size: 9.4pt; }
+.m-qr { margin-left: auto; text-align: center; }
+.m-qr svg { display: block; width: 24mm; height: 24mm; }
+.m-qr span { display: block; font-size: 7.5pt; color: #5b5f69; margin-top: 1mm; }
+.m-fig { margin: 2mm 0 1mm; }
+.m-partitura { border: .3mm solid #c9c6be; border-radius: 2mm; overflow: hidden; max-height: 92mm; }
+.m-partitura .pagina { margin: 0 !important; width: 100% !important; max-width: none !important; box-shadow: none !important; }
+.m-pie { font-size: 8.8pt; color: #5b5f69; margin: 1mm 0 3mm; }
+.m-barra { position: relative; padding-bottom: 9mm; }
+.m-barra header { position: relative !important; top: auto !important; border-radius: 2mm; }
+.m-num { position: absolute; bottom: 0; width: 5.6mm; height: 5.6mm; margin-left: -2.8mm; border-radius: 50%; background: #c0283f; color: #fff; font: 700 8.5pt var(--cuerpo); font-style: normal; display: flex; align-items: center; justify-content: center; }
+.m-num::before { content: ""; position: absolute; bottom: 100%; left: 50%; width: .5mm; height: 3mm; margin-left: -.25mm; background: #c0283f; }
+.m-leyenda { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5mm 5mm; font-size: 9.4pt; margin: 1mm 0 3mm; }
+.m-leyenda b { display: inline-flex; width: 4.6mm; height: 4.6mm; border-radius: 50%; background: #c0283f; color: #fff; font-size: 8pt; align-items: center; justify-content: center; margin-right: 1.4mm; vertical-align: -1mm; }
+.m-panel { background: #20232a; color: var(--texto); border-radius: 2.5mm; padding: 10px; display: flex; flex-direction: column; gap: 9px; width: 300px; font-family: var(--cuerpo); font-size: 12px; line-height: 1.3; break-inside: avoid; }
+.m-panel #tiras, .m-panel .m-pila { display: flex; flex-direction: column; gap: 9px; }
+.m-panel h2 { margin: 0; font: 600 10.5px var(--cuerpo); letter-spacing: .14em; text-transform: uppercase; color: var(--tenue); display: flex; justify-content: space-between; align-items: center; }
+.m-panel h2 button { font: 500 11px var(--cuerpo); letter-spacing: 0; text-transform: none; border: 0; background: none; color: var(--laton); padding: 0; }
+.m-panel.m-solo { margin: 1mm 0 3mm; }
+.m-dos { display: grid; grid-template-columns: 300px 1fr; gap: 6mm; align-items: start; margin-bottom: 3mm; break-inside: avoid; }
+.m-modos { border-collapse: collapse; width: 100%; font-size: 9.8pt; margin: 1mm 0 4mm; }
+.m-modos td { padding: 1.6mm 2mm; border-bottom: .3mm solid #e2ded3; vertical-align: top; }
+.m-modos td:first-child { font-weight: 700; white-space: nowrap; width: 22mm; }
+.m-modos tr.m-par td { background: #faf6ea; }
+.m-consejo { background: #faf6ea; border-left: 1.2mm solid #d4b064; padding: 2.4mm 3.5mm; margin: 3mm 0; font-size: 9.6pt; }
+.m-consejo b { color: #8a6a1f; }
+.m-gris { font-size: 9.2pt; color: #5b5f69; }
+.m-voz { display: inline-block; width: 3mm; height: 3mm; border-radius: .6mm; vertical-align: -.3mm; margin-right: .8mm; }
+#manual ul { margin: 0 0 2.5mm; padding-left: 5mm; }
+#manual li { margin: 0 0 1.2mm; }
+#manual kbd { font-family: var(--mono); font-size: 8.6pt; border: .3mm solid #b9b4a8; border-bottom-width: .6mm; border-radius: 1mm; padding: 0 1.2mm; background: #fff; color: #1d1f24; }
+.m-final { font-size: 8.6pt; color: #8b8e96; text-align: center; margin-top: 8mm; }
+@media print {
+  html.modo-manual, body.modo-manual { background: #fff; }
+  .m-acciones { display: none; }
+  .m-hoja { width: auto; min-height: 0; height: 297mm; overflow: hidden; margin: 0; padding: 13mm 15mm; box-shadow: none; break-after: page; }
+  .m-hoja:last-child { break-after: auto; }
+}
 #avisito { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); background: var(--consola); border: 1px solid var(--surco); color: var(--texto); font-size: 12px; padding: 6px 12px; border-radius: 8px; opacity: 0; pointer-events: none; transition: opacity .2s; z-index: 9; }
 #avisito.ver { opacity: 1; }
 @media (prefers-reduced-motion: reduce) { #hoja { scroll-behavior: auto; } }
@@ -251,13 +307,15 @@ body.indice aside { display: none; }
   const $ = id => document.getElementById(id);
   const db2g = db => db <= -24 ? 0 : Math.pow(10, db / 20);
   const fmt = s => { s = Math.max(0, s); return Math.floor(s / 60) + ':' + String(Math.floor(s % 60)).padStart(2, '0'); };
+  // modo manual: ?manual#<obra> (web) o #manual-<obra> (también en la prueba de Claude). No guarda ni lee nada del navegador.
+  const modoManual = /(^|[?&])manual(=|&|$)/.test(location.search) || /^#manual-/.test(location.hash);
   let PFX = 'atril:';   // localStorage por obra: atril:<id>:*
-  const guardar = (k, v) => { try { localStorage.setItem(PFX + k, JSON.stringify(v)); } catch (e) {} };
-  const leer = (k, d) => { try { const v = localStorage.getItem(PFX + k); return v ? JSON.parse(v) : d; } catch (e) { return d; } };
+  const guardar = (k, v) => { if (modoManual) return; try { localStorage.setItem(PFX + k, JSON.stringify(v)); } catch (e) {} };
+  const leer = (k, d) => { if (modoManual) return d; try { const v = localStorage.getItem(PFX + k); return v ? JSON.parse(v) : d; } catch (e) { return d; } };
   const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
   const slug = s => String(s).normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
   function desentidad(s) { const t = document.createElement('textarea'); t.innerHTML = s; return t.value; }
-  const VERSION = '2026.11.17-17';   // se ve al pie del índice: sirve para saber qué programa tiene la web
+  const VERSION = '2026.11.17-18';   // se ve al pie del índice: sirve para saber qué programa tiene la web
   const VEROVIO = 'https://cdn.jsdelivr.net/npm/verovio@6.1.0/dist/verovio-toolkit-wasm.js';
   // mismas opciones que el antiguo render.js: con la misma semilla, las dos letras dan los mismos ids
   const OPC = { xmlIdSeed: 1, scale: 40, pageWidth: 2200, pageHeight: 3000, adjustPageHeight: true, breaks: 'auto', footer: 'none', header: 'auto', svgViewBox: true, condenseFirstPage: true, svgHtml5: true, svgRemoveXlink: true, lyricSize: 4.2, pageMarginTop: 40, pageMarginBottom: 20, pageMarginLeft: 40, pageMarginRight: 40 };
@@ -299,7 +357,7 @@ body.indice aside { display: none; }
   addEventListener('hashchange', () => location.reload());
   const pedirJSON = async u => { const r = await fetch(u, { cache: 'no-cache' }); if (!r.ok) throw new Error(u + ': ' + r.status); return r.json(); };
   let lista = null; try { lista = await pedirJSON('obras.json'); } catch (e) {}
-  const idPedido = decodeURIComponent(location.hash.slice(1));
+  const idPedido = decodeURIComponent(location.hash.slice(1)).replace(/^manual-/, '');
   if (!idPedido && lista) return mostrarIndice(lista);
   const fila = lista && (lista.obras || []).find(o => o.id === idPedido);
   const base = fila ? fila.carpeta.replace(/\/?$/, '/') : idPedido ? 'obras/' + idPedido + '/' : '';
@@ -440,10 +498,12 @@ body.indice aside { display: none; }
     return decodificar(await r.arrayBuffer()).finally(alPaso);
   }
   let hechas = 0;
-  try {
+  if (modoManual) pistas.forEach(p => { p.buf = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate); });   // el manual no necesita el audio
+  else try {
     await Promise.all(pistas.map(p => bajar(p.archivo, () => carga('Cargando las pistas… ' + (++hechas) + ' de ' + pistas.length, hechas / pistas.length)).then(b => { p.buf = b; })));
   } catch (e) { carga('No he podido cargar el audio: ' + e.message, 1, true); throw e; }
   duracion = Math.max(...pistas.map(p => p.buf.duration));
+  if (modoManual) duracion = Math.max(duracion, (tm.length ? tm[tm.length - 1].tstamp / 1000 : 0) + 2);   // sin audio: la duración de la partitura
   $('total').textContent = fmt(duracion);
 
   // sincronía: la primera nota del audio (Cantāmus deja un silencio al principio) = la primera nota de la partitura
@@ -766,6 +826,169 @@ body.indice aside { display: none; }
       const c = compases[Math.max(0, Math.min(compases.length - 1, k))]; ir(c.t + arranque);
     }
   });
+  // ---------- modo manual (?manual#<obra> o #manual-<obra>): la página dibuja el manual imprimible de la obra.
+  // Usa el mezclador de verdad en cada estado (sin audio y sin tocar la mezcla guardada) y redacta los textos con los datos de la obra.
+  // El Taller lo imprime con Chrome sin interfaz (--print-to-pdf) y lo guarda como manual.pdf junto a la obra.
+  async function construirManual() {
+    const espera = ms => new Promise(r => setTimeout(r, ms));
+    const y = a => a.length < 2 ? a.join('') : a.slice(0, -1).join(', ') + ' y ' + a[a.length - 1];
+    const voces = enMezclador.filter(p => p.voz), inst = enMezclador.filter(p => !p.voz);
+    document.body.classList.remove('plegado'); await espera(30);
+    // copia de un trozo de la interfaz tal como se ve (los valores de inputs y selects no viajan con cloneNode)
+    function clon(el) {
+      const c = el.cloneNode(true), a = el.querySelectorAll('input, select'), b = c.querySelectorAll('input, select');
+      a.forEach((x, i) => { b[i].value = x.value; });
+      return c;
+    }
+    function estado(cambios) {
+      pistas.forEach(p => { Object.assign(p, p.orig); p.solo = false; });
+      modo = 'todas'; $('miVoz').value = (voces[0] || pistas[0]).id;
+      if (cambios) cambios();
+      document.querySelectorAll('[data-modo]').forEach(x => x.classList.toggle('on', x.dataset.modo === modo));
+      aplicar();
+    }
+    // nombres para el texto: «Z. (soprano)» si el nombre de la pista no dice qué es
+    const instrDe = p => (infoParte[p.parte || parteDe[p.id]] || {}).instr || '';
+    const TIPO_ES = { soprano: 'soprano', alto: 'contralto', tenor: 'tenor', bajo: 'bajo', voz: 'voz' };
+    const instrEs = p => { const i = instrDe(p).toLowerCase(); return /piano/.test(i) ? 'piano' : /organ|órgano/.test(i) ? 'órgano' : /flute|flauta/.test(i) ? 'flauta' : /guitar/.test(i) ? 'guitarra' : /violin/.test(i) ? 'violín' : i; };
+    // «Z. (soprano)», «Soprán (soprano)», «Alt (contralto)»; «Soprano», «Tenor» quedan tal cual; instrumentos abreviados: «P. (piano)»
+    const nombreLargo = p => {
+      if (p.voz) { const t = TIPO_ES[p.voz]; return slug(p.nombre) === slug(t) || (p.voz === 'alto' && slug(p.nombre) === 'alto') ? p.nombre : p.nombre + ' (' + t + ')'; }
+      const i = instrEs(p); return i && slug(p.nombre).length <= 3 ? p.nombre + ' (' + i + ')' : p.nombre;
+    };
+    const NUM = ['', 'una', 'dos', 'tres', 'cuatro', 'cinco', 'seis', 'siete', 'ocho'];
+    const b = t => '<b>' + esc(t) + '</b>';
+    const yo = voces[0] || pistas[0], resal = voces[1] || voces[0] || pistas[0];
+    const muda = inst[0] || voces[1] || pistas[0], sola = voces[voces.length - 1] || pistas[pistas.length - 1];
+
+    // estados del mezclador
+    estado(); const capEnsayo = clon(document.querySelector('.ensayo')), capTira = clon(yo.el), capGeneral = clon(document.querySelector('.general'));
+    estado(() => { muda.muda = true; }); const capMuda = clon(muda.el);
+    estado(() => { sola.solo = true; }); const capSolo = clon($('tiras'));
+    estado(() => { $('miVoz').value = resal.id; modo = 'resaltar'; });
+    const capResaltar = document.createElement('div'); capResaltar.className = 'm-pila';
+    [document.querySelector('.ensayo'), document.querySelector('.cab-mezcla'), $('tiras')].forEach(e => capResaltar.appendChild(clon(e)));
+    estado();
+    // partitura sonando (compás 2) y barra de arriba
+    if (compases.length > 1) ir(compases[1].t + arranque);
+    pintar(true); await espera(30); pintar(false); await espera(30);
+    const capPartitura = clon(document.querySelector('.pagina')), capBarra = clon(document.querySelector('header'));
+
+    // textos que dependen de la obra
+    const url = location.origin + location.pathname.replace(/index\.html$/, '') + '#' + cfg.id;
+    const lado = v => v <= -0.5 ? 'a la izquierda' : v < -0.15 ? 'algo a la izquierda' : v < 0.15 ? 'en el centro' : v < 0.5 ? 'algo a la derecha' : 'a la derecha';
+    const ORDEN_LADO = ['a la izquierda', 'algo a la izquierda', 'en el centro', 'algo a la derecha', 'a la derecha'];
+    const porLado = {}; enMezclador.forEach(p => (porLado[lado(p.orig.pan)] = porLado[lado(p.orig.pan)] || []).push(p.nombre));
+    const lados = ORDEN_LADO.filter(l => porLado[l]);
+    const espacio = lados.length < 2
+      ? 'En esta obra todas las pistas vienen en el centro; prueba a abrir cada voz hacia un lado y notarás la diferencia.'
+      : 'En esta obra vienen repartidas así: ' + y(lados.map(l => y(porLado[l].map(n => '<b>' + esc(n) + '</b>')) + ' ' + l)) + '.';
+    const callados = pistas.filter(p => p.orig.muda || p.orig.vol <= -20);
+    const nInst = p => slug(p.nombre).length <= 3 ? instrEs(p) + ' (' + p.nombre + ')' : p.nombre.toLowerCase();
+    const tipoObra = (voces.length ? (voces.length === 1 ? 'una voz' : (NUM[voces.length] || voces.length) + ' voces') + ' (' + y(voces.map(p => b(nombreLargo(p)))) + ')' : '')
+      + (inst.length ? (voces.length ? ' y ' : '') + y(inst.map(p => b(nInst(p)))) : ', sin instrumentos');
+    const leyenda = y(voces.map(p => '<span class="m-voz" style="background:' + p.color + '"></span>' + esc(p.nombre))) + (inst.length ? (inst.length > 1 ? '; los instrumentos van en gris' : '; ' + esc(inst[0].nombre) + ' va en gris') : '');
+    const autor = cfg.autor ? ' · ' + esc(cfg.autor) : '';
+
+    const m = document.createElement('div'); m.id = 'manual';
+    m.innerHTML = `
+<div class="m-acciones"><button onclick="window.print()">Guardar como PDF o imprimir</button><span>Manual de «${esc(cfg.obra)}», hecho por el Atril con esta misma página</span></div>
+<section class="m-hoja">
+  <div class="m-cab">
+    <div class="m-logo"></div>
+    <div><h1>Cómo usar el Atril</h1><div class="m-sub">${esc(cfg.obra)}${autor}<br><span class="m-url">${esc(url.replace(/^https?:\/\//, ''))}</span></div></div>
+    <div class="m-qr"><div id="mQR"></div><span>Escanéalo con el móvil</span></div>
+  </div>
+  <p>El Atril es una página web para ensayar: ves la partitura y escuchas a la vez cada voz por separado, con un <b>mezclador</b> para subir, bajar, mover o apagar cada una. Funciona en el ordenador, la tablet y el móvil, sin instalar nada. Ábrela en el navegador (Chrome o Safari); la primera vez tarda unos segundos en preparar la partitura.</p>
+  <p>Esta obra es para ${tipoObra}.</p>
+  ${callados.length ? '<div class="m-consejo"><b>Atención:</b> en la mezcla original ' + y(callados.map(p => b(p.nombre))) + (callados.length > 1 ? ' empiezan' : ' empieza') + ' apagado o muy bajo. Usa su altavoz y su volumen para oírlo.</div>' : ''}
+  <div class="m-fig m-partitura" id="mPart"></div>
+  <div class="m-pie">La partitura mientras suena: la línea roja vertical marca por dónde va la música y la página avanza sola.</div>
+  <h3>La barra de arriba</h3>
+  <div class="m-barra" id="mBarra"></div>
+  <div class="m-leyenda">
+    <div><b>1</b>Logo: vuelve a la lista de obras</div><div><b>2</b>Volver al principio</div><div><b>3</b>Reproducir / parar (o la barra espaciadora)</div>
+    <div><b>4</b>Tiempo y número de compás</div><div><b>5</b>Barra de progreso: pulsa para saltar</div><div><b>6</b>Abre y cierra el mezclador</div>
+  </div>
+  <p><b>Para ir a un sitio concreto</b>, pulsa sobre cualquier nota o compás de la partitura: la música salta ahí.</p>
+</section>
+<section class="m-hoja">
+  <h2><span class="m-n">1</span>Mi voz de ensayo: lo más fácil</h2>
+  <p>Arriba del mezclador (botón <b>6</b>) está <b>«Mi voz de ensayo»</b>. Es el atajo pensado para el coro: eliges tu voz una vez y, con un solo botón, decides cómo quieres oírla respecto a las demás. <b>No hace falta tocar nada más del mezclador.</b></p>
+  <div class="m-panel m-solo" id="mEnsayo"></div>
+  <table class="m-modos">
+    <tr><td>Sola</td><td>Solo suena tu voz. Para <b>aprender las notas</b>.</td></tr>
+    <tr class="m-par"><td>Resaltar</td><td>Tu voz más fuerte y todo lo demás de fondo, más bajo. Para <b>aprenderla dentro del conjunto</b> sin perderte.</td></tr>
+    <tr><td>Todas</td><td>Todo suena tal cual, como en el concierto.</td></tr>
+    <tr class="m-par"><td>Sin ella</td><td>Suena todo <b>menos tu voz</b>: la cantas tú. Es el ensayo «de verdad».</td></tr>
+  </table>
+  <div class="m-dos">
+    <div class="m-panel" id="mResaltar"></div>
+    <div>
+      <h3 style="margin-top:0">Ejemplo: «Resaltar» con ${esc(resal.nombre)}</h3>
+      <p>Quien canta ${esc(nombreLargo(resal))} elige <b>${esc(resal.nombre.toUpperCase())}</b> y pulsa <b>Resaltar</b>. En su tira aparece <b>+4 dB</b> (sube un poco) y en las demás <b>−14 dB</b> (bajan bastante); además se ven más apagadas.</p>
+      <p>Las barras de volumen <b>no se mueven</b>: al volver a «Todas», todo suena exactamente como antes.</p>
+      <div class="m-consejo"><b>Recorrido recomendado:</b> Sola → Resaltar → Todas → Sin ella. Cuando te salga bien «Sin ella», ¡ya te la sabes!</div>
+      <p class="m-gris">El cuadradito de color junto al nombre es el color de cada voz: ${leyenda}.</p>
+    </div>
+  </div>
+</section>
+<section class="m-hoja">
+  <h2><span class="m-n">2</span>El mezclador, voz por voz</h2>
+  <p>Debajo de «Mi voz de ensayo» está el <b>mezclador</b>: una tira por pista para ajustarlas a tu gusto. Cada tira tiene cuatro controles:</p>
+  <div class="m-dos"><div class="m-panel" id="mTira"></div><div>
+    <p><b>Volumen.</b> Arrastra la bolita: a la izquierda más bajo, a la derecha más alto. La rayita gris marca el volumen original (<b>0 dB</b>).</p>
+    <p><b>Balance.</b> Decide <b>por qué lado</b> suena la voz: <b>I</b> izquierda, <b>C</b> centro, <b>D</b> derecha. Pulsa o arrastra sobre las casillas; la casilla con borde blanco es la posición.</p>
+    <p><b>Sensación de espacio.</b> Con el balance, cada voz suena desde su sitio, como si tuvieras a los cantantes delante. ${espacio} Así es mucho más fácil distinguirlas y seguir la tuya. Se aprecia sobre todo <b>con auriculares</b>.</p>
+  </div></div>
+  <div class="m-dos"><div class="m-panel" id="mMuda"></div><div>
+    <p><b>Altavoz = silenciar.</b> Pulsa el altavoz para <b>apagar esa pista</b> (en la imagen, ${esc(muda.nombre)}); se pone rojo y tachado y la tira se oscurece. Vuelve a pulsarlo para encenderla. Puedes apagar varias.</p>
+  </div></div>
+  <div class="m-dos"><div class="m-panel" id="mSolo"></div><div>
+    <p><b>S = solo.</b> Pulsa la <b>S</b> de una pista para <b>escuchar solo esa</b>: las demás se apagan (en la imagen, solo ${esc(sola.nombre)}). Vuelve a pulsarla para quitarlo.</p>
+    <p>Para escuchar <b>dos o más pistas solas</b>, mantén pulsada la tecla <kbd>⌘</kbd> (Mac) o <kbd>Ctrl</kbd> (Windows) al pulsar la segunda <b>S</b>.</p>
+    <div class="m-consejo"><b>Para deshacerlo todo:</b> «Mezcla original», con el icono de los auriculares (arriba a la derecha del mezclador), devuelve todas las pistas a como venían. Y un <b>doble clic</b> en cualquier control lo devuelve a su valor original.</div>
+    <p class="m-gris">Tu mezcla se guarda en tu navegador: la próxima vez que abras la obra en ese mismo aparato, la encontrarás igual.</p>
+  </div></div>
+</section>
+<section class="m-hoja">
+  <h2><span class="m-n">3</span>General</h2>
+  <div class="m-dos"><div class="m-panel" id="mGeneral"></div><div>
+    <ul>
+      <li><b>Volumen:</b> el de todo a la vez.</li>
+      <li><b>Seguimiento:</b> cómo se marca por dónde va la música: una <b>Línea</b> roja que avanza de nota en nota, o una <b>Banda</b> dorada sobre el compás entero.</li>
+      <li><b>Pasar página:</b> <b>Sola</b>, la partitura avanza con la música; <b>A mano</b>, se queda quieta y la mueves tú.</li>
+    </ul>
+    <h3>Atajos de teclado (en ordenador)</h3>
+    <p><kbd>Espacio</kbd> reproducir / parar &nbsp; <kbd>←</kbd> <kbd>→</kbd> compás anterior / siguiente<br><kbd>M</kbd> abrir / cerrar el mezclador &nbsp; <kbd>B</kbd> Banda o Línea &nbsp; <kbd>S</kbd> pasar página sola o a mano</p>
+    <div class="m-consejo"><b>En la tablet o el móvil</b> todo funciona tocando con el dedo. Si el mezclador tapa la partitura, ciérralo con su botón (<b>6</b>) o tocando sobre la partitura.</div>
+  </div></div>
+  <div class="m-final">Atril · ${esc(location.host || 'atril')}</div>
+</section>`;
+    document.body.appendChild(m);
+    document.body.classList.add('modo-manual'); document.documentElement.classList.add('modo-manual');
+    m.querySelector('.m-logo').innerHTML = document.querySelector('.marca svg') ? document.querySelector('.marca svg').outerHTML : '';
+    $('mPart').appendChild(capPartitura); $('mBarra').appendChild(capBarra);
+    $('mEnsayo').appendChild(capEnsayo); $('mResaltar').appendChild(capResaltar); $('mTira').appendChild(capTira);
+    $('mMuda').appendChild(capMuda); $('mSolo').appendChild(capSolo);
+    const tg = document.createElement('h2'); tg.textContent = 'General'; $('mGeneral').append(tg, capGeneral);
+    // números de la barra, debajo de cada elemento
+    await espera(30);
+    const zona = $('mBarra'), z = zona.getBoundingClientRect();
+    [['.marca', 1], ['#inicio', 2], ['#play', 3], ['.reloj', 4], ['#barra', 5], ['#verMezclador', 6]].forEach(([sel, n]) => {
+      const e = capBarra.querySelector(sel); if (!e) return;
+      const r = e.getBoundingClientRect(), i = document.createElement('i');
+      i.className = 'm-num'; i.textContent = n; i.style.left = (r.left + r.width / 2 - z.left) + 'px'; zona.appendChild(i);
+    });
+    // código QR de la obra (qrcode-generator de cdnjs); si no carga, queda la dirección escrita
+    try {
+      await new Promise((ok, mal) => { const s = document.createElement('script'); s.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js'; s.onload = ok; s.onerror = mal; document.head.appendChild(s); });
+      const q = qrcode(0, 'M'); q.addData(url); q.make(); $('mQR').innerHTML = q.createSvgTag(4, 0);
+    } catch (e) { m.querySelector('.m-qr').remove(); }
+    document.title = 'Atril · Manual · ' + cfg.obra;
+    document.documentElement.dataset.manual = 'listo';   // señal para quien lo imprima
+  }
+  if (modoManual) return construirManual();
   requestAnimationFrame(bucle);
 })().catch(e => { const c = document.getElementById('cargando'); c.classList.remove('fuera'); c.classList.add('error'); document.getElementById('cargaTxt').textContent = 'Algo ha fallado: ' + e.message; console.error(e); });
 </script>
