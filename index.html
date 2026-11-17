@@ -256,7 +256,7 @@ body.indice aside { display: none; }
   const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
   const slug = s => String(s).normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
   function desentidad(s) { const t = document.createElement('textarea'); t.innerHTML = s; return t.value; }
-  const VERSION = '2026.11.17-13';   // se ve al pie del índice: sirve para saber qué programa tiene la web
+  const VERSION = '2026.11.17-15';   // se ve al pie del índice: sirve para saber qué programa tiene la web
   const VEROVIO = 'https://cdn.jsdelivr.net/npm/verovio@6.1.0/dist/verovio-toolkit-wasm.js';
   // mismas opciones que el antiguo render.js: con la misma semilla, las dos letras dan los mismos ids
   const OPC = { xmlIdSeed: 1, scale: 40, pageWidth: 2200, pageHeight: 3000, adjustPageHeight: true, breaks: 'auto', footer: 'none', header: 'auto', svgViewBox: true, condenseFirstPage: true, svgHtml5: true, svgRemoveXlink: true, lyricSize: 4.2, pageMarginTop: 40, pageMarginBottom: 20, pageMarginLeft: 40, pageMarginRight: 40 };
@@ -343,6 +343,25 @@ body.indice aside { display: none; }
     if (pistaDeParte[m[1]]) continue;
     const q = cfg.pistas.find(p => !p.parte && slug(p.nombre) === slug(desentidad(m[2]))); if (q) pistaDeParte[m[1]] = q.id;
   }
+  // ¿voz o instrumento? Se mira el <score-part> de cada pista en el MusicXML, en este orden:
+  // 1) <instrument-sound> «voice.…» (soprano, alto, tenor, bass…); 2) <instrument-name> (Soprano, Bajo…);
+  // 3) el nombre de la pista (como antes); 4) si la parte lleva letra, es voz aunque no se sepa de qué tipo.
+  // Así «Z.» (Zerlina, voice.soprano) es Soprano y «G.» (Giovanni, voice.bass) es Bajo.
+  const SONIDO_VOZ = [[/^voice\.(soprano|treble|boy-soprano|girl)/, 'soprano'], [/^voice\.(mezzo|alto|contralto|countertenor)/, 'alto'], [/^voice\.tenor/, 'tenor'], [/^voice\.(baritone|bass)/, 'bajo']];
+  const infoParte = {};
+  for (const m of xmls.cant.matchAll(/<score-part id="([^"]+)">([\s\S]*?)<\/score-part>/g)) {
+    const t = m[2], g = re => (re.exec(t) || [])[1] || '';
+    infoParte[m[1]] = { sonido: g(/<instrument-sound>([^<]*)</), instr: desentidad(g(/<instrument-name>([^<]*)</)) };
+  }
+  for (const m of xmls.cant.matchAll(/<part id="([^"]+)">([\s\S]*?)<\/part>/g)) if (infoParte[m[1]]) infoParte[m[1]].letra = /<lyric[\s>]/.test(m[2]);
+  const parteDe = {}; Object.entries(pistaDeParte).forEach(([pid, id]) => { parteDe[id] = pid; });
+  function tipoDeVoz(p) {
+    const i = infoParte[p.parte || parteDe[p.id]] || {};
+    for (const [re, v] of SONIDO_VOZ) if (re.test(i.sonido || '')) return v;
+    const porNombre = vozDe(slug(i.instr || '')) || vozDe(p.id);
+    if (porNombre) return porNombre;
+    return /^voice\./.test(i.sonido || '') || i.letra ? 'voz' : null;   // voz sin tipo conocido
+  }
   const pentagrama = {};
   d0.paginas.forEach(s => { for (const m of s.matchAll(/data-id="([^"]+)" data-class="staff"/g)) { const pid = partes[+d0.tk.getElementAttr(m[1]).n - 1]; if (pistaDeParte[pid]) pentagrama[m[1]] = pistaDeParte[pid]; } });
 
@@ -369,7 +388,7 @@ body.indice aside { display: none; }
   // seguimiento y colores por voz (como la Multiconsola): azul = todo; cada voz, el suyo
   let seguimiento = leer('seg', 'linea'), colores = null, firma = '';
   // colores de las tiras del mezclador (los del usuario; el morado, aclarado para el fondo oscuro); instrumentos en gris claro
-  const COLOR_TIRA = { soprano: '#d42e28', alto: '#9a55d4', tenor: '#e3922f', bajo: '#55ac6b', inst: '#b9b4a8' };
+  const COLOR_TIRA = { soprano: '#d42e28', alto: '#9a55d4', tenor: '#e3922f', bajo: '#55ac6b', voz: '#d4b064', inst: '#b9b4a8' };   // voz = voz sin tipo conocido (latón)
   const COLOR = { todos: '#3f7fe0', soprano: '#e0303f', alto: '#9150d2', tenor: '#f08a1c', bajo: '#2fa65a' };
   const ALFA = { todos: .15, soprano: .17, alto: .17, tenor: .19, bajo: .17 };
   // qué voz es una pista, por su id (slug del nombre), en varios idiomas: es, ca, cs, it, en, de, fr, la… y S/A/T/B
@@ -411,7 +430,7 @@ body.indice aside { display: none; }
   const AC = window.AudioContext || window.webkitAudioContext;
   ctx = new AC();
   const maestro = ctx.createGain(); maestro.connect(ctx.destination);
-  const pistas = cfg.pistas.map(p => Object.assign({}, p, { archivo: base + p.archivo + ver, grupo: vozDe(p.id) ? 'Voces' : 'Instrumentos', orig: { vol: p.vol, pan: p.pan, muda: p.muda }, solo: false }));
+  const pistas = cfg.pistas.map(p => Object.assign({}, p, { archivo: base + p.archivo + ver, voz: tipoDeVoz(p), grupo: tipoDeVoz(p) ? 'Voces' : 'Instrumentos', orig: { vol: p.vol, pan: p.pan, muda: p.muda }, solo: false }));
   const guardadas = leer('mezcla', null);
   if (guardadas) pistas.forEach(p => { const g = guardadas[p.id]; if (g) Object.assign(p, g); });
   const decodificar = buf => new Promise((ok, mal) => { const r = ctx.decodeAudioData(buf, ok, mal); if (r && r.then) r.then(ok, mal); });
@@ -587,9 +606,10 @@ body.indice aside { display: none; }
 
   // ---------- mezclador
   // las voces siempre en orden S, A, T, B (como en la partitura); los instrumentos, en el orden del Taller
-  const ORDEN_VOZ = { soprano: 0, alto: 1, tenor: 2, bajo: 3 };
+  const ORDEN_VOZ = { soprano: 0, alto: 1, tenor: 2, bajo: 3, voz: 4 };
   const enMezclador = pistas.map((p, i) => ({ p, i })).sort((x, y) => {
-    const vx = vozDe(x.p.id), vy = vozDe(y.p.id);
+    const vx = x.p.voz, vy = y.p.voz;
+    if (!!vx !== !!vy) return vx ? -1 : 1;   // voces antes que instrumentos (también en «Mi voz»: por defecto, la primera voz)
     if (vx && vy) return ORDEN_VOZ[vx] - ORDEN_VOZ[vy] || x.i - y.i;
     return x.i - y.i;
   }).map(x => x.p);
@@ -604,7 +624,7 @@ body.indice aside { display: none; }
       '<label class="mando vol"><span>Volumen</span><span class="rv" style="--cero:' + (24 / 34) + '"><input type="range" id="vol-' + p.id + '" min="-24" max="10" step="0.5"></span><output></output></label>' +
       '<div class="mando pan"><span>Balance</span><span class="luces" role="slider" tabindex="0" aria-label="Balance ' + esc(p.nombre) + '" aria-valuemin="-100" aria-valuemax="100"><svg viewBox="0 0 200 25"></svg></span><output></output></div>';
     grupos[p.grupo].appendChild(t);
-    Object.assign(p, { el: t, vuEl: t.querySelector('.vu i'), mEl: t.querySelector('.m'), sEl: t.querySelector('.s'), volEl: t.querySelector('.vol input'), volOut: t.querySelector('.vol output'), ajEl: t.querySelector('.ajuste'), panEl: t.querySelector('.luces'), panOut: t.querySelector('.pan output'), color: COLOR_TIRA[vozDe(p.id)] || COLOR_TIRA.inst });
+    Object.assign(p, { el: t, vuEl: t.querySelector('.vu i'), mEl: t.querySelector('.m'), sEl: t.querySelector('.s'), volEl: t.querySelector('.vol input'), volOut: t.querySelector('.vol output'), ajEl: t.querySelector('.ajuste'), panEl: t.querySelector('.luces'), panOut: t.querySelector('.pan output'), color: COLOR_TIRA[p.voz] || COLOR_TIRA.inst });
     p.volEl.style.setProperty('--c', p.color); t.style.setProperty('--c', p.color);
     p.mEl.onclick = () => { p.muda = !p.muda; aplicar(); };
     p.sEl.onclick = e => { const v = !p.solo; if (!(e.metaKey || e.ctrlKey)) pistas.forEach(q => q.solo = false); p.solo = v; aplicar(); };
@@ -672,10 +692,10 @@ body.indice aside { display: none; }
   // en «Resaltar», tu voz con su color y el resto en azul. Los instrumentos, siempre en azul.
   function calcularColores() {
     const oye = pistas.filter(p => referencia || nivel(p) > 0), yo = $('miVoz').value;
-    const voces = pistas.filter(p => vozDe(p.id)), todasVoces = voces.every(v => oye.includes(v));
+    const voces = pistas.filter(p => p.voz), todasVoces = voces.every(v => oye.includes(v));
     colores = new Map();
     oye.forEach(p => {
-      const v = vozDe(p.id);
+      const v = COLOR[p.voz] ? p.voz : null;
       const propio = v && !referencia && (modo === 'resaltar' ? p.id === yo : !todasVoces);
       colores.set(p.id, propio ? v : 'todos');
     });
