@@ -156,6 +156,11 @@ input[type=range]::-moz-range-thumb { width: 12px; height: 12px; border: 0; bord
 .general { display: grid; gap: 8px; background: rgba(22,24,29,.7); border: 1px solid var(--surco); border-radius: 9px; padding: 8px 9px 8px 11px; }   /* mismos márgenes que .tira: los 0 dB quedan en la misma vertical */
 .general .chip { font-size: 11.5px; padding: 5px 8px; }
 .general .nota { font-size: 11px; }
+.obras.entrar { text-align: center; max-width: 420px; }
+.obras.entrar .nota { margin: 10px 0 18px; }
+#botonGoogle { display: flex; justify-content: center; min-height: 44px; }
+#entrarError { color: #ff8a9a; min-height: 1.2em; }
+.version a { color: inherit; }
 .manual-link { display: flex; align-items: center; gap: 6px; font: 500 11.5px var(--cuerpo); color: var(--laton); text-decoration: none; border-top: 1px solid var(--surco); padding-top: 7px; margin-top: 1px; }
 .manual-link:hover { text-decoration: underline; }
 .ico-libro { width: 15px; height: 15px; flex: none; }
@@ -319,7 +324,7 @@ body.modo-manual > :not(#manual) { display: none !important; }
   const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
   const slug = s => String(s).normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
   function desentidad(s) { const t = document.createElement('textarea'); t.innerHTML = s; return t.value; }
-  const VERSION = '2026.11.18-1';   // se ve al pie del índice: sirve para saber qué programa tiene la web
+  const VERSION = '2026.11.18-2';   // se ve al pie del índice: sirve para saber qué programa tiene la web
   const VEROVIO = 'https://cdn.jsdelivr.net/npm/verovio@6.1.0/dist/verovio-toolkit-wasm.js';
   // mismas opciones que el antiguo render.js: con la misma semilla, las dos letras dan los mismos ids
   const OPC = { xmlIdSeed: 1, scale: 40, pageWidth: 2200, pageHeight: 3000, adjustPageHeight: true, breaks: 'auto', footer: 'none', header: 'auto', svgViewBox: true, condenseFirstPage: true, svgHtml5: true, svgRemoveXlink: true, lyricSize: 4.2, pageMarginTop: 40, pageMarginBottom: 20, pageMarginLeft: 40, pageMarginRight: 40 };
@@ -341,14 +346,54 @@ body.modo-manual > :not(#manual) { display: none !important; }
       return tr.replace(/<lyric[\s>][\s\S]*?<\/lyric>/g, ly => { const par = lista[k++]; return par ? ly.replace(/<text>[\s\S]*?<\/text>/, () => '<text>' + esc(par[1]) + '</text>') : ly; });
     }).join('');
   }
-  function mostrarIndice(l) {
+  function mostrarIndice(l, conSesion) {
     document.title = 'Atril · Obras';
     document.body.classList.add('indice', 'plegado');
     $('cargando').classList.add('fuera');
     const obras = l.obras || [];
     $('paginas').innerHTML = '<div class="obras"><h1>Obras</h1>' + (obras.length ? obras.map(o =>
       '<a class="obra" href="#' + encodeURIComponent(o.id) + '"><b>' + esc(o.obra) + '</b>' + (o.autor ? '<span>' + esc(o.autor) + '</span>' : '') + '</a>').join('')
-      : '<p class="nota">Todavía no hay obras.</p>') + '<p class="version">Atril · versión ' + VERSION + '</p></div>';
+      : '<p class="nota">Todavía no hay obras.</p>') + '<p class="version">Atril · versión ' + VERSION + (conSesion ? ' · <a href="#" id="salir">Salir</a>' : '') + '</p></div>';
+    if (conSesion) $('salir').onclick = async e => {
+      e.preventDefault();
+      try { await fetch('lista.php', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{"salir":true}' }); } catch (err) {}
+      try { google.accounts.id.disableAutoSelect(); } catch (err) {}
+      location.reload();
+    };
+  }
+  // lista privada: lista.php solo la entrega con sesión de Google; sin sesión, botón «Iniciar sesión con Google»
+  async function pedirLista() {
+    try {
+      const r = await fetch('lista.php', { cache: 'no-store', credentials: 'same-origin' });
+      if (r.status === 401) { const j = await r.json(); if (j.entrar) return { cliente: j.cliente }; }
+      if (r.ok) { const j = await r.json(); if (j && j.obras) return { lista: j, sesion: true }; }
+    } catch (e) {}
+    try { return { lista: await pedirJSON('obras.json') }; } catch (e) { return {}; }   // sin lista.php (prueba de Claude): como antes
+  }
+  function pedirEntrada(cliente) {
+    document.title = 'Atril';
+    document.body.classList.add('indice', 'plegado');
+    $('cargando').classList.add('fuera');
+    $('paginas').innerHTML = '<div class="obras entrar"><h1>Atril</h1><p class="nota">La lista de obras es privada. Para abrir una obra, usa su enlace.</p>'
+      + '<div id="botonGoogle"></div><p class="nota" id="entrarError"></p><p class="version">Atril · versión ' + VERSION + '</p></div>';
+    const s = document.createElement('script'); s.src = 'https://accounts.google.com/gsi/client'; s.async = true;
+    s.onload = () => {
+      google.accounts.id.initialize({ client_id: cliente, auto_select: true, cancel_on_tap_outside: true, context: 'signin', ux_mode: 'popup',
+        callback: async resp => {
+          $('entrarError').textContent = '';
+          try {
+            const r = await fetch('lista.php', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ credential: resp.credential }) });
+            const j = await r.json();
+            if (r.ok && j.obras) return mostrarIndice(j, true);
+            $('entrarError').textContent = j.error || 'No se ha podido entrar.';
+            google.accounts.id.disableAutoSelect();
+          } catch (e) { $('entrarError').textContent = 'No se ha podido entrar: ' + e.message; }
+        } });
+      google.accounts.id.renderButton($('botonGoogle'), { theme: 'filled_black', size: 'large', shape: 'pill', text: 'signin_with', locale: 'es' });
+      google.accounts.id.prompt();
+    };
+    s.onerror = () => { $('entrarError').textContent = 'No se ha podido cargar el inicio de sesión de Google.'; };
+    document.head.appendChild(s);
   }
   const carga = (txt, frac, err) => { $('cargaTxt').textContent = txt; $('cargaRiel').style.width = (frac * 100) + '%'; $('cargando').classList.toggle('error', !!err); };
 
@@ -360,11 +405,15 @@ body.modo-manual > :not(#manual) { display: none !important; }
   // ---------- qué abrir: el índice (obras.json) o una obra (#id, u obra.json junto a esta página)
   addEventListener('hashchange', () => location.reload());
   const pedirJSON = async u => { const r = await fetch(u, { cache: 'no-cache' }); if (!r.ok) throw new Error(u + ': ' + r.status); return r.json(); };
-  let lista = null; try { lista = await pedirJSON('obras.json'); } catch (e) {}
   const idPedido = decodeURIComponent(location.hash.slice(1)).replace(/^manual-/, '');
-  if (!idPedido && lista) return mostrarIndice(lista);
-  const fila = lista && (lista.obras || []).find(o => o.id === idPedido);
-  const base = fila ? fila.carpeta.replace(/\/?$/, '/') : idPedido ? 'obras/' + idPedido + '/' : '';
+  if (!idPedido) {   // sin obra: la lista (privada si está lista.php)
+    const l = await pedirLista();
+    if (l.cliente) return pedirEntrada(l.cliente);
+    if (l.lista) return mostrarIndice(l.lista, l.sesion);
+  }
+  // cada obra está en obras/<id>/ y se abre con su enlace sin consultar la lista
+  const base = idPedido ? 'obras/' + idPedido + '/' : '';
+  const hayIndice = !!idPedido;   // el logo vuelve a la lista (que pedirá entrar si hace falta)
   carga('Cargando la obra…', 0);
   const cfg = await pedirJSON(base + 'obra.json');
   PFX = 'atril:' + cfg.id + ':';
@@ -376,7 +425,7 @@ body.modo-manual > :not(#manual) { display: none !important; }
       Object.keys(localStorage).filter(k => k.startsWith('atril:pastorella:')).forEach(k => localStorage.setItem(PFX + k.slice(17), localStorage.getItem(k)));
   } catch (e) {}
   document.title = 'Atril · ' + cfg.obra;
-  if (lista) { document.querySelector('.marca').classList.add('vuelve'); document.querySelector('.marca').title = 'Todas las obras'; }
+  if (hayIndice) { document.querySelector('.marca').classList.add('vuelve'); document.querySelector('.marca').title = 'Todas las obras'; }
 
   // ---------- partitura: Verovio dibuja en el navegador a partir del MusicXML
   carga('Cargando la partitura y Verovio…', .04);
@@ -479,7 +528,7 @@ body.modo-manual > :not(#manual) { display: none !important; }
     if (!xmls.orig) return aviso('Esta obra solo tiene una letra');
     ponerLetra(letra === 'cant' ? 'orig' : 'cant').then(() => aviso(letra === 'cant' ? 'Letra: pronunciación (Cantāmus)' : 'Letra: original'));
   }
-  document.querySelector('.marca').addEventListener('click', e => { if (e.altKey) cambiarLetra(); else if (lista) location.hash = ''; });
+  document.querySelector('.marca').addEventListener('click', e => { if (e.altKey) cambiarLetra(); else if (hayIndice) location.hash = ''; });
   function aviso(t) { let a = $('avisito'); if (!a) { a = document.createElement('div'); a.id = 'avisito'; document.body.appendChild(a); } a.textContent = t; a.classList.add('ver'); clearTimeout(aviso.t); aviso.t = setTimeout(() => a.classList.remove('ver'), 1600); }
   $('paginas').addEventListener('click', e => {
     const n = e.target.closest('g.note[data-id]');
