@@ -334,7 +334,7 @@ body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: v
         </div>
         <span>Separación</span>
         <div class="seg cuatro" role="group" aria-label="Separación de las voces entre izquierda y derecha">
-          <button data-sep="1" title="Como viene de Cantāmus">Amplia</button>
+          <button data-sep="1" title="Los balances como vienen de Cantāmus">Amplia</button>
           <button data-sep="0.5" title="Las voces a mitad de camino del centro">Media</button>
           <button data-sep="0.25" title="Las voces muy cerca del centro">Cerca</button>
           <button data-sep="0" title="Todas las voces en el centro">Centro</button>
@@ -359,7 +359,7 @@ body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: v
   const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
   const slug = s => String(s).normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
   function desentidad(s) { const t = document.createElement('textarea'); t.innerHTML = s; return t.value; }
-  const VERSION = '2026.11.18-7';   // se ve al pie del índice: sirve para saber qué programa tiene la web
+  const VERSION = '2026.11.18-8';   // se ve al pie del índice: sirve para saber qué programa tiene la web
   const VEROVIO = 'https://cdn.jsdelivr.net/npm/verovio@6.1.0/dist/verovio-toolkit-wasm.js';
   // mismas opciones que el antiguo render.js: con la misma semilla, las dos letras dan los mismos ids
   const OPC = { xmlIdSeed: 1, scale: 40, pageWidth: 2200, pageHeight: 3000, adjustPageHeight: true, breaks: 'auto', footer: 'none', header: 'auto', svgViewBox: true, condenseFirstPage: true, svgHtml5: true, svgRemoveXlink: true, lyricSize: 4.2, pageMarginTop: 40, pageMarginBottom: 20, pageMarginLeft: 40, pageMarginRight: 40 };
@@ -947,14 +947,15 @@ body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: v
   let modo = 'todas';
   // «Resaltar»: tu voz +4 dB y todo lo demás −14 dB (antes −9: resaltaba poco)
   const RESALTE = { mia: db2g(4), otras: db2g(-14), txtMia: '+4 dB', txtOtras: '−14 dB' };
-  // «Separación»: multiplica el balance de todas las pistas (1 = como viene, 0 = todo al centro). No mueve los balances de las tiras.
+  // «Separación»: coloca los balances a partir de los de Cantāmus (1 = como vienen, 0 = todos al centro) y los mandos se mueven con ellos.
+  // El botón queda marcado mientras los balances coincidan con esa colocación; si mueves uno a mano, ninguno.
   const SEPARACIONES = [1, 0.5, 0.25, 0];
-  let separacion = SEPARACIONES.includes(leer('separacion', 1)) ? leer('separacion', 1) : 1;
-  function ponerSeparacion(v) {
-    separacion = v; guardar('separacion', v);
-    document.querySelectorAll('[data-sep]').forEach(b => b.classList.toggle('on', +b.dataset.sep === v));
-    aplicar();
+  const panSep = (p, v) => Math.round(p.orig.pan * v * 100) / 100;
+  function marcarSeparacion() {
+    const v = SEPARACIONES.find(v => pistas.every(p => Math.abs(p.pan - panSep(p, v)) < 0.006));
+    document.querySelectorAll('[data-sep]').forEach(b => b.classList.toggle('on', v !== undefined && +b.dataset.sep === v));
   }
+  function ponerSeparacion(v) { pistas.forEach(p => { p.pan = panSep(p, v); }); aplicar(); }
   function nivel(p) {
     const yo = $('miVoz').value, hay = pistas.some(q => q.solo);
     if (p.muda || (hay && !p.solo)) return 0;
@@ -976,12 +977,13 @@ body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: v
       p.ajEl.hidden = !res; p.ajEl.textContent = mia ? RESALTE.txtMia : RESALTE.txtOtras;
       p.ajEl.classList.toggle('sube', res && mia); p.el.classList.toggle('atenuada', res && !mia);
       p.gan.gain.setTargetAtTime(g, ctx.currentTime, 0.015);
-      if (p.pan_) p.pan_.pan.setTargetAtTime(p.pan * separacion, ctx.currentTime, 0.015);
+      if (p.pan_) p.pan_.pan.setTargetAtTime(p.pan, ctx.currentTime, 0.015);
     });
     const m = +$('maestro').value; $('maestro').style.setProperty('--p', ((m + 24) / 34 * 100) + '%'); maestro.gain.setTargetAtTime(db2g(m), ctx.currentTime, 0.015);
     $('maestroV').textContent = (m > 0 ? '+' : '') + m + ' dB';
     calcularColores();
     const g = {}; pistas.forEach(p => g[p.id] = { vol: p.vol, pan: p.pan, muda: p.muda }); guardar('mezcla', g);
+    marcarSeparacion();
     guardar('ensayo', { voz: $('miVoz').value, modo }); guardar('maestro', m);
   }
   // qué color lleva cada pista que se oye: azul si suenan todas las voces; el de cada voz si suena solo una parte del coro;
@@ -1010,9 +1012,8 @@ body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: v
   });
   $('miVoz').onchange = aplicar;
   $('maestro').oninput = aplicar; $('maestro').ondblclick = () => { $('maestro').value = 0; aplicar(); };
-  $('reponer').onclick = () => { pistas.forEach(p => { Object.assign(p, p.orig); p.solo = false; }); modo = 'todas'; document.querySelectorAll('[data-modo]').forEach(x => x.classList.toggle('on', x.dataset.modo === 'todas')); ponerSeparacion(1); };
+  $('reponer').onclick = () => { pistas.forEach(p => { Object.assign(p, p.orig); p.solo = false; }); modo = 'todas'; document.querySelectorAll('[data-modo]').forEach(x => x.classList.toggle('on', x.dataset.modo === 'todas')); aplicar(); };
   document.querySelectorAll('[data-sep]').forEach(b => b.onclick = () => ponerSeparacion(+b.dataset.sep));
-  ponerSeparacion(separacion);
   const ens = leer('ensayo', null);
   if (ens) { if (pistas.some(p => p.id === ens.voz)) $('miVoz').value = ens.voz; modo = ens.modo || 'todas'; document.querySelectorAll('[data-modo]').forEach(x => x.classList.toggle('on', x.dataset.modo === modo)); }
   $('maestro').value = leer('maestro', 0);
@@ -1195,7 +1196,7 @@ body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: v
       <li><b>Volumen:</b> el de todo a la vez.</li>
       <li><b>Seguimiento:</b> cómo se marca por dónde va la música: una <b>Línea</b> roja que avanza de nota en nota, o una <b>Banda</b> dorada sobre el compás entero.</li>
       <li><b>Pasar página:</b> <b>Sola</b>, la partitura avanza con la música; <b>A mano</b>, se queda quieta y la mueves tú.</li>
-      <li><b>Separación:</b> acerca todas las voces al centro sin tocar el balance de cada una: <b>Amplia</b> (como viene), <b>Media</b>, <b>Cerca</b> o <b>Centro</b>. Prueba «Cerca» si las voces te suenan demasiado lejos unas de otras.</li>
+      <li><b>Separación:</b> acerca todas las voces al centro de una vez, moviendo sus balances: <b>Amplia</b> (como vienen), <b>Media</b>, <b>Cerca</b> o <b>Centro</b>. Prueba «Cerca» si las voces te suenan demasiado lejos unas de otras.</li>
     </ul>
     <h3>Atajos de teclado (en ordenador)</h3>
     <p><kbd>Espacio</kbd> reproducir / parar &nbsp; <kbd>←</kbd> <kbd>→</kbd> compás anterior / siguiente<br><kbd>M</kbd> abrir / cerrar el mezclador &nbsp; <kbd>B</kbd> Banda o Línea &nbsp; <kbd>S</kbd> pasar página sola o a mano</p>
