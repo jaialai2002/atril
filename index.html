@@ -167,8 +167,13 @@ input[type=range]::-moz-range-thumb { width: 12px; height: 12px; border: 0; bord
 .seguim { display: grid; grid-template-columns: auto 1fr; gap: 6px 8px; align-items: center; font-size: 11px; color: var(--tenue); }
 .seguim .seg { display: grid; grid-template-columns: repeat(2, 1fr); }
 .seguim .seg button { padding: 4px 6px; font-size: 11.5px; }
-.seguim .seg.cuatro { grid-template-columns: repeat(4, 1fr); }
-.seguim .seg.cuatro button { padding: 4px 2px; }
+.separacion { display: flex; align-items: center; gap: 8px; padding: 3px 2px 1px; }
+.separacion .lbl { font-size: 12px; color: var(--tenue); white-space: nowrap; }
+.separacion .seg { flex: 1; display: grid; grid-template-columns: repeat(4, 1fr); }
+.separacion .seg button { padding: 5px 2px 4px; font-size: 10.5px; display: grid; justify-items: center; gap: 3px; }
+.separacion .glifo { position: relative; width: 34px; height: 8px; }
+.separacion .glifo i { position: absolute; top: 1px; width: 6px; height: 6px; border-radius: 50%; margin-left: -3px; }
+.separacion .seg button:not(.on) .glifo { opacity: .7; }
 .leyenda { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 4px 10px; font-size: 10.5px; color: var(--tenue); }
 .leyenda i { display: inline-block; width: 9px; height: 9px; border-radius: 3px; margin-right: 4px; vertical-align: -1px; }
 body:not(.seg-voces) .leyenda { display: none; }
@@ -332,13 +337,6 @@ body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: v
           <button data-seguir="1" title="La partitura se desplaza sola al sistema que suena (tecla S)">Sola</button>
           <button data-seguir="0" title="La partitura se queda quieta: tú la mueves (tecla S)">A mano</button>
         </div>
-        <span>Separación</span>
-        <div class="seg cuatro" role="group" aria-label="Separación de las voces entre izquierda y derecha">
-          <button data-sep="1" title="Los balances como vienen de Cantāmus">Amplia</button>
-          <button data-sep="0.5" title="Las voces a mitad de camino del centro">Media</button>
-          <button data-sep="0.25" title="Las voces muy cerca del centro">Cerca</button>
-          <button data-sep="0" title="Todas las voces en el centro">Centro</button>
-        </div>
       </div>
       <p class="nota">Clic en una nota o un compás para ir ahí. <b>Espacio</b> reproduce o para; <b>← →</b> cambian de compás; <b>M</b> pliega el mezclador; <b>B</b> cambia el seguimiento; <b>S</b> pasa de página sola o a mano. Doble clic en un control lo devuelve a su valor original.</p>
       <a id="verManual" class="manual-link" target="_blank" rel="noopener"><svg class="ico-libro" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 10.4V20M12 10.4C12 8.15979 12 7.03969 11.564 6.18404C11.1805 5.43139 10.5686 4.81947 9.81596 4.43597C8.96031 4 7.84021 4 5.6 4H4.6C4.03995 4 3.75992 4 3.54601 4.10899C3.35785 4.20487 3.20487 4.35785 3.10899 4.54601C3 4.75992 3 5.03995 3 5.6V16.4C3 16.9601 3 17.2401 3.10899 17.454C3.20487 17.6422 3.35785 17.7951 3.54601 17.891C3.75992 18 4.03995 18 4.6 18H7.54668C8.08687 18 8.35696 18 8.61814 18.0466C8.84995 18.0879 9.0761 18.1563 9.29191 18.2506C9.53504 18.3567 9.75977 18.5065 10.2092 18.8062L12 20M12 10.4C12 8.15979 12 7.03969 12.436 6.18404C12.8195 5.43139 13.4314 4.81947 14.184 4.43597C15.0397 4 16.1598 4 18.4 4H19.4C19.9601 4 20.2401 4 20.454 4.10899C20.6422 4.20487 20.7951 4.35785 20.891 4.54601C21 4.75992 21 5.03995 21 5.6V16.4C21 16.9601 21 17.2401 20.891 17.454C20.7951 17.6422 20.6422 17.7951 20.454 17.891C20.2401 18 19.9601 18 19.4 18H16.4533C15.9131 18 15.643 18 15.3819 18.0466C15.15 18.0879 14.9239 18.1563 14.7081 18.2506C14.465 18.3567 14.2402 18.5065 13.7908 18.8062L12 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Manual de uso</a>
@@ -359,7 +357,7 @@ body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: v
   const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
   const slug = s => String(s).normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
   function desentidad(s) { const t = document.createElement('textarea'); t.innerHTML = s; return t.value; }
-  const VERSION = '2026.11.18-8';   // se ve al pie del índice: sirve para saber qué programa tiene la web
+  const VERSION = '2026.11.18-9';   // se ve al pie del índice: sirve para saber qué programa tiene la web
   const VEROVIO = 'https://cdn.jsdelivr.net/npm/verovio@6.1.0/dist/verovio-toolkit-wasm.js';
   // mismas opciones que el antiguo render.js: con la misma semilla, las dos letras dan los mismos ids
   const OPC = { xmlIdSeed: 1, scale: 40, pageWidth: 2200, pageHeight: 3000, adjustPageHeight: true, breaks: 'auto', footer: 'none', header: 'auto', svgViewBox: true, condenseFirstPage: true, svgHtml5: true, svgRemoveXlink: true, lyricSize: 4.2, pageMarginTop: 40, pageMarginBottom: 20, pageMarginLeft: 40, pageMarginRight: 40 };
@@ -943,19 +941,29 @@ body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: v
     [['I', -100], ['50', -50], ['C', 0], ['50', 50], ['D', 100]].forEach(([t, x]) => { h += '<text x="' + (P + (x + 100) / 10 * cw + cw / 2) + '" y="24.5" text-anchor="middle" font-size="8.5" fill="#7d818a">' + t + '</text>'; });
     svg.innerHTML = h;
   }
+  // «Separación» debajo de la última voz: cada botón lleva un dibujito con las voces (sus colores) en la posición que tendrán
+  const vocesSep = enMezclador.filter(p => p.voz);
+  if (grupos.Voces && vocesSep.length >= 2 && vocesSep.some(p => p.orig.pan)) {
+    const glifo = f => '<span class="glifo" aria-hidden="true">' + vocesSep.map(p => '<i style="background:' + p.color + ';left:' + (50 + p.orig.pan * f * 45) + '%"></i>').join('') + '</span>';
+    const d = document.createElement('div'); d.className = 'separacion';
+    d.innerHTML = '<span class="lbl">Separación</span><div class="seg" role="group" aria-label="Separación de las voces entre izquierda y derecha">'
+      + [[1, 'Amplia', 'Las voces como vienen de Cantāmus'], [0.5, 'Media', 'Las voces a mitad de camino del centro'], [0.25, 'Cerca', 'Las voces muy cerca del centro'], [0, 'Centro', 'Todas las voces en el centro']]
+        .map(([v, t, ti]) => '<button data-sep="' + v + '" title="' + ti + '">' + glifo(v) + t + '</button>').join('') + '</div>';
+    grupos.Voces.appendChild(d);
+  }
   const txtPan = v => Math.abs(v) < 0.01 ? 'centro' : (v < 0 ? 'I ' : 'D ') + Math.round(Math.abs(v) * 100);
   let modo = 'todas';
   // «Resaltar»: tu voz +4 dB y todo lo demás −14 dB (antes −9: resaltaba poco)
   const RESALTE = { mia: db2g(4), otras: db2g(-14), txtMia: '+4 dB', txtOtras: '−14 dB' };
-  // «Separación»: coloca los balances a partir de los de Cantāmus (1 = como vienen, 0 = todos al centro) y los mandos se mueven con ellos.
+  // «Separación»: coloca los balances de las voces a partir de los de Cantāmus (1 = como vienen, 0 = todos al centro) y los mandos se mueven con ellos.
   // El botón queda marcado mientras los balances coincidan con esa colocación; si mueves uno a mano, ninguno.
   const SEPARACIONES = [1, 0.5, 0.25, 0];
-  const panSep = (p, v) => Math.round(p.orig.pan * v * 100) / 100;
+  const panSep = (p, v) => Math.sign(p.orig.pan) * Math.round(Math.abs(p.orig.pan) * v * 100) / 100;   // simétrico: I 8 y D 8   // solo para las voces: los instrumentos se quedan donde estén
   function marcarSeparacion() {
-    const v = SEPARACIONES.find(v => pistas.every(p => Math.abs(p.pan - panSep(p, v)) < 0.006));
+    const v = SEPARACIONES.find(v => pistas.every(p => !p.voz || Math.abs(p.pan - panSep(p, v)) < 0.006));
     document.querySelectorAll('[data-sep]').forEach(b => b.classList.toggle('on', v !== undefined && +b.dataset.sep === v));
   }
-  function ponerSeparacion(v) { pistas.forEach(p => { p.pan = panSep(p, v); }); aplicar(); }
+  function ponerSeparacion(v) { pistas.forEach(p => { if (p.voz) p.pan = panSep(p, v); }); aplicar(); }
   function nivel(p) {
     const yo = $('miVoz').value, hay = pistas.some(q => q.solo);
     if (p.muda || (hay && !p.solo)) return 0;
@@ -1178,6 +1186,7 @@ body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: v
     <p><b>Volumen.</b> Arrastra la bolita: a la izquierda más bajo, a la derecha más alto. La rayita gris marca el volumen original (<b>0 dB</b>).</p>
     <p><b>Balance.</b> Decide <b>por qué lado</b> suena la voz: <b>I</b> izquierda, <b>C</b> centro, <b>D</b> derecha. Pulsa o arrastra sobre las casillas; la casilla con borde blanco es la posición.</p>
     <p><b>Sensación de espacio.</b> Con el balance, cada voz suena desde su sitio, como si tuvieras a los cantantes delante. ${espacio} Así es mucho más fácil distinguirlas y seguir la tuya. Se aprecia sobre todo <b>con auriculares</b>.</p>
+    ${document.querySelector('.separacion') ? '<p><b>Separación.</b> Si las voces te suenan demasiado lejos unas de otras, debajo de la última voz puedes acercarlas todas a la vez: <b>Amplia</b> (como vienen), <b>Media</b>, <b>Cerca</b> o <b>Centro</b>. Los balances se mueven solos; los instrumentos se quedan donde están.</p>' : ''}
   </div></div>
   <div class="m-dos"><div class="m-panel" id="mMuda"></div><div>
     <p><b>Altavoz = silenciar.</b> Pulsa el altavoz para <b>apagar esa pista</b> (en la imagen, ${esc(muda.nombre)}); se pone rojo y tachado y la tira se oscurece. Vuelve a pulsarlo para encenderla. Puedes apagar varias.</p>
@@ -1196,7 +1205,6 @@ body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: v
       <li><b>Volumen:</b> el de todo a la vez.</li>
       <li><b>Seguimiento:</b> cómo se marca por dónde va la música: una <b>Línea</b> roja que avanza de nota en nota, o una <b>Banda</b> dorada sobre el compás entero.</li>
       <li><b>Pasar página:</b> <b>Sola</b>, la partitura avanza con la música; <b>A mano</b>, se queda quieta y la mueves tú.</li>
-      <li><b>Separación:</b> acerca todas las voces al centro de una vez, moviendo sus balances: <b>Amplia</b> (como vienen), <b>Media</b>, <b>Cerca</b> o <b>Centro</b>. Prueba «Cerca» si las voces te suenan demasiado lejos unas de otras.</li>
     </ul>
     <h3>Atajos de teclado (en ordenador)</h3>
     <p><kbd>Espacio</kbd> reproducir / parar &nbsp; <kbd>←</kbd> <kbd>→</kbd> compás anterior / siguiente<br><kbd>M</kbd> abrir / cerrar el mezclador &nbsp; <kbd>B</kbd> Banda o Línea &nbsp; <kbd>S</kbd> pasar página sola o a mano</p>
