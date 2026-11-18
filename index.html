@@ -251,6 +251,32 @@ body.modo-manual > :not(#manual) { display: none !important; }
   .m-hoja { width: auto; min-height: 0; height: 297mm; overflow: hidden; margin: 0; padding: 13mm 15mm; box-shadow: none; break-after: page; }
   .m-hoja:last-child { break-after: auto; }
 }
+/* ---------- portada con fondo animado (canvas fijo detrás de todo) y faldón de controles del fondo (solo admin) */
+body.indice { background: #18191d; }
+#fondo { position: fixed; inset: 0; z-index: 0; pointer-events: none; display: block; }
+body.con-fondo > header, body.con-fondo > main { position: relative; z-index: 1; }
+body.con-fondo > header { background: rgba(24,25,29,.55); -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); }
+body.con-fondo .obra { background: rgba(34,35,39,.82); border: 1px solid rgba(255,255,255,.07); -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); }
+body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: var(--laton); }
+#faldonFondo { position: fixed; right: 18px; bottom: 0; z-index: 6; width: min(320px, calc(100vw - 36px)); font-family: var(--cuerpo); transform: translateY(calc(100% - 30px)); transition: transform .28s ease; }
+#faldonFondo.abierto { transform: none; }
+#faldonFondo .pestana { display: flex; align-items: center; gap: 6px; margin-left: auto; height: 30px; padding: 0 12px; border: 1px solid var(--surco); border-bottom: 0; border-radius: 9px 9px 0 0; background: rgba(32,35,42,.92); color: var(--tenue); font: 500 12px var(--cuerpo); cursor: pointer; }
+#faldonFondo .pestana:hover, #faldonFondo.abierto .pestana { color: var(--texto); }
+#faldonFondo.cambiado .pestana::after { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--laton); }
+#faldonFondo .pestana svg { width: 14px; height: 14px; }
+#faldonFondo .cuerpo { background: rgba(32,35,42,.92); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); border: 1px solid var(--surco); border-bottom: 0; border-radius: 10px 0 0 0; padding: 10px 12px 12px; max-height: 70vh; overflow: auto; }
+#faldonFondo h2 { margin: 0 0 8px; font: 600 10.5px var(--cuerpo); letter-spacing: .14em; text-transform: uppercase; color: var(--tenue); }
+#faldonFondo .ctl label { display: grid; grid-template-columns: 112px 1fr 44px; align-items: center; gap: 8px; font-size: 12px; color: var(--texto); margin: 0 0 5px; }
+#faldonFondo .ctl input { width: 100%; accent-color: var(--laton); }
+#faldonFondo output { font: 11px var(--mono); color: var(--tenue); text-align: right; }
+#faldonFondo .si { display: flex; align-items: center; gap: 7px; font-size: 12px; margin: 6px 0 0; color: var(--texto); }
+#faldonFondo .si input { accent-color: var(--laton); }
+#faldonFondo .botones { display: flex; gap: 6px; margin: 11px 0 6px; flex-wrap: wrap; }
+#faldonFondo .botones button { flex: 1; border: 1px solid var(--surco); background: #2a2e37; color: var(--texto); border-radius: 7px; padding: 6px 8px; font: 500 12px var(--cuerpo); cursor: pointer; white-space: nowrap; }
+#faldonFondo .botones button:hover { border-color: var(--tenue); }
+#faldonFondo .botones .principal { background: var(--laton); color: var(--tinta); border-color: var(--laton); font-weight: 600; }
+#faldonFondo .estado { margin: 0; font-size: 11px; color: var(--tenue); }
+#faldonFondo .estado.error { color: #ff8a9a; }
 #avisito { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); background: var(--consola); border: 1px solid var(--surco); color: var(--texto); font-size: 12px; padding: 6px 12px; border-radius: 8px; opacity: 0; pointer-events: none; transition: opacity .2s; z-index: 9; }
 #avisito.ver { opacity: 1; }
 @media (prefers-reduced-motion: reduce) { #hoja { scroll-behavior: auto; } }
@@ -324,7 +350,7 @@ body.modo-manual > :not(#manual) { display: none !important; }
   const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
   const slug = s => String(s).normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
   function desentidad(s) { const t = document.createElement('textarea'); t.innerHTML = s; return t.value; }
-  const VERSION = '2026.11.18-3';   // se ve al pie del índice: sirve para saber qué programa tiene la web
+  const VERSION = '2026.11.18-4';   // se ve al pie del índice: sirve para saber qué programa tiene la web
   const VEROVIO = 'https://cdn.jsdelivr.net/npm/verovio@6.1.0/dist/verovio-toolkit-wasm.js';
   // mismas opciones que el antiguo render.js: con la misma semilla, las dos letras dan los mismos ids
   const OPC = { xmlIdSeed: 1, scale: 40, pageWidth: 2200, pageHeight: 3000, adjustPageHeight: true, breaks: 'auto', footer: 'none', header: 'auto', svgViewBox: true, condenseFirstPage: true, svgHtml5: true, svgRemoveXlink: true, lyricSize: 4.2, pageMarginTop: 40, pageMarginBottom: 20, pageMarginLeft: 40, pageMarginRight: 40 };
@@ -346,6 +372,142 @@ body.modo-manual > :not(#manual) { display: none !important; }
       return tr.replace(/<lyric[\s>][\s\S]*?<\/lyric>/g, ly => { const par = lista[k++]; return par ? ly.replace(/<text>[\s\S]*?<\/text>/, () => '<text>' + esc(par[1]) + '</text>') : ly; });
     }).join('');
   }
+  // ---------- fondo animado de la portada: malla de triángulos con vértices compartidos que se deforma despacio y se aparta del ratón.
+  // Ajustes: los guardados en el servidor (lista.php?fondo) sobre FONDO_DEF. El faldón para cambiarlos solo aparece si lista.php dice admin
+  // (lo comprueba el servidor con la sesión de Google; guardar también lo vuelve a comprobar allí).
+  const FONDO_DEF = { cellSize: 90, variance: 0.35, speed: 0.008, mouseRadius: 160, mouseForce: 0.08,
+    lineA: 0.06, baseHue: 230, hueRange: 12, sat: 8, light: 9, wire: false, dots: true, dotR: 1.6, dotA: 0.35 };
+  const FONDO_CTL = [   // clave, etiqueta, mínimo, máximo, paso, ¿rehace la malla?
+    ['baseHue', 'Tono base', 0, 360, 1], ['hueRange', 'Variación de tono', 0, 90, 1], ['sat', 'Saturación %', 0, 100, 1],
+    ['light', 'Luminosidad %', 4, 30, 0.5], ['cellSize', 'Tamaño de celda', 40, 160, 5, 1], ['variance', 'Aleatoriedad', 0, 0.5, 0.01, 1],
+    ['speed', 'Velocidad', 0, 0.05, 0.001], ['mouseRadius', 'Radio del ratón', 0, 300, 5], ['lineA', 'Opacidad líneas', 0, 0.5, 0.01],
+    ['dotR', 'Radio bolitas', 0.5, 4, 0.1], ['dotA', 'Opacidad bolitas', 0, 1, 0.01]];
+  let fondoProm = null;
+  const iniciarFondo = () => fondoProm || (fondoProm = arrancarFondo());   // una sola vez; devuelve la función que monta el faldón
+  async function arrancarFondo() {
+    const cfgF = Object.assign({}, FONDO_DEF);
+    const aplicarGuardado = g => { if (g && typeof g === 'object') Object.keys(FONDO_DEF).forEach(k => { if (k in g && typeof g[k] === typeof FONDO_DEF[k]) cfgF[k] = g[k]; }); };
+    try { const r = await fetch('lista.php?fondo', { cache: 'no-store' }); if (r.ok) aplicarGuardado(await r.json()); } catch (e) {}   // sin servidor: valores por defecto
+    let guardado = Object.assign({}, cfgF);
+
+    const canvas = document.createElement('canvas'); canvas.id = 'fondo'; canvas.setAttribute('aria-hidden', 'true');
+    document.body.prepend(canvas); document.body.classList.add('con-fondo');
+    const c2 = canvas.getContext('2d');
+    const quieto = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let W = 0, H = 0, puntos = [], tris = [];
+    const raton = { x: -1000, y: -1000 };
+    function nuevoPunto(x, y, borde) {
+      return { ox: x, oy: y, x, y, e: borde, a: Math.random() * Math.PI * 2, r: Math.random() * cfgF.cellSize * 0.25, sf: 0.5 + Math.random() };
+    }
+    function mover(p) {
+      if (p.e) return;
+      p.a += cfgF.speed * p.sf;
+      let tx = p.ox + Math.cos(p.a) * p.r, ty = p.oy + Math.sin(p.a) * p.r;
+      const dx = p.x - raton.x, dy = p.y - raton.y, d = Math.hypot(dx, dy);
+      if (d < cfgF.mouseRadius && d > 0) { const f = (cfgF.mouseRadius - d) / cfgF.mouseRadius; tx += dx / d * f * 40; ty += dy / d * f * 40; }
+      p.x += (tx - p.x) * cfgF.mouseForce; p.y += (ty - p.y) * cfgF.mouseForce;
+    }
+    function malla() {
+      const dpr = devicePixelRatio || 1;
+      W = innerWidth; H = innerHeight;
+      canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr);
+      canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+      c2.setTransform(dpr, 0, 0, dpr, 0, 0);
+      puntos = []; tris = [];
+      const s = cfgF.cellSize, cols = Math.ceil(W / s) + 2, filas = Math.ceil(H / s) + 2, g = [];
+      for (let r = 0; r < filas; r++) {
+        const fila = [];
+        for (let c = 0; c < cols; c++) {
+          const borde = r === 0 || r === filas - 1 || c === 0 || c === cols - 1;
+          const jx = borde ? 0 : (Math.random() - 0.5) * s * cfgF.variance * 2, jy = borde ? 0 : (Math.random() - 0.5) * s * cfgF.variance * 2;
+          const p = nuevoPunto(-s + c * s + jx, -s + r * s + jy, borde); puntos.push(p); fila.push(p);
+        }
+        g.push(fila);
+      }
+      for (let r = 0; r < filas - 1; r++) for (let c = 0; c < cols - 1; c++) {
+        const p1 = g[r][c], p2 = g[r][c + 1], p3 = g[r + 1][c], p4 = g[r + 1][c + 1];
+        if ((r + c) % 2 === 0) { tris.push({ p: [p1, p2, p3], s: Math.random() }, { p: [p2, p4, p3], s: Math.random() }); }
+        else { tris.push({ p: [p1, p2, p4], s: Math.random() }, { p: [p1, p4, p3], s: Math.random() }); }
+      }
+    }
+    function dibujar(conMovimiento) {
+      c2.clearRect(0, 0, W, H);
+      if (conMovimiento) for (const p of puntos) mover(p);
+      c2.lineWidth = 1;
+      c2.strokeStyle = 'rgba(255,255,255,' + (cfgF.wire ? Math.max(cfgF.lineA, 0.12) : cfgF.lineA) + ')';
+      for (const t of tris) {
+        const [a, b, c] = t.p;
+        c2.beginPath(); c2.moveTo(a.x, a.y); c2.lineTo(b.x, b.y); c2.lineTo(c.x, c.y); c2.closePath();
+        if (!cfgF.wire) {
+          const g = ((a.x + b.x + c.x) / 3 / W + (a.y + b.y + c.y) / 3 / H) / 2;
+          c2.fillStyle = 'hsl(' + (cfgF.baseHue + t.s * cfgF.hueRange) + ',' + cfgF.sat + '%,' + (cfgF.light + t.s * cfgF.light * 0.8 + g * cfgF.light) + '%)';
+          c2.fill();
+        }
+        c2.stroke();
+      }
+      if (cfgF.dots && cfgF.dotA > 0) {   // todas las bolitas en un solo trazado y un solo fill()
+        c2.fillStyle = 'rgba(255,255,255,' + cfgF.dotA + ')'; c2.beginPath();
+        for (const p of puntos) { c2.moveTo(p.x + cfgF.dotR, p.y); c2.arc(p.x, p.y, cfgF.dotR, 0, Math.PI * 2); }
+        c2.fill();
+      }
+    }
+    const repintar = () => { if (quieto) dibujar(false); };   // sin animación: se redibuja solo cuando algo cambia
+    malla();
+    if (quieto) dibujar(false);
+    else {
+      const bucleF = () => { dibujar(true); requestAnimationFrame(bucleF); };
+      requestAnimationFrame(bucleF);
+      // ratón (y dedo) escuchados en window: funciona aunque el contenido esté encima
+      addEventListener('pointermove', e => { raton.x = e.clientX; raton.y = e.clientY; }, { passive: true });
+      const fuera = () => { raton.x = -1000; raton.y = -1000; };
+      document.addEventListener('pointerleave', fuera); addEventListener('blur', fuera);
+      addEventListener('pointerup', e => { if (e.pointerType !== 'mouse') fuera(); });
+    }
+    addEventListener('resize', () => { malla(); repintar(); });
+
+    // faldón de controles (solo se construye si el servidor ha dicho que esta sesión es admin)
+    return function faldon() {
+      if (document.getElementById('faldonFondo')) return;
+      const f = document.createElement('div'); f.id = 'faldonFondo';
+      f.innerHTML = '<button class="pestana" aria-expanded="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 20 12 4l9 16H3zM12 4v16M7.5 12h9" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>Fondo</button>'
+        + '<div class="cuerpo"><h2>Fondo de la portada</h2><div class="ctl"></div>'
+        + '<label class="si"><input type="checkbox" data-k="dots"> Bolitas en los vértices</label>'
+        + '<label class="si"><input type="checkbox" data-k="wire"> Solo líneas (sin relleno)</label>'
+        + '<div class="botones"><button data-a="regen">Regenerar</button><button data-a="def">Valores por defecto</button><button data-a="guardar" class="principal">Guardar</button></div>'
+        + '<p class="estado" aria-live="polite">Los cambios solo los ves tú hasta que pulses Guardar.</p></div>';
+      document.body.appendChild(f);
+      const zona = f.querySelector('.ctl'), estado = f.querySelector('.estado');
+      const fmt = (v, paso) => { const d = (String(paso).split('.')[1] || '').length; return Number(v).toFixed(d); };
+      FONDO_CTL.forEach(([k, txt, mn, mx, paso, rehace]) => {
+        const l = document.createElement('label');
+        l.innerHTML = '<span>' + txt + '</span><input type="range" min="' + mn + '" max="' + mx + '" step="' + paso + '" data-k="' + k + '"><output></output>';
+        const i = l.querySelector('input'), o = l.querySelector('output');
+        i.oninput = () => { cfgF[k] = +i.value; o.textContent = fmt(i.value, paso); if (rehace) malla(); repintar(); marcar(); };
+        zona.appendChild(l);
+      });
+      f.querySelectorAll('.si input').forEach(i => { i.onchange = () => { cfgF[i.dataset.k] = i.checked; repintar(); marcar(); }; });
+      function poner() {   // controles = valores actuales
+        f.querySelectorAll('input[type=range]').forEach(i => { const c = FONDO_CTL.find(x => x[0] === i.dataset.k); i.value = cfgF[i.dataset.k]; i.nextElementSibling.textContent = fmt(cfgF[i.dataset.k], c[4]); });
+        f.querySelectorAll('.si input').forEach(i => { i.checked = !!cfgF[i.dataset.k]; });
+      }
+      const distinto = () => Object.keys(FONDO_DEF).some(k => cfgF[k] !== guardado[k]);
+      function marcar() { f.classList.toggle('cambiado', distinto()); estado.textContent = distinto() ? 'Cambios sin guardar: solo los ves tú.' : 'Es lo que ven todos.'; estado.classList.remove('error'); }
+      f.querySelector('.pestana').onclick = () => { const a = f.classList.toggle('abierto'); f.querySelector('.pestana').setAttribute('aria-expanded', a); };
+      f.querySelector('[data-a=regen]').onclick = () => { malla(); repintar(); };
+      f.querySelector('[data-a=def]').onclick = () => { const rehacer = cfgF.cellSize !== FONDO_DEF.cellSize || cfgF.variance !== FONDO_DEF.variance; Object.assign(cfgF, FONDO_DEF); poner(); if (rehacer) malla(); repintar(); marcar(); };
+      f.querySelector('[data-a=guardar]').onclick = async () => {
+        estado.textContent = 'Guardando…';
+        try {
+          const envio = {}; Object.keys(FONDO_DEF).forEach(k => { if (k !== 'mouseForce') envio[k] = cfgF[k]; });
+          const r = await fetch('lista.php', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ fondo: envio }) });
+          const j = await r.json().catch(() => ({}));
+          if (!r.ok) throw new Error(j.error || ('error ' + r.status));
+          guardado = Object.assign({}, cfgF); marcar(); estado.textContent = 'Guardado: ahora lo ven todos.';
+        } catch (e) { estado.textContent = 'No se ha guardado: ' + e.message; estado.classList.add('error'); }
+      };
+      poner(); marcar();
+    };
+  }
   function mostrarIndice(l, conSesion) {
     document.title = 'Atril · Obras';
     document.body.classList.add('indice', 'plegado');
@@ -354,6 +516,7 @@ body.modo-manual > :not(#manual) { display: none !important; }
     $('paginas').innerHTML = '<div class="obras"><h1>Obras</h1>' + (obras.length ? obras.map(o =>
       '<a class="obra" href="#' + encodeURIComponent(o.id) + '"><b>' + esc(o.obra) + '</b>' + (o.autor ? '<span>' + esc(o.autor) + '</span>' : '') + '</a>').join('')
       : '<p class="nota">Todavía no hay obras.</p>') + '<p class="version">Atril · versión ' + VERSION + (conSesion ? ' · <a href="#" id="salir">Salir</a>' : '') + '</p></div>';
+    iniciarFondo().then(faldon => { if (l.admin && typeof faldon === 'function') faldon(); });
     if (conSesion) $('salir').onclick = async e => {
       e.preventDefault();
       try { await fetch('lista.php', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{"salir":true}' }); } catch (err) {}
@@ -376,6 +539,7 @@ body.modo-manual > :not(#manual) { display: none !important; }
     $('cargando').classList.add('fuera');
     $('paginas').innerHTML = '<div class="obras entrar"><h1>Atril</h1><p class="nota">La lista de obras es privada. Para abrir una obra, usa su enlace.</p>'
       + '<div id="botonGoogle"></div><p class="nota" id="entrarError"></p><p class="version">Atril · versión ' + VERSION + '</p></div>';
+    iniciarFondo();
     const s = document.createElement('script'); s.src = 'https://accounts.google.com/gsi/client'; s.async = true;
     s.onload = () => {
       google.accounts.id.initialize({ client_id: cliente, auto_select: true, cancel_on_tap_outside: true, context: 'signin', ux_mode: 'popup',

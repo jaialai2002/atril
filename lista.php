@@ -4,9 +4,13 @@
 //   GET  lista.php                       -> obras.json si la sesión es válida; si no, 401 {"entrar": true, "cliente": "<ID de cliente>"}
 //   POST lista.php {"credential": "…"}  -> comprueba con Google el justificante del botón «Iniciar sesión con Google» y abre sesión (30 días)
 //   POST lista.php {"salir": true}       -> cierra la sesión
+//   GET  lista.php?fondo                 -> ajustes del fondo animado de la portada (públicos; {} si no hay)
+//   POST lista.php {"fondo": {…}}        -> guarda esos ajustes (solo cuentas de 'admin', comprobado aquí con la sesión)
 //
 // Configuración FUERA de la web, en /home/sigan1/atril-config.php (un nivel por encima de esta carpeta):
-//   <?php return ['cliente' => '….apps.googleusercontent.com', 'correos' => ['tu-correo@gmail.com']];
+//   <?php return ['cliente' => '….apps.googleusercontent.com', 'correos' => ['tu-correo@gmail.com'], 'admin' => ['tu-correo@gmail.com']];
+// 'correos' pueden ver la lista; 'admin' pueden además cambiar el fondo (si falta 'admin', vale el primero de 'correos').
+// El fondo guardado va en /home/sigan1/atril-fondo.json (también fuera de la web).
 // La clave para firmar la cookie se crea sola la primera vez en /home/sigan1/.atril-secreto (solo la lee este programa).
 // Este archivo se sube a mano una vez; NO se actualiza solo desde GitHub.
 
@@ -18,6 +22,17 @@ $fuera = dirname(__DIR__);
 $cfg = @include $fuera . '/atril-config.php';
 if (!is_array($cfg) || empty($cfg['cliente']) || empty($cfg['correos'])) { http_response_code(500); echo '{"error":"Falta o está incompleto atril-config.php"}'; exit; }
 $correos = array_map('strtolower', array_map('trim', (array) $cfg['correos']));
+$admin = array_map('strtolower', array_map('trim', (array) ($cfg['admin'] ?? [$cfg['correos'][0]])));
+$FONDO = $fuera . '/atril-fondo.json';
+// ajustes permitidos del fondo: [mínimo, máximo] (números) o 'b' (sí/no)
+$CAMPOS = ['baseHue' => [0, 360], 'hueRange' => [0, 90], 'sat' => [0, 100], 'light' => [4, 30], 'cellSize' => [40, 160],
+  'variance' => [0, 0.5], 'speed' => [0, 0.05], 'mouseRadius' => [0, 300], 'lineA' => [0, 0.5], 'dots' => 'b',
+  'dotR' => [0.5, 4], 'dotA' => [0, 1], 'wire' => 'b'];
+if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['fondo'])) {
+  $j = @file_get_contents($FONDO);
+  echo ($j !== false && json_decode($j) !== null) ? $j : '{}';
+  exit;
+}
 $DIAS = 30;
 
 function secreto($fuera) {
@@ -37,6 +52,7 @@ function deb64($s) { return base64_decode(strtr($s, '-_', '+/')); }
 function poner_cookie($valor, $hasta) {
   setcookie('atril_sesion', $valor, ['expires' => $hasta, 'path' => '/', 'secure' => true, 'httponly' => true, 'samesite' => 'Lax']);
 }
+// correo de la sesión si es válida (y sigue en la configuración); si no, false
 function sesion_valida($correos, $fuera) {
   $c = $_COOKIE['atril_sesion'] ?? '';
   $p = explode('.', $c);
@@ -44,12 +60,15 @@ function sesion_valida($correos, $fuera) {
   [$correo, $hasta, $f] = $p;
   if (!hash_equals(firma($correo . '.' . $hasta, $fuera), $f)) return false;
   if ((int) $hasta < time()) return false;
-  return in_array(strtolower(deb64($correo)), $correos, true);   // si quitas un correo de la configuración, su sesión deja de valer
+  $e = strtolower(deb64($correo));
+  return in_array($e, $correos, true) ? $e : false;   // si quitas un correo de la configuración, su sesión deja de valer
 }
-function entregar_lista() {
-  $f = __DIR__ . '/obras.json';
-  $j = @file_get_contents($f);
-  echo $j !== false ? $j : '{"obras":[]}';
+// la lista de obras, con la marca 'admin' si esa cuenta puede cambiar el fondo
+function entregar_lista($correo, $admin) {
+  $l = json_decode((string) @file_get_contents(__DIR__ . '/obras.json'), true);
+  if (!is_array($l)) $l = ['obras' => []];
+  $l['admin'] = in_array($correo, $admin, true);
+  echo json_encode($l, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
   exit;
 }
 function pedir($url) {
@@ -67,6 +86,22 @@ function pedir($url) {
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   $d = json_decode(file_get_contents('php://input'), true) ?: [];
   if (!empty($d['salir'])) { poner_cookie('', time() - 3600); echo '{"ok":true}'; exit; }
+  if (isset($d['fondo'])) {   // guardar el fondo: solo con sesión de una cuenta 'admin'
+    $e = sesion_valida($correos, $fuera);
+    if (!$e || !in_array($e, $admin, true)) { http_response_code(403); echo '{"error":"Solo la cuenta administradora puede guardar el fondo"}'; exit; }
+    if (!is_array($d['fondo'])) { http_response_code(400); echo '{"error":"Ajustes no válidos"}'; exit; }
+    $limpio = [];
+    foreach ($CAMPOS as $k => $r) {
+      if (!array_key_exists($k, $d['fondo'])) continue;
+      $v = $d['fondo'][$k];
+      if ($r === 'b') $limpio[$k] = (bool) $v;
+      elseif (is_numeric($v)) $limpio[$k] = max($r[0], min($r[1], $v + 0));
+    }
+    if (@file_put_contents($FONDO, json_encode($limpio), LOCK_EX) === false) { http_response_code(500); echo '{"error":"No puedo guardar atril-fondo.json"}'; exit; }
+    @chmod($FONDO, 0644);
+    echo json_encode(['ok' => true, 'fondo' => $limpio]);
+    exit;
+  }
   $t = (string) ($d['credential'] ?? '');
   if ($t === '' || strlen($t) > 4096) { http_response_code(400); echo '{"error":"Falta el justificante"}'; exit; }
   // Google comprueba la firma del justificante y nos devuelve su contenido
@@ -82,9 +117,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   $hasta = time() + $DIAS * 86400;
   $correo = b64(strtolower($i['email']));
   poner_cookie($correo . '.' . $hasta . '.' . firma($correo . '.' . $hasta, $fuera), $hasta);
-  entregar_lista();
+  entregar_lista(strtolower($i['email']), $admin);
 }
 
-if (sesion_valida($correos, $fuera)) entregar_lista();
+if ($e = sesion_valida($correos, $fuera)) entregar_lista($e, $admin);
 http_response_code(401);
 echo json_encode(['entrar' => true, 'cliente' => $cfg['cliente']]);
