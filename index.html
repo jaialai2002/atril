@@ -367,7 +367,7 @@ body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: v
   const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
   const slug = s => String(s).normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
   function desentidad(s) { const t = document.createElement('textarea'); t.innerHTML = s; return t.value; }
-  const VERSION = '2026.11.18-13';   // se ve al pie del índice: sirve para saber qué programa tiene la web
+  const VERSION = '2026.11.18-14';   // se ve al pie del índice: sirve para saber qué programa tiene la web
   const VEROVIO = 'https://cdn.jsdelivr.net/npm/verovio@6.1.0/dist/verovio-toolkit-wasm.js';
   // mismas opciones que el antiguo render.js: con la misma semilla, las dos letras dan los mismos ids
   const OPC = { xmlIdSeed: 1, scale: 40, pageWidth: 2200, pageHeight: 3000, adjustPageHeight: true, breaks: 'auto', footer: 'none', header: 'auto', svgViewBox: true, condenseFirstPage: true, svgHtml5: true, svgRemoveXlink: true, lyricSize: 4.2, pageMarginTop: 40, pageMarginBottom: 20, pageMarginLeft: 40, pageMarginRight: 40 };
@@ -531,7 +531,7 @@ body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: v
     $('cargando').classList.add('fuera');
     const obras = l.obras || [];
     $('paginas').innerHTML = '<div class="obras"><h1>Obras</h1>' + (obras.length ? obras.map(o =>
-      '<a class="obra" href="#' + encodeURIComponent(o.id) + '"><b>' + esc(o.obra) + '</b>' + (o.autor ? '<span>' + esc(o.autor) + '</span>' : '') + '</a>').join('')
+      '<a class="obra" href="' + (/(^|\.)sigan\.me$/.test(location.hostname) ? '/' : '#') + encodeURIComponent(o.id) + '"><b>' + esc(o.obra) + '</b>' + (o.autor ? '<span>' + esc(o.autor) + '</span>' : '') + '</a>').join('')
       : '<p class="nota">Todavía no hay obras.</p>') + '<p class="version">Atril · versión ' + VERSION + (conSesion ? ' · <a href="#" id="salir">Salir</a>' : '') + '</p></div>';
     iniciarFondo().then(faldon => { if (l.admin && typeof faldon === 'function') faldon(); });
     if (conSesion) $('salir').onclick = async e => {
