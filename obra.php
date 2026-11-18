@@ -14,7 +14,7 @@ if (!is_array($o) || $html === false) { header('Location: /#' . $id, true, 302);
 $h = function ($t) { return htmlspecialchars((string) $t, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'); };
 $titulo = trim((string) ($o['obra'] ?? '')) ?: 'Atril';
 $autor = trim((string) ($o['autor'] ?? ''));
-$desc = ($autor !== '' ? $autor . ' · ' : '') . 'Atril: partitura y voces para ensayar';
+$desc = ($autor !== '' ? $autor . ' · ' : '') . 'Partitura y voces para ensayar';
 $url = 'https://' . $_SERVER['HTTP_HOST'] . '/' . $id;
 
 $cambios = [
