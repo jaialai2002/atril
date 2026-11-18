@@ -31,10 +31,10 @@ AddCharset utf-8 .html .json .musicxml
   </FilesMatch>
 </IfModule>
 
-# enlace corto: atril.sigan.me/pastorella-in-g  ->  atril.sigan.me/#pastorella-in-g
+# enlace limpio de cada obra: atril.sigan.me/pastorella-in-g lo sirve obra.php (con la tarjeta de la obra para WhatsApp)
 <IfModule mod_rewrite.c>
   RewriteEngine On
   RewriteCond %{REQUEST_FILENAME} !-f
   RewriteCond %{REQUEST_FILENAME} !-d
-  RewriteRule ^([a-z0-9-]+)/?$ /#$1 [R=302,NE,L]
+  RewriteRule ^([a-z0-9-]+)/?$ obra.php?id=$1 [L]
 </IfModule>
