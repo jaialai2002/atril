@@ -3,6 +3,7 @@
 // El .htaccess manda aquí atril.sigan.me/<obra> (sin #). Este programa entrega la misma página del Atril (index.html)
 // con la tarjeta para compartir (título, autor, imagen) de esa obra, que es lo que leen WhatsApp, Telegram, etc.
 // En el navegador la página abre la obra como siempre.
+// Imagen propia de una obra: obras/<obra>/tarjeta.jpg (o .png, .webp), 1200×630. Si no hay, la común (atril-og.png).
 // Este archivo se sube a mano una vez; NO se actualiza solo desde GitHub.
 
 $id = (string) ($_GET['id'] ?? '');
@@ -26,6 +27,22 @@ $cambios = [
   '<head>' => '<head>' . "\n" . '<script>history.replaceState(null, "", "/#" + ' . json_encode($id) . ');</script>',
 ];
 $html = strtr($html, $cambios);
+
+// imagen propia de la obra, si la hay; ?v= con la fecha del archivo: al cambiarla, WhatsApp y compañía la leen como nueva
+foreach (['jpg' => 'image/jpeg', 'jpeg' => 'image/jpeg', 'png' => 'image/png', 'webp' => 'image/webp'] as $ext => $tipo) {
+  $f = __DIR__ . '/obras/' . $id . '/tarjeta.' . $ext;
+  if (!is_file($f)) continue;
+  $img = 'https://' . $_SERVER['HTTP_HOST'] . '/obras/' . $id . '/tarjeta.' . $ext . '?v=' . filemtime($f);
+  $tam = @getimagesize($f);
+  $html = preg_replace('#<meta property="og:image" content="[^"]*">#', '<meta property="og:image" content="' . $h($img) . '">', $html, 1);
+  $html = preg_replace('#<meta property="og:image:type" content="[^"]*">#', '<meta property="og:image:type" content="' . $tipo . '">', $html, 1);
+  if ($tam) {
+    $html = preg_replace('#<meta property="og:image:width" content="[^"]*">#', '<meta property="og:image:width" content="' . (int) $tam[0] . '">', $html, 1);
+    $html = preg_replace('#<meta property="og:image:height" content="[^"]*">#', '<meta property="og:image:height" content="' . (int) $tam[1] . '">', $html, 1);
+  }
+  $html = preg_replace('#<meta property="og:image:alt" content="[^"]*">#', '<meta property="og:image:alt" content="' . $h($titulo) . '">', $html, 1);
+  break;
+}
 
 header('Content-Type: text/html; charset=utf-8');
 header('Cache-Control: no-cache');
