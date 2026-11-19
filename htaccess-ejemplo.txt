@@ -1,3 +1,8 @@
+# fuera de los buscadores: ningún archivo del Atril (páginas, audio, partituras, json) se indexa
+<IfModule mod_headers.c>
+  Header always set X-Robots-Tag "noindex, nofollow, noarchive, nosnippet, noimageindex"
+</IfModule>
+
 # Atril · atril.sigan.me
 DirectoryIndex index.html
 Options -Indexes
