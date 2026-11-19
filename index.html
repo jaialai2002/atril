@@ -295,6 +295,52 @@ body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: v
 #faldonFondo .botones .principal { background: var(--laton); color: var(--tinta); border-color: var(--laton); font-weight: 600; }
 #faldonFondo .estado { margin: 0; font-size: 11px; color: var(--tenue); }
 #faldonFondo .estado.error { color: #ff8a9a; }
+/* ---------- índice: lista compacta por categorías (vista) y modo Organizar (solo admin) */
+.obras.ix { max-width: 760px; display: block; margin: 26px auto; }
+.ix-barra { display: flex; gap: 8px; align-items: center; margin: 0 0 14px; flex-wrap: wrap; }
+.ix-buscar { flex: 1 1 220px; display: flex; align-items: center; gap: 8px; background: rgba(34,35,39,.82); border: 1px solid rgba(255,255,255,.08); border-radius: 9px; padding: 0 12px; -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); color: var(--tenue); }
+.ix-buscar svg { width: 15px; height: 15px; flex: none; }
+.ix-buscar input { flex: 1; min-width: 0; background: none; border: 0; outline: 0; color: var(--texto); font: 13.5px var(--cuerpo); padding: 9px 0; }
+.ix-buscar:focus-within { border-color: var(--laton); }
+.ix-orden { display: flex; align-items: center; gap: 6px; background: rgba(34,35,39,.82); border: 1px solid rgba(255,255,255,.08); border-radius: 9px; padding: 0 4px 0 12px; -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); font: 13px var(--cuerpo); color: var(--tenue); }
+.ix-orden select { background: none; border: 0; color: var(--texto); font: 13px var(--cuerpo); padding: 9px 4px; outline: 0; cursor: pointer; }
+.ix-orden select option, .ix-fila.org select option { background: #20232a; color: var(--texto); }
+.ix-boton { background: rgba(34,35,39,.82); border: 1px solid rgba(255,255,255,.08); border-radius: 9px; padding: 8px 12px; color: var(--texto); font: 13px var(--cuerpo); cursor: pointer; white-space: nowrap; -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); }
+.ix-boton:hover { border-color: var(--tenue); }
+.ix-boton.dor { border-color: var(--laton); color: var(--laton); }
+.ix-boton.pri { background: var(--laton); color: var(--tinta); border-color: var(--laton); font-weight: 600; }
+.ix-boton:disabled { opacity: .45; cursor: default; }
+.ix-cat { display: flex; align-items: center; gap: 8px; width: 100%; margin: 18px 0 7px; padding: 0 2px; background: none; border: 0; font: 600 11px var(--cuerpo); letter-spacing: .14em; text-transform: uppercase; color: var(--tenue); cursor: pointer; text-align: left; }
+.ix-cat:first-child { margin-top: 4px; }
+.ix-cat .fl { color: var(--laton); width: 12px; font-size: 12px; }
+.ix-cat .n { font: 500 11px var(--mono); letter-spacing: 0; background: rgba(255,255,255,.06); border-radius: 10px; padding: 1px 7px; }
+.ix-cat::after { content: ""; flex: 1; height: 1px; background: rgba(255,255,255,.07); }
+.ix-cat:hover { color: var(--texto); }
+.ix .ix-fila { display: flex; align-items: baseline; gap: 14px; background: rgba(34,35,39,.82); border: 1px solid rgba(255,255,255,.07); border-radius: 9px; padding: 9px 16px; margin: 0 0 6px; -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); }
+.ix .ix-fila b { display: block; font: italic 400 20px/1.25 "Times New Roman", Times, "Tinos", serif; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.ix .ix-fila .ix-autor { display: block; margin: 0 0 0 auto; font: 13px var(--cuerpo); color: var(--tenue); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 42%; text-align: right; flex: none; }
+.ix-marca { font: 600 9.5px var(--cuerpo); font-style: normal; letter-spacing: .1em; color: var(--tinta); background: var(--laton); border-radius: 4px; padding: 1px 5px; align-self: center; flex: none; }
+.ix-marca.act { background: none; color: var(--laton); border: 1px solid var(--laton); }
+@media (max-width: 600px) { .ix .ix-fila { flex-wrap: wrap; row-gap: 2px; } .ix .ix-fila b { white-space: normal; } .ix .ix-fila .ix-autor { margin: 0; max-width: 100%; text-align: left; flex-basis: 100%; } }
+.ix-aviso { font: 12px var(--cuerpo); color: var(--tenue); margin: -4px 2px 12px; }
+.ix-cat.org { cursor: default; }
+.ix-cat.org input { flex: 0 1 280px; background: #2a2e37; border: 1px solid var(--laton); border-radius: 6px; color: var(--texto); font: 600 12px var(--cuerpo); letter-spacing: .06em; padding: 5px 8px; outline: 0; }
+.ix-cat .acc { display: flex; gap: 2px; order: 3; margin-left: 4px; }
+.ix-cat::after { order: 2; }
+.ix-cat .acc button { background: none; border: 1px solid transparent; border-radius: 5px; color: var(--tenue); font: 12px var(--cuerpo); width: 22px; height: 22px; cursor: pointer; padding: 0; }
+.ix-cat .acc button:hover { border-color: var(--surco); color: var(--texto); }
+.ix .ix-fila.org { align-items: center; padding: 7px 10px 7px 8px; }
+.ix .ix-fila.org b { font-size: 18px; flex: 1; }
+.ix-fila.org .asa { color: #6b707b; font-size: 15px; letter-spacing: -2px; cursor: grab; padding: 4px 6px; touch-action: none; user-select: none; }
+.ix-fila.org.arrastra { border-color: var(--laton); box-shadow: 0 6px 18px rgba(0,0,0,.4); }
+.ix-fila.org select { background: #2a2e37; border: 1px solid var(--surco); border-radius: 7px; color: var(--texto); font: 12px var(--cuerpo); padding: 4px 6px; max-width: 170px; }
+.ix-fila.org .ojo { background: none; border: 0; color: var(--tenue); width: 28px; height: 28px; padding: 4px; cursor: pointer; flex: none; }
+.ix-fila.org .ojo svg { width: 100%; height: 100%; }
+.ix-fila.org.oculta { opacity: .5; }
+.ix-fila.org.oculta b { text-decoration: line-through; }
+.ix-pie-org { display: flex; gap: 8px; justify-content: space-between; align-items: center; margin-top: 14px; font: 12px var(--cuerpo); color: var(--tenue); flex-wrap: wrap; }
+.ix-pie-org > span:last-child { display: flex; gap: 8px; }
+#ixEstado.error { color: #ff8a9a; }
 #avisito { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); background: var(--consola); border: 1px solid var(--surco); color: var(--texto); font-size: 12px; padding: 6px 12px; border-radius: 8px; opacity: 0; pointer-events: none; transition: opacity .2s; z-index: 9; }
 #avisito.ver { opacity: 1; }
 @media (prefers-reduced-motion: reduce) { #hoja { scroll-behavior: auto; } }
@@ -368,7 +414,7 @@ body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: v
   const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
   const slug = s => String(s).normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
   function desentidad(s) { const t = document.createElement('textarea'); t.innerHTML = s; return t.value; }
-  const VERSION = '2026.11.19-1';   // se ve al pie del índice: sirve para saber qué programa tiene la web
+  const VERSION = '2026.11.19-2';   // se ve al pie del índice: sirve para saber qué programa tiene la web
   const VEROVIO = 'https://cdn.jsdelivr.net/npm/verovio@6.1.0/dist/verovio-toolkit-wasm.js';
   // mismas opciones que el antiguo render.js: con la misma semilla, las dos letras dan los mismos ids
   const OPC = { xmlIdSeed: 1, scale: 40, pageWidth: 2200, pageHeight: 3000, adjustPageHeight: true, breaks: 'auto', footer: 'none', header: 'auto', svgViewBox: true, condenseFirstPage: true, svgHtml5: true, svgRemoveXlink: true, lyricSize: 4.2, pageMarginTop: 40, pageMarginBottom: 20, pageMarginLeft: 40, pageMarginRight: 40 };
@@ -526,21 +572,166 @@ body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: v
       poner(); marcar();
     };
   }
+  // ---------- índice de obras: lista compacta por categorías, buscador y orden; con la cuenta admin, modo «Organizar»
+  // (categorías, orden arrastrando, ocultar). La organización la guarda lista.php fuera de la web (atril-indice.json).
   function mostrarIndice(l, conSesion) {
     document.title = 'Atril · Obras';
     document.body.classList.add('indice', 'plegado');
     $('cargando').classList.add('fuera');
-    const obras = l.obras || [];
-    $('paginas').innerHTML = '<div class="obras"><h1>Obras</h1>' + (obras.length ? obras.map(o =>
-      '<a class="obra" href="' + (/(^|\.)sigan\.me$/.test(location.hostname) ? '/' : '#') + encodeURIComponent(o.id) + '"><b>' + esc(o.obra) + '</b>' + (o.autor ? '<span>' + esc(o.autor) + '</span>' : '') + '</a>').join('')
-      : '<p class="nota">Todavía no hay obras.</p>') + '<p class="version">Atril · versión ' + VERSION + (conSesion ? ' · <a href="#" id="salir">Salir</a>' : '') + '</p></div>';
+    const enlace = id => (/(^|\.)sigan\.me$/.test(location.hostname) ? '/' : '#') + encodeURIComponent(id);
+    const copia = x => JSON.parse(JSON.stringify(x));
+    let datos = { categorias: (l.categorias || []).slice(), obras: copia(l.obras || []) };
+    let organizando = false, borrador = null, editando = -1, avisado = false;
+    let orden = leer('indice-orden', 'propio'), busca = '';
+    const plegadas = new Set(leer('indice-plegadas', []));
+    const raiz = document.createElement('div'); raiz.className = 'obras ix';
+    $('paginas').innerHTML = ''; $('paginas').appendChild(raiz);
+    const cmp = (a, b) => String(a || '').localeCompare(String(b || ''), 'es', { sensitivity: 'base' });
+    const ORDENES = { propio: 'Orden propio', titulo: 'Título', autor: 'Compositor', recientes: 'Más recientes' };
+    function ordenar(lista, modo) {
+      const f = {
+        propio: (a, b) => (a.orden ?? 1e9) - (b.orden ?? 1e9) || cmp(a.obra, b.obra),
+        titulo: (a, b) => cmp(a.obra, b.obra),
+        autor: (a, b) => cmp(a.autor, b.autor) || cmp(a.obra, b.obra),
+        recientes: (a, b) => cmp(b.fecha, a.fecha) || cmp(a.obra, b.obra),
+      }[modo] || ((a, b) => 0);
+      return lista.slice().sort(f);
+    }
+    // grupos en el orden de las categorías; las obras sin categoría al final
+    function agrupar(d, modo, filtro) {
+      const g = d.categorias.map((c, i) => ({ cat: c, i, obras: [] })); const sin = { cat: '', i: -1, obras: [] };
+      ordenar(d.obras, modo).forEach(o => { if (filtro && !filtro(o)) return; (g.find(x => x.cat && x.cat === o.cat) || sin).obras.push(o); });
+      return g.concat([sin]);
+    }
+    const pie = () => '<p class="version">Atril · versión ' + VERSION + (conSesion ? ' · <a href="#" id="salir">Salir</a>' : '') + '</p>';
+    function ponerSalir() {
+      if (!conSesion || !$('salir')) return;
+      $('salir').onclick = async e => {
+        e.preventDefault();
+        try { await fetch('lista.php', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{"salir":true}' }); } catch (err) {}
+        try { google.accounts.id.disableAutoSelect(); } catch (err) {}
+        location.reload();
+      };
+    }
+    const marca = o => o.nueva ? '<i class="ix-marca">NUEVA</i>' : o.actualizada ? '<i class="ix-marca act">ACTUALIZADA</i>' : '';
+
+    // --- vista normal (A)
+    function vista() {
+      raiz.innerHTML = '<div class="ix-barra"><label class="ix-buscar"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M15.5 15.5 21 21" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>'
+        + '<input type="search" id="ixBuscar" placeholder="Buscar obra o compositor" autocomplete="off"></label>'
+        + '<label class="ix-orden"><span>Ordenar</span><select id="ixOrden">' + Object.entries(ORDENES).map(([k, t]) => '<option value="' + k + '">' + t + '</option>').join('') + '</select></label>'
+        + (l.admin ? '<button class="ix-boton" id="ixOrganizar">Organizar</button>' : '') + '</div><div id="ixLista"></div>' + pie();
+      $('ixBuscar').value = busca; $('ixOrden').value = ORDENES[orden] ? orden : 'propio';
+      $('ixBuscar').oninput = () => { busca = $('ixBuscar').value; lista(); };
+      $('ixOrden').onchange = () => { orden = $('ixOrden').value; guardar('indice-orden', orden); lista(); };
+      if (l.admin) $('ixOrganizar').onclick = () => { organizando = true; borrador = copia(datos); render(); };
+      ponerSalir(); lista();
+    }
+    function lista() {
+      const q = busca.trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+      const sin = t => String(t || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+      const filtro = o => !o.oculta && (!q || sin(o.obra + ' ' + o.autor).includes(q));
+      const grupos = agrupar(datos, orden, filtro).filter(g => g.obras.length);
+      const conCats = grupos.some(g => g.cat);
+      const fila = o => '<a class="obra ix-fila" href="' + enlace(o.id) + '"><b>' + esc(o.obra) + '</b>' + marca(o) + (o.autor ? '<span class="ix-autor">' + esc(o.autor) + '</span>' : '') + '</a>';
+      $('ixLista').innerHTML = !grupos.length ? '<p class="nota">' + (q ? 'Ninguna obra coincide con la búsqueda.' : 'Todavía no hay obras.') + '</p>'
+        : grupos.map(g => {
+          const plegada = !q && plegadas.has(g.cat || '·');
+          return (conCats ? '<button class="ix-cat" data-cat="' + esc(g.cat || '·') + '" aria-expanded="' + !plegada + '"><span class="fl">' + (plegada ? '▸' : '▾') + '</span>' + esc(g.cat || 'Otras obras') + '<span class="n">' + g.obras.length + '</span></button>' : '')
+            + (plegada ? '' : '<div class="ix-grupo">' + g.obras.map(fila).join('') + '</div>');
+        }).join('');
+      $('ixLista').querySelectorAll('.ix-cat').forEach(b => b.onclick = () => {
+        const k = b.dataset.cat; plegadas.has(k) ? plegadas.delete(k) : plegadas.add(k); guardar('indice-plegadas', [...plegadas]); lista();
+      });
+    }
+
+    // --- modo Organizar (C): solo con la cuenta admin; el servidor lo vuelve a comprobar al guardar
+    const OJO = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="12" r="2.6" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>';
+    const OJO_NO = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M4 4l16 16" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>';
+    function organizar() {
+      const cambiado = JSON.stringify(borrador) !== JSON.stringify(datos);
+      const opciones = sel => '<option value="">Sin categoría</option>' + borrador.categorias.filter(c => c).map(c => '<option' + (c === sel ? ' selected' : '') + '>' + esc(c) + '</option>').join('');
+      const grupos = agrupar(borrador, 'propio');
+      raiz.innerHTML = '<div class="ix-barra"><button class="ix-boton dor" id="ixHecho">✓ Organizando</button><button class="ix-boton" id="ixNueva">+ Nueva categoría</button></div>'
+        + '<p class="ix-aviso">Arrastra <b>⋮⋮</b> para ordenar (también a otra categoría) · elige la categoría de cada obra · el ojo la oculta del índice</p>'
+        + '<div id="ixOrg" class="ix-org">' + grupos.map(g => {
+          const i = g.i, real = i >= 0;
+          const cab = i >= 0 && i === editando
+            ? '<div class="ix-cat org" data-cat="' + esc(g.cat) + '"><input id="ixNombre" value="' + esc(g.cat) + '" placeholder="Nombre de la categoría" maxlength="60"></div>'
+            : '<div class="ix-cat org" data-cat="' + esc(g.cat) + '"><span>' + esc(g.cat || 'Sin categoría') + '</span><span class="n">' + g.obras.length + '</span>'
+              + (real ? '<span class="acc"><button data-a="sube" data-i="' + i + '" title="Subir la categoría">↑</button><button data-a="baja" data-i="' + i + '" title="Bajar la categoría">↓</button><button data-a="nombre" data-i="' + i + '" title="Cambiar el nombre">✎</button><button data-a="quita" data-i="' + i + '" title="Quitar la categoría (sus obras pasan a «Sin categoría»)">✕</button></span>' : '') + '</div>';
+          return cab + g.obras.map(o => '<div class="ix-fila org' + (o.oculta ? ' oculta' : '') + '" data-id="' + esc(o.id) + '"><span class="asa" title="Arrastra para ordenar">⋮⋮</span><b>' + esc(o.obra) + '</b>'
+            + '<select aria-label="Categoría">' + opciones(o.cat) + '</select><button class="ojo" title="' + (o.oculta ? 'Oculta: pulsa para mostrarla' : 'Visible: pulsa para ocultarla') + '">' + (o.oculta ? OJO_NO : OJO) + '</button></div>').join('');
+        }).join('') + '</div>'
+        + '<div class="ix-pie-org"><span id="ixEstado">' + (cambiado ? 'Cambios sin guardar' : 'Sin cambios') + '</span><span><button class="ix-boton" id="ixCancelar">Cancelar</button><button class="ix-boton pri" id="ixGuardar"' + (cambiado ? '' : ' disabled') + '>Guardar</button></span></div>' + pie();
+      ponerSalir();
+      const obra = id => borrador.obras.find(o => o.id === id);
+      const numerar = () => {   // orden = posición en pantalla; categoría = la cabecera bajo la que queda
+        let cat = '', n = 0;
+        $('ixOrg').querySelectorAll('.ix-cat, .ix-fila').forEach(e => { if (e.classList.contains('ix-cat')) cat = e.dataset.cat; else { const o = obra(e.dataset.id); o.cat = cat; o.orden = n++; } });
+      };
+      numerar();
+      $('ixOrg').querySelectorAll('.ix-fila').forEach(f => {
+        const o = obra(f.dataset.id);
+        f.querySelector('select').onchange = e => { o.cat = e.target.value; o.orden = 1e6; organizar(); };
+        f.querySelector('.ojo').onclick = () => { o.oculta = !o.oculta; organizar(); };
+        // arrastrar por el asa (ratón y dedo)
+        f.querySelector('.asa').onpointerdown = e => {
+          e.preventDefault(); f.classList.add('arrastra');
+          const mover = ev => {
+            const bajo = document.elementFromPoint(ev.clientX, ev.clientY), dest = bajo && bajo.closest('#ixOrg .ix-fila, #ixOrg .ix-cat');
+            if (!dest || dest === f) return;
+            const r = dest.getBoundingClientRect();
+            if (dest.classList.contains('ix-cat')) dest.after(f);
+            else if (ev.clientY < r.top + r.height / 2) dest.before(f); else dest.after(f);
+          };
+          const soltar = () => { removeEventListener('pointermove', mover); removeEventListener('pointerup', soltar); removeEventListener('pointercancel', soltar); f.classList.remove('arrastra'); numerar(); organizar(); };
+          addEventListener('pointermove', mover); addEventListener('pointerup', soltar); addEventListener('pointercancel', soltar);
+        };
+      });
+      $('ixOrg').querySelectorAll('.acc button').forEach(b => b.onclick = () => {
+        const i = +b.dataset.i, c = borrador.categorias, a = b.dataset.a;
+        if (a === 'sube' && i > 0) [c[i - 1], c[i]] = [c[i], c[i - 1]];
+        if (a === 'baja' && i < c.length - 1) [c[i + 1], c[i]] = [c[i], c[i + 1]];
+        if (a === 'quita') { borrador.obras.forEach(o => { if (o.cat === c[i]) o.cat = ''; }); c.splice(i, 1); }
+        if (a === 'nombre') editando = i;
+        organizar();
+      });
+      if ($('ixNombre')) {
+        const inp = $('ixNombre'), i = editando, viejo = borrador.categorias[i];
+        const fin = ok => {
+          if (editando < 0) return; editando = -1;
+          const nuevo = inp.value.trim().replace(/\s+/g, ' ').slice(0, 60);
+          if (ok && nuevo && !borrador.categorias.some((c, k) => k !== i && c === nuevo)) { borrador.obras.forEach(o => { if (viejo && o.cat === viejo) o.cat = nuevo; }); borrador.categorias[i] = nuevo; }
+          else if (!viejo) borrador.categorias.splice(i, 1);   // categoría nueva sin nombre: se descarta
+          organizar();
+        };
+        inp.onkeydown = e => { if (e.key === 'Enter') fin(true); if (e.key === 'Escape') fin(false); };
+        inp.onblur = () => fin(true);
+        inp.focus(); inp.select();
+      }
+      $('ixNueva').onclick = () => { borrador.categorias.push(''); editando = borrador.categorias.length - 1; organizar(); };
+      // Cancelar descarta; «✓ Organizando» sale, pero si hay cambios avisa la primera vez
+      $('ixCancelar').onclick = () => { organizando = false; editando = -1; avisado = false; render(); };
+      $('ixHecho').onclick = () => {
+        if (cambiado && !avisado) { avisado = true; $('ixEstado').textContent = 'Hay cambios sin guardar: pulsa Guardar, o Cancelar para descartarlos.'; return; }
+        organizando = false; editando = -1; avisado = false; render();
+      };
+      $('ixGuardar').onclick = async () => {
+        $('ixEstado').textContent = 'Guardando…';
+        const env = { categorias: borrador.categorias.filter(c => c), obras: {} };
+        borrador.obras.forEach(o => { env.obras[o.id] = { cat: o.cat || '', orden: o.orden ?? 0, oculta: !!o.oculta }; });
+        try {
+          const r = await fetch('lista.php', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ indice: env }) });
+          const j = await r.json().catch(() => ({}));
+          if (!r.ok || !j.obras) throw new Error(j.error || ('error ' + r.status));
+          datos = { categorias: (j.categorias || []).slice(), obras: copia(j.obras) }; organizando = false; avisado = false; render();
+        } catch (e) { $('ixEstado').textContent = 'No se ha guardado: ' + e.message; $('ixEstado').classList.add('error'); }
+      };
+    }
+    function render() { raiz.classList.toggle('organizando', organizando); if (organizando) organizar(); else vista(); }
+    render();
     iniciarFondo().then(faldon => { if (l.admin && typeof faldon === 'function') faldon(); });
-    if (conSesion) $('salir').onclick = async e => {
-      e.preventDefault();
-      try { await fetch('lista.php', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{"salir":true}' }); } catch (err) {}
-      try { google.accounts.id.disableAutoSelect(); } catch (err) {}
-      location.reload();
-    };
   }
   // lista privada: lista.php solo la entrega con sesión de Google; sin sesión, botón «Iniciar sesión con Google»
   async function pedirLista() {

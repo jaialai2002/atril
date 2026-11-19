@@ -6,11 +6,14 @@
 //   POST lista.php {"salir": true}       -> cierra la sesión
 //   GET  lista.php?fondo                 -> ajustes del fondo animado de la portada (públicos; {} si no hay)
 //   POST lista.php {"fondo": {…}}        -> guarda esos ajustes (solo cuentas de 'admin', comprobado aquí con la sesión)
+//   POST lista.php {"indice": {…}}       -> guarda la organización del índice: categorías, orden, ocultas (solo 'admin')
 //
 // Configuración FUERA de la web, en /home/sigan1/atril-config.php (un nivel por encima de esta carpeta):
 //   <?php return ['cliente' => '….apps.googleusercontent.com', 'correos' => ['tu-correo@gmail.com'], 'admin' => ['tu-correo@gmail.com']];
 // 'correos' pueden ver la lista; 'admin' pueden además cambiar el fondo (si falta 'admin', vale el primero de 'correos').
 // El fondo guardado va en /home/sigan1/atril-fondo.json (también fuera de la web).
+// La organización del índice va en /home/sigan1/atril-indice.json: {categorias:[…], obras:{id:{cat, orden, oculta}}, vistas:{id: fecha}}
+// (vistas = cuándo apareció cada obra por primera vez en la lista: sirve para las marcas NUEVA / ACTUALIZADA). El Taller no la toca.
 // La clave para firmar la cookie se crea sola la primera vez en /home/sigan1/.atril-secreto (solo la lee este programa).
 // Este archivo se sube a mano una vez; NO se actualiza solo desde GitHub.
 
@@ -24,6 +27,14 @@ if (!is_array($cfg) || empty($cfg['cliente']) || empty($cfg['correos'])) { http_
 $correos = array_map('strtolower', array_map('trim', (array) $cfg['correos']));
 $admin = array_map('strtolower', array_map('trim', (array) ($cfg['admin'] ?? [$cfg['correos'][0]])));
 $FONDO = $fuera . '/atril-fondo.json';
+$INDICE = $fuera . '/atril-indice.json';
+function leer_indice($f) {
+  $i = json_decode((string) @file_get_contents($f), true);
+  if (!is_array($i)) $i = [];
+  return ['categorias' => array_values(array_filter((array) ($i['categorias'] ?? []), 'is_string')),
+          'obras' => is_array($i['obras'] ?? null) ? $i['obras'] : [], 'vistas' => is_array($i['vistas'] ?? null) ? $i['vistas'] : []];
+}
+function guardar_indice($f, $i) { return @file_put_contents($f, json_encode($i, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT), LOCK_EX) !== false; }
 // ajustes permitidos del fondo: [mínimo, máximo] (números) o 'b' (sí/no)
 $CAMPOS = ['baseHue' => [0, 360], 'hueRange' => [0, 90], 'sat' => [0, 100], 'light' => [4, 30], 'cellSize' => [40, 160],
   'variance' => [0, 0.5], 'speed' => [0, 0.05], 'mouseRadius' => [0, 300], 'lineA' => [0, 0.5], 'dots' => 'b',
@@ -63,11 +74,31 @@ function sesion_valida($correos, $fuera) {
   $e = strtolower(deb64($correo));
   return in_array($e, $correos, true) ? $e : false;   // si quitas un correo de la configuración, su sesión deja de valer
 }
-// la lista de obras, con la marca 'admin' si esa cuenta puede cambiar el fondo
+// la lista de obras con su organización (categoría, orden, oculta, nueva/actualizada) y la marca 'admin'
+// (las ocultas solo se entregan a la cuenta admin, para el modo Organizar)
 function entregar_lista($correo, $admin) {
+  global $INDICE;
   $l = json_decode((string) @file_get_contents(__DIR__ . '/obras.json'), true);
   if (!is_array($l)) $l = ['obras' => []];
-  $l['admin'] = in_array($correo, $admin, true);
+  $esAdmin = in_array($correo, $admin, true);
+  $ix = leer_indice($INDICE); $ahora = time(); $cambio = false; $SEMANA = 7 * 86400;
+  $obras = [];
+  foreach ((array) ($l['obras'] ?? []) as $o) {
+    if (!is_array($o) || !isset($o['id'])) continue;
+    $id = (string) $o['id'];
+    if (!isset($ix['vistas'][$id])) { $ix['vistas'][$id] = $ahora; $cambio = true; }   // primera vez que aparece
+    $org = is_array($ix['obras'][$id] ?? null) ? $ix['obras'][$id] : [];
+    $o['cat'] = in_array($org['cat'] ?? '', $ix['categorias'], true) ? $org['cat'] : '';
+    $o['orden'] = isset($org['orden']) ? (int) $org['orden'] : null;
+    $o['oculta'] = !empty($org['oculta']);
+    $vista = (int) $ix['vistas'][$id]; $fecha = isset($o['fecha']) ? strtotime((string) $o['fecha']) : false;
+    $o['nueva'] = $ahora - $vista < $SEMANA;
+    $o['actualizada'] = !$o['nueva'] && $fecha && $fecha > $vista + 86400 && $ahora - $fecha < $SEMANA;
+    if ($o['oculta'] && !$esAdmin) continue;
+    $obras[] = $o;
+  }
+  if ($cambio) guardar_indice($INDICE, $ix);
+  $l['obras'] = $obras; $l['categorias'] = $ix['categorias']; $l['admin'] = $esAdmin;
   echo json_encode($l, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
   exit;
 }
@@ -86,6 +117,25 @@ function pedir($url) {
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   $d = json_decode(file_get_contents('php://input'), true) ?: [];
   if (!empty($d['salir'])) { poner_cookie('', time() - 3600); echo '{"ok":true}'; exit; }
+  if (isset($d['indice'])) {   // guardar la organización del índice: solo con sesión de una cuenta 'admin'
+    $e = sesion_valida($correos, $fuera);
+    if (!$e || !in_array($e, $admin, true)) { http_response_code(403); echo '{"error":"Solo la cuenta administradora puede organizar el índice"}'; exit; }
+    $n = $d['indice'];
+    if (!is_array($n)) { http_response_code(400); echo '{"error":"Datos no válidos"}'; exit; }
+    $cats = [];
+    foreach ((array) ($n['categorias'] ?? []) as $c) {
+      $c = trim(preg_replace('/\s+/u', ' ', (string) $c));
+      if ($c !== '' && (function_exists('mb_strlen') ? mb_strlen($c) : strlen($c)) <= 60 && !in_array($c, $cats, true) && count($cats) < 100) $cats[] = $c;
+    }
+    $obras = [];
+    foreach ((array) ($n['obras'] ?? []) as $id => $o) {
+      if (!preg_match('/^[a-z0-9-]{1,120}$/', (string) $id) || !is_array($o) || count($obras) >= 2000) continue;
+      $obras[$id] = ['cat' => in_array($o['cat'] ?? '', $cats, true) ? $o['cat'] : '', 'orden' => (int) ($o['orden'] ?? 0), 'oculta' => !empty($o['oculta'])];
+    }
+    $ix = leer_indice($INDICE); $ix['categorias'] = $cats; $ix['obras'] = $obras;
+    if (!guardar_indice($INDICE, $ix)) { http_response_code(500); echo '{"error":"No puedo guardar atril-indice.json"}'; exit; }
+    entregar_lista($e, $admin);
+  }
   if (isset($d['fondo'])) {   // guardar el fondo: solo con sesión de una cuenta 'admin'
     $e = sesion_valida($correos, $fuera);
     if (!$e || !in_array($e, $admin, true)) { http_response_code(403); echo '{"error":"Solo la cuenta administradora puede guardar el fondo"}'; exit; }
