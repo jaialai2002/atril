@@ -48,6 +48,8 @@ button { cursor: pointer; }
 .seg button:focus-visible { outline-offset: -3px; border-radius: 7px; }   /* dentro del botón: el grupo recorta los bordes y solo asomaba una rayita dorada */
 
 /* ---------- barra de arriba */
+/* zoom del navegador (⌘+ / ⌘−): solo agranda la partitura; la barra y el mezclador quedan del mismo tamaño (ver compensarZoom) */
+header { zoom: var(--antizoom, 1); }
 header { display: flex; align-items: center; gap: 14px; padding: 8px 14px; background: var(--consola); border-bottom: 1px solid var(--surco); flex-wrap: nowrap; }
 .marca { display: flex; align-items: center; flex: none; }
 .marca .logo-n { height: 30px; width: auto; display: block; color: var(--texto); }   /* logo @tril: la @ naranja y «tril» del color del texto */
@@ -97,6 +99,7 @@ main { flex: 1; display: flex; min-height: 0; }
 .pagina svg { display: block; width: 100%; height: auto; }
 .pagina .note, .pagina .measure { cursor: pointer; }
 .pagina g.note.suena { fill: var(--rojo); }
+.pagina .at-rotulador { mix-blend-mode: multiply; fill-opacity: .9; pointer-events: none; }   /* «Resaltar»: la letra de tu voz con rotulador */
 /* seguimiento: Banda (dorada, todo el sistema) · Voces (banda por pentagrama con el color de lo que suena) · Línea (cabezal rojizo) */
 .pagina .at-banda { fill: var(--banda); }
 .pagina .at-cabeza { display: none; }
@@ -110,7 +113,7 @@ body.seg-linea .pagina .at-cabeza { display: inline; fill: var(--rojo); opacity:
 #cargando.error { border-color: var(--rojo); }
 
 /* mezclador: cajón superpuesto a la derecha, como el de Cantāmus; la partitura no se encoge */
-aside { position: fixed; top: var(--alto-cab, 66px); right: 0; bottom: 0; z-index: 5; width: min(320px, 100vw); background: rgba(32, 35, 42, .75); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); border-left: 1px solid var(--surco); box-shadow: -14px 0 34px rgba(0,0,0,.35); overflow: auto; padding: 12px 12px 20px; display: flex; flex-direction: column; gap: 10px; transition: transform .25s ease, visibility .25s; }
+aside { position: fixed; top: calc(var(--alto-cab, 66px) * var(--rezoom, 1)); zoom: var(--antizoom, 1); right: 0; bottom: 0; z-index: 5; width: min(320px, 100vw); background: rgba(32, 35, 42, .75); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); border-left: 1px solid var(--surco); box-shadow: -14px 0 34px rgba(0,0,0,.35); overflow: auto; padding: 12px 12px 20px; display: flex; flex-direction: column; gap: 10px; transition: transform .25s ease, visibility .25s; }
 aside h2 { margin: 0; font: 600 10.5px var(--cuerpo); letter-spacing: .14em; text-transform: uppercase; color: var(--tenue); display: flex; justify-content: space-between; align-items: center; }
 aside h2 button { font: 500 11px var(--cuerpo); letter-spacing: 0; text-transform: none; border: 0; background: none; color: var(--laton); padding: 0; }
 .ensayo { display: grid; gap: 8px; background: rgba(22,24,29,.7); border: 1px solid var(--surco); border-radius: 9px; padding: 9px 9px 8px 11px; font-size: 12px; }
@@ -320,6 +323,10 @@ body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: v
 .ix .ix-fila { display: flex; align-items: baseline; gap: 14px; background: rgba(34,35,39,.82); border: 1px solid rgba(255,255,255,.07); border-radius: 9px; padding: 9px 16px; margin: 0 0 6px; -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); }
 .ix .ix-fila b { display: block; font: italic 400 20px/1.25 "Times New Roman", Times, "Tinos", serif; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 .ix .ix-fila .ix-autor { display: block; margin: 0 0 0 auto; font: 13px var(--cuerpo); color: var(--tenue); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 42%; text-align: right; flex: none; }
+.ix .ix-fila .ix-voces { font: 500 14px var(--cuerpo); font-style: normal; letter-spacing: .06em; color: var(--laton); white-space: nowrap; flex: none; }
+.ix .ix-fila .ix-voces::before { content: "·"; margin-right: 8px; }
+.ix-fila.org input.voces { background: #2a2e37; border: 1px solid var(--surco); border-radius: 7px; color: var(--laton); font: 12px var(--cuerpo); padding: 4px 7px; width: 150px; flex: none; }
+.ix-fila.org input.voces::placeholder { color: #8d8a80; }
 .ix-marca { font: 600 9.5px var(--cuerpo); font-style: normal; letter-spacing: .1em; color: var(--tinta); background: var(--laton); border-radius: 4px; padding: 1px 5px; align-self: center; flex: none; }
 .ix-marca.act { background: none; color: var(--laton); border: 1px solid var(--laton); }
 @media (max-width: 600px) { .ix .ix-fila { flex-wrap: wrap; row-gap: 2px; } .ix .ix-fila b { white-space: normal; } .ix .ix-fila .ix-autor { margin: 0; max-width: 100%; text-align: left; flex-basis: 100%; } }
@@ -424,10 +431,59 @@ body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: v
   let PFX = 'atril:';   // localStorage por obra: atril:<id>:*
   const guardar = (k, v) => { if (modoManual) return; try { localStorage.setItem(PFX + k, JSON.stringify(v)); } catch (e) {} };
   const leer = (k, d) => { if (modoManual) return d; try { const v = localStorage.getItem(PFX + k); return v ? JSON.parse(v) : d; } catch (e) { return d; } };
+  // zoom del navegador en el ordenador: la partitura crece, pero la barra de arriba y el mezclador se quedan como están.
+  // El zoom se deduce de ancho de ventana / ancho útil (se ajusta a los niveles de Chrome; si no cuadra, se deja en 100 %).
+  // En el móvil y la tableta (dedo) no se toca: allí el zoom con dos dedos no cambia estos anchos.
+  (function compensarZoom() {
+    const NIVELES = [0.25, 0.33, 0.5, 0.67, 0.75, 0.8, 0.9, 1, 1.1, 1.25, 1.5, 1.75, 2, 2.5, 3, 4, 5];
+    const poner = () => {
+      let z = 1;
+      if (matchMedia('(pointer: fine)').matches && outerWidth > 0 && innerWidth > 0) {
+        const r = outerWidth / innerWidth, n = NIVELES.reduce((a, b) => Math.abs(b - r) < Math.abs(a - r) ? b : a);
+        if (Math.abs(n - r) / n < 0.04) z = n;
+      }
+      document.documentElement.style.setProperty('--antizoom', 1 / z);
+      document.documentElement.style.setProperty('--rezoom', z);
+    };
+    poner(); addEventListener('resize', poner);
+  })();
   const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
   const slug = s => String(s).normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+  // qué voz es una pista, por su id (slug del nombre), en varios idiomas: es, ca, cs, it, en, de, fr, la… y S/A/T/B
+  const NUM = '(-?\\d+|-?i{1,3}|-?iv)?$';   // «Soprano 1», «Soprán II»…
+  const VOZ = [
+    ['soprano', new RegExp('^(soprano|sopranos|sopran|soprani|soprans|sopr|sop|tiple|tiples|s)' + NUM)],
+    ['alto', new RegExp('^(alto|altos|alt|alti|contralto|contraltos|contralt|mezzo|mezzosoprano|mezzo-soprano|a)' + NUM)],
+    ['tenor', new RegExp('^(tenor|tenores|tenors|tenore|tenori|ten|t)' + NUM)],
+    ['bajo', new RegExp('^(bajo|bajos|bas|bass|basso|bassi|basses|baix|baixos|baritono|baritonos|bariton|baritone|b)' + NUM)]
+  ];
+  const vozDe = id => { for (const [v, re] of VOZ) if (re.test(id)) return v; return null; };
+  const SONIDO_VOZ = [[/^voice\.(soprano|treble|boy-soprano|girl)/, 'soprano'], [/^voice\.(mezzo|alto|contralto|countertenor)/, 'alto'], [/^voice\.tenor/, 'tenor'], [/^voice\.(baritone|bass)/, 'bajo']];
+  // cómo se describen las voces de una obra en el índice, a partir de sus pistas ({n: nombre, v: voz, s: instrument-sound, i: instrument-name}):
+  // 2 → «Dúo SB», 3 → «Trío STB», 4 o más → «SATB», «SSATB»; si alguna voz no se sabe de qué tipo es → «3 voces».
+  // Las que se llaman «Solo»/«Solista» van aparte: «SATB · solistas ATB». Se puede cambiar a mano en Organizar.
+  const LETRA_VOZ = { soprano: 'S', alto: 'A', tenor: 'T', bajo: 'B' };
+  function etiquetaVoces(pistas) {
+    const tipo = p => { for (const [re, v] of SONIDO_VOZ) if (re.test(p.s || '')) return v;
+      const sin = t => slug(t).replace(/(^|-)(solo|soli|solista|solistas|coro|cor|chorus|choir|tutti)(?=-|$)/g, '').replace(/^-+|-+$/g, '');
+      return vozDe(sin(p.i || '')) || vozDe(sin(p.n || '')); };
+    const voces = (pistas || []).filter(p => p.v === true || (p.v == null && (tipo(p) || /^voice\./.test(p.s || ''))));
+    if (!voces.length) return '';
+    const letras = l => l.map(p => LETRA_VOZ[tipo(p)] || null);
+    const grupo = l => {
+      const x = letras(l), n = l.length;
+      if (x.includes(null)) return n + (n === 1 ? ' voz' : ' voces');
+      const t = x.sort((a, b) => 'SATB'.indexOf(a) - 'SATB'.indexOf(b)).join('');
+      return n === 2 ? 'Dúo ' + t : n === 3 ? 'Trío ' + t : n === 1 ? 'Voz ' + t : t;
+    };
+    const solo = p => /(^|-)(solo|soli|solista|solistas)(-|$)/.test(slug(p.n || ''));
+    const coro = voces.filter(p => !solo(p)), solos = voces.filter(solo);
+    if (!coro.length || !solos.length) return grupo(voces);
+    const ls = letras(solos);
+    return grupo(coro) + ' · solistas ' + (ls.includes(null) ? solos.length : ls.sort((a, b) => 'SATB'.indexOf(a) - 'SATB'.indexOf(b)).join(''));
+  }
   function desentidad(s) { const t = document.createElement('textarea'); t.innerHTML = s; return t.value; }
-  const VERSION = '2026.11.19-4';   // se ve al pie del índice: sirve para saber qué programa tiene la web
+  const VERSION = '2026.11.20-1';   // se ve al pie del índice: sirve para saber qué programa tiene la web
   const VEROVIO = 'https://cdn.jsdelivr.net/npm/verovio@6.1.0/dist/verovio-toolkit-wasm.js';
   // mismas opciones que el antiguo render.js: con la misma semilla, las dos letras dan los mismos ids
   const OPC = { xmlIdSeed: 1, scale: 40, pageWidth: 2200, pageHeight: 3000, adjustPageHeight: true, breaks: 'auto', footer: 'none', header: 'auto', svgViewBox: true, condenseFirstPage: true, svgHtml5: true, svgRemoveXlink: true, lyricSize: 4.2, pageMarginTop: 40, pageMarginBottom: 20, pageMarginLeft: 40, pageMarginRight: 40 };
@@ -626,6 +682,7 @@ body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: v
         location.reload();
       };
     }
+    const vocesDe = o => (o.voces || '').trim() || etiquetaVoces(o.pistas);   // la escrita en Organizar o la calculada
     const marca = o => o.nueva ? '<i class="ix-marca">NUEVA</i>' : o.actualizada ? '<i class="ix-marca act">ACTUALIZADA</i>' : '';
 
     // --- vista normal (A)
@@ -643,10 +700,10 @@ body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: v
     function lista() {
       const q = busca.trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
       const sin = t => String(t || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
-      const filtro = o => !o.oculta && (!q || sin(o.obra + ' ' + o.autor).includes(q));
+      const filtro = o => !o.oculta && (!q || sin(o.obra + ' ' + o.autor + ' ' + vocesDe(o)).includes(q));
       const grupos = agrupar(datos, orden, filtro).filter(g => g.obras.length);
       const conCats = grupos.some(g => g.cat);
-      const fila = o => '<a class="obra ix-fila" href="' + enlace(o.id) + '"><b>' + esc(o.obra) + '</b>' + marca(o) + (o.autor ? '<span class="ix-autor">' + esc(o.autor) + '</span>' : '') + '</a>';
+      const fila = o => { const v = vocesDe(o); return '<a class="obra ix-fila" href="' + enlace(o.id) + '"><b>' + esc(o.obra) + '</b>' + (v ? '<em class="ix-voces">' + esc(v) + '</em>' : '') + marca(o) + (o.autor ? '<span class="ix-autor">' + esc(o.autor) + '</span>' : '') + '</a>'; };
       $('ixLista').innerHTML = !grupos.length ? '<p class="nota">' + (q ? 'Ninguna obra coincide con la búsqueda.' : 'Todavía no hay obras.') + '</p>'
         : grupos.map(g => {
           const plegada = !q && plegadas.has(g.cat || '·');
@@ -666,7 +723,7 @@ body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: v
       const opciones = sel => '<option value="">Sin categoría</option>' + borrador.categorias.filter(c => c).map(c => '<option' + (c === sel ? ' selected' : '') + '>' + esc(c) + '</option>').join('');
       const grupos = agrupar(borrador, 'propio');
       raiz.innerHTML = '<div class="ix-barra"><button class="ix-boton dor" id="ixHecho">✓ Organizando</button><button class="ix-boton" id="ixNueva">+ Nueva categoría</button></div>'
-        + '<p class="ix-aviso">Arrastra <b>⋮⋮</b> para ordenar (también a otra categoría) · elige la categoría de cada obra · el ojo la oculta del índice</p>'
+        + '<p class="ix-aviso">Arrastra <b>⋮⋮</b> para ordenar (también a otra categoría) · escribe cómo se llaman sus voces (vacío: las calcula el Atril) · elige la categoría de cada obra · el ojo la oculta del índice</p>'
         + '<div id="ixOrg" class="ix-org">' + grupos.map(g => {
           const i = g.i, real = i >= 0;
           const cab = i >= 0 && i === editando
@@ -674,6 +731,7 @@ body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: v
             : '<div class="ix-cat org" data-cat="' + esc(g.cat) + '"><span>' + esc(g.cat || 'Sin categoría') + '</span><span class="n">' + g.obras.length + '</span>'
               + (real ? '<span class="acc"><button data-a="sube" data-i="' + i + '" title="Subir la categoría">↑</button><button data-a="baja" data-i="' + i + '" title="Bajar la categoría">↓</button><button data-a="nombre" data-i="' + i + '" title="Cambiar el nombre">✎</button><button data-a="quita" data-i="' + i + '" title="Quitar la categoría (sus obras pasan a «Sin categoría»)">✕</button></span>' : '') + '</div>';
           return cab + g.obras.map(o => '<div class="ix-fila org' + (o.oculta ? ' oculta' : '') + '" data-id="' + esc(o.id) + '"><span class="asa" title="Arrastra para ordenar">⋮⋮</span><b>' + esc(o.obra) + '</b>'
+            + '<input class="voces" aria-label="Voces" title="Cómo se describen sus voces en el índice. Vacío: la que calcula el Atril (' + esc(etiquetaVoces(o.pistas) || 'ninguna') + ')" maxlength="60" placeholder="' + esc(etiquetaVoces(o.pistas) || 'Voces') + '" value="' + esc(o.voces || '') + '">'
             + '<select aria-label="Categoría">' + opciones(o.cat) + '</select><button class="ojo" title="' + (o.oculta ? 'Oculta: pulsa para mostrarla' : 'Visible: pulsa para ocultarla') + '">' + (o.oculta ? OJO_NO : OJO) + '</button></div>').join('');
         }).join('') + '</div>'
         + '<div class="ix-pie-org"><span id="ixEstado">' + (cambiado ? 'Cambios sin guardar' : 'Sin cambios') + '</span><span><button class="ix-boton" id="ixCancelar">Cancelar</button><button class="ix-boton pri" id="ixGuardar"' + (cambiado ? '' : ' disabled') + '>Guardar</button></span></div>' + pie();
@@ -688,6 +746,9 @@ body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: v
         const o = obra(f.dataset.id);
         f.querySelector('select').onchange = e => { o.cat = e.target.value; o.orden = 1e6; organizar(); };
         f.querySelector('.ojo').onclick = () => { o.oculta = !o.oculta; organizar(); };
+        const iv = f.querySelector('input.voces');
+        iv.onchange = () => { o.voces = iv.value.trim().replace(/\s+/g, ' ').slice(0, 60); organizar(); };
+        iv.onkeydown = e => { if (e.key === 'Enter') iv.blur(); if (e.key === 'Escape') { iv.value = o.voces || ''; iv.blur(); } };
         // arrastrar por el asa (ratón y dedo)
         f.querySelector('.asa').onpointerdown = e => {
           e.preventDefault(); f.classList.add('arrastra');
@@ -733,7 +794,7 @@ body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: v
       $('ixGuardar').onclick = async () => {
         $('ixEstado').textContent = 'Guardando…';
         const env = { categorias: borrador.categorias.filter(c => c), obras: {} };
-        borrador.obras.forEach(o => { env.obras[o.id] = { cat: o.cat || '', orden: o.orden ?? 0, oculta: !!o.oculta }; });
+        borrador.obras.forEach(o => { env.obras[o.id] = { cat: o.cat || '', orden: o.orden ?? 0, oculta: !!o.oculta, voces: o.voces || '' }; });
         try {
           const r = await fetch('lista.php', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ indice: env }) });
           const j = await r.json().catch(() => ({}));
@@ -876,7 +937,6 @@ body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: v
   // 1) <instrument-sound> «voice.…» (soprano, alto, tenor, bass…); 2) <instrument-name> (Soprano, Bajo…);
   // 3) el nombre de la pista (como antes); 4) si la parte lleva letra, es voz aunque no se sepa de qué tipo.
   // Así «Z.» (Zerlina, voice.soprano) es Soprano y «G.» (Giovanni, voice.bass) es Bajo.
-  const SONIDO_VOZ = [[/^voice\.(soprano|treble|boy-soprano|girl)/, 'soprano'], [/^voice\.(mezzo|alto|contralto|countertenor)/, 'alto'], [/^voice\.tenor/, 'tenor'], [/^voice\.(baritone|bass)/, 'bajo']];
   const infoParte = {};
   for (const m of xmls.cant.matchAll(/<score-part id="([^"]+)">([\s\S]*?)<\/score-part>/g)) {
     const t = m[2], g = re => (re.exec(t) || [])[1] || '';
@@ -914,21 +974,13 @@ body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: v
   // ---------- partitura (SVG de Verovio ya dibujado; la letra original y la cantada tienen los mismos ids)
   let letra = ({ cze: 'orig', cat: 'cant' })[leer('letra', 'orig')] || leer('letra', 'orig'), mapa = new Map(), marcados = [], sistemaVisto = null;
   let compasVisto = null, bandas = [], cabeza = null, caja = null, firmaVista = ''; const xNota = new Map();
+  let rotular = () => {}, firmaRotulador = '';   // «Resaltar»: la letra de tu voz marcada con rotulador (se define con las pistas)
   // seguimiento y colores por voz (como la Multiconsola): azul = todo; cada voz, el suyo
   let seguimiento = leer('seg', 'linea'), colores = null, firma = '';
   // colores de las tiras del mezclador (los del usuario; el morado, aclarado para el fondo oscuro); instrumentos en gris claro
   const COLOR_TIRA = { soprano: '#d42e28', alto: '#9a55d4', tenor: '#e3922f', bajo: '#55ac6b', voz: '#d4b064', inst: '#b9b4a8' };   // voz = voz sin tipo conocido (latón)
   const COLOR = { todos: '#3f7fe0', soprano: '#e0303f', alto: '#9150d2', tenor: '#f08a1c', bajo: '#2fa65a' };
   const ALFA = { todos: .15, soprano: .17, alto: .17, tenor: .19, bajo: .17 };
-  // qué voz es una pista, por su id (slug del nombre), en varios idiomas: es, ca, cs, it, en, de, fr, la… y S/A/T/B
-  const NUM = '(-?\\d+|-?i{1,3}|-?iv)?$';   // «Soprano 1», «Soprán II»…
-  const VOZ = [
-    ['soprano', new RegExp('^(soprano|sopranos|sopran|soprani|soprans|sopr|sop|tiple|tiples|s)' + NUM)],
-    ['alto', new RegExp('^(alto|altos|alt|alti|contralto|contraltos|contralt|mezzo|mezzosoprano|mezzo-soprano|a)' + NUM)],
-    ['tenor', new RegExp('^(tenor|tenores|tenors|tenore|tenori|ten|t)' + NUM)],
-    ['bajo', new RegExp('^(bajo|bajos|bas|bass|basso|bassi|basses|baix|baixos|baritono|baritonos|bariton|baritone|b)' + NUM)]
-  ];
-  const vozDe = id => { for (const [v, re] of VOZ) if (re.test(id)) return v; return null; };
   async function ponerLetra(v) {
     if (!xmls[v]) v = principal;
     if (!svgs[v]) { aviso('Dibujando la otra letra…'); await new Promise(r => setTimeout(r, 40)); svgs[v] = dibujar(v).paginas; }
@@ -937,7 +989,7 @@ body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: v
     $('paginas').innerHTML = svgs[v].map(s => '<div class="pagina">' + s + '</div>').join('');
     mapa = new Map();
     $('paginas').querySelectorAll('g.note[data-id], g.measure[data-id]').forEach(g => mapa.set(g.getAttribute('data-id'), g));
-    marcados = []; sistemaVisto = null; compasVisto = null; bandas = []; cabeza = null; xNota.clear(); $('hoja').scrollTop = y; pintar(true);
+    marcados = []; sistemaVisto = null; compasVisto = null; bandas = []; cabeza = null; xNota.clear(); firmaRotulador = ''; rotular(); $('hoja').scrollTop = y; pintar(true);
   }
   // letra de pronunciación: oculta; se cambia con ⌥ + clic en el logo o con ⇧ + L
   function cambiarLetra() {
@@ -1237,7 +1289,7 @@ body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: v
     });
     const m = +$('maestro').value; $('maestro').style.setProperty('--p', ((m + 24) / 34 * 100) + '%'); maestro.gain.setTargetAtTime(db2g(m), ctx.currentTime, 0.015);
     $('maestroV').textContent = (m > 0 ? '+' : '') + m + ' dB';
-    calcularColores();
+    calcularColores(); rotular();
     const g = {}; pistas.forEach(p => g[p.id] = { vol: p.vol, pan: p.pan, muda: p.muda }); guardar('mezcla', g);
     marcarSeparacion();
     guardar('ensayo', { voz: $('miVoz').value, modo }); guardar('maestro', m);
@@ -1256,6 +1308,46 @@ body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: v
     const f = seguimiento + '|' + [...colores].join(',');
     if (f !== firma) { firma = f; pintar(false); }
   }
+  // «Resaltar» con «Mi voz de ensayo»: la letra de esa voz, marcada como con un rotulador fluorescente de su color.
+  // Una franja por renglón de letra y sistema, de la primera a la última sílaba, detrás del texto y multiplicando sobre el papel.
+  const ROTULADOR = { soprano: '#ff8f8f', alto: '#d2a6ff', tenor: '#ffc266', bajo: '#8ef58a', voz: '#ffe45c' };
+  rotular = function () {
+    const yo = pistas.find(p => p.id === $('miVoz').value);
+    const f = (modo === 'resaltar' && yo && yo.voz ? yo.id + '|' + yo.voz : '') + '|' + letra;
+    if (f === firmaRotulador) return;
+    firmaRotulador = f;
+    $('paginas').querySelectorAll('.at-rotulador').forEach(r => r.remove());
+    if (modo !== 'resaltar' || !yo || !yo.voz) return;
+    const color = ROTULADOR[yo.voz] || ROTULADOR.voz;
+    $('paginas').querySelectorAll('g.system').forEach(sis => {
+      // tramos: compases seguidos en los que tu voz tiene notas (un compás todo de silencios corta la franja;
+      // los melismas siguen marcados porque sus compases tienen notas)
+      const tramos = []; let actual = null;
+      sis.querySelectorAll('g.measure').forEach(m => {
+        const st = [...m.querySelectorAll(':scope > g.staff')].find(x => pentagrama[x.getAttribute('data-id')] === yo.id);
+        if (!st || !st.querySelector('g.note')) { actual = null; return; }
+        if (!actual) tramos.push(actual = []);
+        st.querySelectorAll('g.verse').forEach(v => { try { const b = v.getBBox(); if (b.width > 0) actual.push(b); } catch (e) {} });
+      });
+      tramos.forEach(cajas => {
+        if (!cajas.length) return;
+        // renglones: sílabas cuya altura se solapa (estrofas 1, 2…)
+        const renglones = [];
+        cajas.sort((a, b) => a.y - b.y).forEach(b => {
+          const r = renglones.find(r => b.y < r.y1 && b.y + b.height > r.y0);
+          if (r) { r.x0 = Math.min(r.x0, b.x); r.x1 = Math.max(r.x1, b.x + b.width); r.y0 = Math.min(r.y0, b.y); r.y1 = Math.max(r.y1, b.y + b.height); }
+          else renglones.push({ x0: b.x, x1: b.x + b.width, y0: b.y, y1: b.y + b.height });
+        });
+        renglones.forEach(r => {
+          const h = r.y1 - r.y0, m = h * 0.16, el = rect('at-rotulador');
+          el.setAttribute('x', r.x0 - h * 0.35); el.setAttribute('width', r.x1 - r.x0 + h * 0.7);
+          el.setAttribute('y', r.y0 - m); el.setAttribute('height', h + 2 * m); el.setAttribute('rx', h * 0.22);
+          el.style.fill = color;
+          sis.insertBefore(el, sis.firstChild);
+        });
+      });
+    });
+  };
   function ponerSeguimiento(v, recordar = true) {
     seguimiento = v; if (recordar) guardar('seg', v);   // solo se recuerda lo que elige quien la usa
     ['banda', 'voces', 'linea'].forEach(x => document.body.classList.toggle('seg-' + x, x === v));
