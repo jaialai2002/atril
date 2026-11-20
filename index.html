@@ -99,7 +99,7 @@ main { flex: 1; display: flex; min-height: 0; }
 .pagina svg { display: block; width: 100%; height: auto; }
 .pagina .note, .pagina .measure { cursor: pointer; }
 .pagina g.note.suena { fill: var(--rojo); }
-.pagina .at-rotulador { mix-blend-mode: multiply; fill-opacity: .5; pointer-events: none; }   /* «Resaltar»: la letra de tu voz con rotulador */
+.pagina .at-rotulador { mix-blend-mode: multiply; fill-opacity: .3; pointer-events: none; }   /* «Resaltar»: la letra de tu voz con rotulador */
 /* seguimiento: Banda (dorada, todo el sistema) · Voces (banda por pentagrama con el color de lo que suena) · Línea (cabezal rojizo) */
 .pagina .at-banda { fill: var(--banda); }
 .pagina .at-cabeza { display: none; }
@@ -483,7 +483,7 @@ body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: v
     return grupo(coro) + ' · solistas ' + (ls.includes(null) ? solos.length : ls.sort((a, b) => 'SATB'.indexOf(a) - 'SATB'.indexOf(b)).join(''));
   }
   function desentidad(s) { const t = document.createElement('textarea'); t.innerHTML = s; return t.value; }
-  const VERSION = '2026.11.21-2';   // se ve al pie del índice: sirve para saber qué programa tiene la web
+  const VERSION = '2026.11.21-3';   // se ve al pie del índice: sirve para saber qué programa tiene la web
   const VEROVIO = 'https://cdn.jsdelivr.net/npm/verovio@6.1.0/dist/verovio-toolkit-wasm.js';
   // mismas opciones que el antiguo render.js: con la misma semilla, las dos letras dan los mismos ids
   const OPC = { xmlIdSeed: 1, scale: 40, pageWidth: 2200, pageHeight: 3000, adjustPageHeight: true, breaks: 'auto', footer: 'none', header: 'auto', svgViewBox: true, condenseFirstPage: true, svgHtml5: true, svgRemoveXlink: true, lyricSize: 4.2, pageMarginTop: 40, pageMarginBottom: 20, pageMarginLeft: 40, pageMarginRight: 40 };
