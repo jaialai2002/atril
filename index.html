@@ -483,7 +483,7 @@ body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: v
     return grupo(coro) + ' · solistas ' + (ls.includes(null) ? solos.length : ls.sort((a, b) => 'SATB'.indexOf(a) - 'SATB'.indexOf(b)).join(''));
   }
   function desentidad(s) { const t = document.createElement('textarea'); t.innerHTML = s; return t.value; }
-  const VERSION = '2026.11.21-3';   // se ve al pie del índice: sirve para saber qué programa tiene la web
+  const VERSION = '2026.11.21-4';   // se ve al pie del índice: sirve para saber qué programa tiene la web
   const VEROVIO = 'https://cdn.jsdelivr.net/npm/verovio@6.1.0/dist/verovio-toolkit-wasm.js';
   // mismas opciones que el antiguo render.js: con la misma semilla, las dos letras dan los mismos ids
   const OPC = { xmlIdSeed: 1, scale: 40, pageWidth: 2200, pageHeight: 3000, adjustPageHeight: true, breaks: 'auto', footer: 'none', header: 'auto', svgViewBox: true, condenseFirstPage: true, svgHtml5: true, svgRemoveXlink: true, lyricSize: 4.2, pageMarginTop: 40, pageMarginBottom: 20, pageMarginLeft: 40, pageMarginRight: 40 };
@@ -916,9 +916,19 @@ body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: v
   // saltos de sistema: si el MusicXML trae los de MuseScore (<print new-system/new-page="yes">), se respetan ('line':
   // cada salto, también el de página, empieza sistema nuevo; las páginas las corta el Atril). Si no trae, reparto automático.
   const conSaltos = /new-(system|page)="yes"/.test(xml);
+  // elisiones (<elision> de MuseScore): Verovio las dibuja con el glifo U+E551 de su fuente musical (Leipzig), que la página
+  // no carga y se veía como un cuadrado. Se cambian por «‿» con la letra de la partitura; si quedan dos seguidos
+  // (la sílaba ya traía «‿» + <elision>), se deja uno.
+  const elisiones = svg => svg
+    .replace(/‿(\s*<\/tspan>\s*<\/tspan>\s*<tspan font-family="Leipzig")/g, '$1')   // ya traía «‿»: se queda solo el del hueco
+    .replace(/(<tspan font-size="([\d.]+)px">[^<]*<\/tspan>\s*<\/tspan>)\s*<tspan font-family="Leipzig"[^>]*>\s*\s*<\/tspan>/g,
+             '$1<tspan font-size="$2px">‿</tspan>')   // en el hueco que deja Verovio, al tamaño de la letra
+    .replace(/<tspan font-family="Leipzig"[^>]*>\s*\s*<\/tspan>/g, '')
+    .replace(//g, '‿')
+    .replace(/‿{2,}/g, '‿');
   function dibujar(v) {
     const tk = new verovio.toolkit(); tk.setOptions(Object.assign({}, OPC, { breaks: conSaltos ? 'line' : 'auto' })); tk.loadData(xmls[v]);
-    const paginas = []; for (let i = 1, n = tk.getPageCount(); i <= n; i++) paginas.push(tk.renderToSVG(i));
+    const paginas = []; for (let i = 1, n = tk.getPageCount(); i <= n; i++) paginas.push(elisiones(tk.renderToSVG(i)));
     return { tk, paginas };
   }
   carga('Dibujando la partitura…', .08); await new Promise(r => setTimeout(r, 40));
