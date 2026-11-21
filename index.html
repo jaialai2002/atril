@@ -483,7 +483,7 @@ body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: v
     return grupo(coro) + ' · solistas ' + (ls.includes(null) ? solos.length : ls.sort((a, b) => 'SATB'.indexOf(a) - 'SATB'.indexOf(b)).join(''));
   }
   function desentidad(s) { const t = document.createElement('textarea'); t.innerHTML = s; return t.value; }
-  const VERSION = '2026.11.21-4';   // se ve al pie del índice: sirve para saber qué programa tiene la web
+  const VERSION = '2026.11.21-5';   // se ve al pie del índice: sirve para saber qué programa tiene la web
   const VEROVIO = 'https://cdn.jsdelivr.net/npm/verovio@6.1.0/dist/verovio-toolkit-wasm.js';
   // mismas opciones que el antiguo render.js: con la misma semilla, las dos letras dan los mismos ids
   const OPC = { xmlIdSeed: 1, scale: 40, pageWidth: 2200, pageHeight: 3000, adjustPageHeight: true, breaks: 'auto', footer: 'none', header: 'auto', svgViewBox: true, condenseFirstPage: true, svgHtml5: true, svgRemoveXlink: true, lyricSize: 4.2, pageMarginTop: 40, pageMarginBottom: 20, pageMarginLeft: 40, pageMarginRight: 40 };
@@ -926,8 +926,20 @@ body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: v
     .replace(/<tspan font-family="Leipzig"[^>]*>\s*\s*<\/tspan>/g, '')
     .replace(//g, '‿')
     .replace(/‿{2,}/g, '‿');
+  // elisiones de MuseScore sin <elision>: una sílaba con varios <text> («ra» + glifo U+E551 + «em») y un solo <syllabic>.
+  // Verovio dibuja cada trozo como una sílaba con ese <syllabic>: «ra-‿-em», «si-‿-es» o «que ‿ es» con huecos (Cantāmus
+  // igual). Solo para dibujar se juntan en un <text> «ra‿em». VAL los deja separados porque así Cantāmus los canta bien.
+  const unirElisiones = xml => xml.replace(/<lyric\b[^>]*>[\s\S]*?<\/lyric>/g, l => {
+    if (/<elision\b/.test(l)) return l;
+    const ts = [...l.matchAll(/<text\b([^>]*)>([^<]*)<\/text>/g)];
+    if (ts.length < 2) return l;
+    const vals = ts.map(t => t[2].trim()).filter(v => v && !/^[\s‿⁀͜]+$/.test(v));
+    if (!vals.length) return l;
+    const a = ts[0].index, b = ts[ts.length - 1].index + ts[ts.length - 1][0].length;
+    return l.slice(0, a) + '<text' + ts[0][1] + '>' + vals.join('‿').replace(/[\s‿⁀͜]{2,}/g, '‿') + '</text>' + l.slice(b);
+  });
   function dibujar(v) {
-    const tk = new verovio.toolkit(); tk.setOptions(Object.assign({}, OPC, { breaks: conSaltos ? 'line' : 'auto' })); tk.loadData(xmls[v]);
+    const tk = new verovio.toolkit(); tk.setOptions(Object.assign({}, OPC, { breaks: conSaltos ? 'line' : 'auto' })); tk.loadData(unirElisiones(xmls[v]));
     const paginas = []; for (let i = 1, n = tk.getPageCount(); i <= n; i++) paginas.push(elisiones(tk.renderToSVG(i)));
     return { tk, paginas };
   }
