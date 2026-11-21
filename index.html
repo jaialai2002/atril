@@ -344,6 +344,7 @@ body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: v
 .ix-fila.org select { background: #2a2e37; border: 1px solid var(--surco); border-radius: 7px; color: var(--texto); font: 12px var(--cuerpo); padding: 4px 6px; max-width: 170px; }
 .ix-fila.org .ojo { background: none; border: 0; color: var(--tenue); width: 28px; height: 28px; padding: 4px; cursor: pointer; flex: none; }
 .ix-fila.org .ojo svg { width: 100%; height: 100%; }
+.ix-fila.org .papelera:hover { color: #e07a6e; }
 .ix-fila.org.oculta { opacity: .5; }
 .ix-fila.org.oculta b { text-decoration: line-through; }
 .ix-pie-org { display: flex; gap: 8px; justify-content: space-between; align-items: center; margin-top: 14px; font: 12px var(--cuerpo); color: var(--tenue); flex-wrap: wrap; }
@@ -483,7 +484,7 @@ body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: v
     return grupo(coro) + ' · solistas ' + (ls.includes(null) ? solos.length : ls.sort((a, b) => 'SATB'.indexOf(a) - 'SATB'.indexOf(b)).join(''));
   }
   function desentidad(s) { const t = document.createElement('textarea'); t.innerHTML = s; return t.value; }
-  const VERSION = '2026.11.21-5';   // se ve al pie del índice: sirve para saber qué programa tiene la web
+  const VERSION = '2026.11.21-6';   // se ve al pie del índice: sirve para saber qué programa tiene la web
   const VEROVIO = 'https://cdn.jsdelivr.net/npm/verovio@6.1.0/dist/verovio-toolkit-wasm.js';
   // mismas opciones que el antiguo render.js: con la misma semilla, las dos letras dan los mismos ids
   const OPC = { xmlIdSeed: 1, scale: 40, pageWidth: 2200, pageHeight: 3000, adjustPageHeight: true, breaks: 'auto', footer: 'none', header: 'auto', svgViewBox: true, condenseFirstPage: true, svgHtml5: true, svgRemoveXlink: true, lyricSize: 4.2, pageMarginTop: 40, pageMarginBottom: 20, pageMarginLeft: 40, pageMarginRight: 40 };
@@ -716,6 +717,7 @@ body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: v
     }
 
     // --- modo Organizar (C): solo con la cuenta admin; el servidor lo vuelve a comprobar al guardar
+    const PAPELERA = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 7h15M9.5 7V4.8h5V7M6.5 7l.9 12.2h9.2L17.5 7M10.3 10.5v5.6M13.7 10.5v5.6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
     const OJO = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="12" r="2.6" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>';
     const OJO_NO = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M4 4l16 16" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>';
     function organizar() {
@@ -723,7 +725,7 @@ body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: v
       const opciones = sel => '<option value="">Sin categoría</option>' + borrador.categorias.filter(c => c).map(c => '<option' + (c === sel ? ' selected' : '') + '>' + esc(c) + '</option>').join('');
       const grupos = agrupar(borrador, 'propio');
       raiz.innerHTML = '<div class="ix-barra"><button class="ix-boton dor" id="ixHecho">✓ Organizando</button><button class="ix-boton" id="ixNueva">+ Nueva categoría</button></div>'
-        + '<p class="ix-aviso">Arrastra <b>⋮⋮</b> para ordenar (también a otra categoría) · escribe cómo se llaman sus voces (vacío: las calcula el Atril) · elige la categoría de cada obra · el ojo la oculta del índice</p>'
+        + '<p class="ix-aviso">Arrastra <b>⋮⋮</b> para ordenar (también a otra categoría) · escribe cómo se llaman sus voces (vacío: las calcula el Atril) · elige la categoría de cada obra · el ojo la oculta del índice · la papelera la borra del Atril</p>'
         + '<div id="ixOrg" class="ix-org">' + grupos.map(g => {
           const i = g.i, real = i >= 0;
           const cab = i >= 0 && i === editando
@@ -732,7 +734,7 @@ body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: v
               + (real ? '<span class="acc"><button data-a="sube" data-i="' + i + '" title="Subir la categoría">↑</button><button data-a="baja" data-i="' + i + '" title="Bajar la categoría">↓</button><button data-a="nombre" data-i="' + i + '" title="Cambiar el nombre">✎</button><button data-a="quita" data-i="' + i + '" title="Quitar la categoría (sus obras pasan a «Sin categoría»)">✕</button></span>' : '') + '</div>';
           return cab + g.obras.map(o => '<div class="ix-fila org' + (o.oculta ? ' oculta' : '') + '" data-id="' + esc(o.id) + '"><span class="asa" title="Arrastra para ordenar">⋮⋮</span><b>' + esc(o.obra) + '</b>'
             + '<input class="voces" aria-label="Voces" title="Cómo se describen sus voces en el índice. Vacío: la que calcula el Atril (' + esc(etiquetaVoces(o.pistas) || 'ninguna') + ')" maxlength="60" placeholder="' + esc(etiquetaVoces(o.pistas) || 'Voces') + '" value="' + esc(o.voces || '') + '">'
-            + '<select aria-label="Categoría">' + opciones(o.cat) + '</select><button class="ojo" title="' + (o.oculta ? 'Oculta: pulsa para mostrarla' : 'Visible: pulsa para ocultarla') + '">' + (o.oculta ? OJO_NO : OJO) + '</button></div>').join('');
+            + '<select aria-label="Categoría">' + opciones(o.cat) + '</select><button class="ojo" title="' + (o.oculta ? 'Oculta: pulsa para mostrarla' : 'Visible: pulsa para ocultarla') + '">' + (o.oculta ? OJO_NO : OJO) + '</button><button class="ojo papelera" title="Borrar del Atril (va a la papelera del servidor 30 días)">' + PAPELERA + '</button></div>').join('');
         }).join('') + '</div>'
         + '<div class="ix-pie-org"><span id="ixEstado">' + (cambiado ? 'Cambios sin guardar' : 'Sin cambios') + '</span><span><button class="ix-boton" id="ixCancelar">Cancelar</button><button class="ix-boton pri" id="ixGuardar"' + (cambiado ? '' : ' disabled') + '>Guardar</button></span></div>' + pie();
       ponerSalir();
@@ -745,7 +747,21 @@ body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: v
       $('ixOrg').querySelectorAll('.ix-fila').forEach(f => {
         const o = obra(f.dataset.id);
         f.querySelector('select').onchange = e => { o.cat = e.target.value; o.orden = 1e6; organizar(); };
-        f.querySelector('.ojo').onclick = () => { o.oculta = !o.oculta; organizar(); };
+        f.querySelector('.ojo:not(.papelera)').onclick = () => { o.oculta = !o.oculta; organizar(); };
+        f.querySelector('.papelera').onclick = async () => {
+          if (!confirm('¿Borrar «' + o.obra + '» del Atril?\n\nSale del índice y su enlace deja de funcionar. Queda 30 días en la papelera del servidor. '
+              + 'Tu «Atril web» del Mac no se toca: el Taller te preguntará la próxima vez si la borra también allí.')) return;
+          $('ixEstado').textContent = 'Borrando…';
+          try {
+            const r = await fetch('lista.php', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ borrar: o.id }) });
+            const j = await r.json().catch(() => ({}));
+            if (!r.ok || !j.obras) throw new Error(j.error || ('error ' + r.status));
+            // fuera del borrador y de los datos; el resto de cambios sin guardar se conservan
+            borrador.obras = borrador.obras.filter(x => x.id !== o.id); datos.obras = datos.obras.filter(x => x.id !== o.id);
+            organizar();
+            $('ixEstado').textContent = '«' + o.obra + '» borrada' + (JSON.stringify(datos) !== JSON.stringify(borrador) ? ' · cambios sin guardar' : '');
+          } catch (e) { $('ixEstado').textContent = 'No se ha borrado: ' + e.message; $('ixEstado').classList.add('error'); }
+        };
         const iv = f.querySelector('input.voces');
         iv.onchange = () => { o.voces = iv.value.trim().replace(/\s+/g, ' ').slice(0, 60); organizar(); };
         iv.onkeydown = e => { if (e.key === 'Enter') iv.blur(); if (e.key === 'Escape') { iv.value = o.voces || ''; iv.blur(); } };

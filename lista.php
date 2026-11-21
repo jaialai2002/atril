@@ -7,6 +7,8 @@
 //   GET  lista.php?fondo                 -> ajustes del fondo animado de la portada (públicos; {} si no hay)
 //   POST lista.php {"fondo": {…}}        -> guarda esos ajustes (solo cuentas de 'admin', comprobado aquí con la sesión)
 //   POST lista.php {"indice": {…}}       -> guarda la organización del índice: categorías, orden, ocultas, voces (solo 'admin')
+//   POST lista.php {"borrar": "<id>"}    -> quita una obra del Atril (solo 'admin'): su carpeta pasa a la papelera de fuera de la web
+//                                        (se vacía a los 30 días), sale de obras.json y se apunta en .htborradas.json para el Taller
 //   POST lista.php {"visita": "<obra>"}  -> cuenta una apertura de esa obra (lo envía la página; sin IP ni datos personales)
 //   GET  lista.php?estadisticas          -> visitas y consumo aproximado por obra (solo 'admin')
 //
@@ -33,6 +35,24 @@ $FONDO = $fuera . '/atril-fondo.json';
 $INDICE = $fuera . '/atril-indice.json';
 $ESTAD = $fuera . '/atril-estadisticas.json';   // {obras:{id:{total, ultima, dias:{AAAA-MM-DD: n}}}}: solo contadores
 date_default_timezone_set('Europe/Madrid');
+// obras borradas desde el editor del índice: la carpeta va a la papelera (fuera de la web, se vacía a los 30 días) y el id
+// se apunta en .htborradas.json, dentro de la web pero que Apache no sirve (empieza por «.ht»), para que el Taller lo lea por
+// FTP y pregunte si las borra también del «Atril web» del Mac. Si el Taller vuelve a publicar una, la quita de la lista.
+$PAPELERA = $fuera . '/atril-papelera';
+$BORRADAS = __DIR__ . '/.htborradas.json';
+function leer_borradas($f) { $b = json_decode((string) @file_get_contents($f), true); return is_array($b) && is_array($b['borradas'] ?? null) ? $b : ['v' => 1, 'borradas' => []]; }
+function borrar_arbol($d) {
+  if (is_link($d) || !is_dir($d)) return @unlink($d);
+  foreach (scandir($d) ?: [] as $n) if ($n !== '.' && $n !== '..') borrar_arbol($d . '/' . $n);
+  return @rmdir($d);
+}
+function vaciar_papelera($dir) {   // lo que lleva más de 30 días
+  if (!is_dir($dir)) return;
+  foreach (scandir($dir) ?: [] as $n) {
+    if ($n === '.' || $n === '..') continue;
+    if (filemtime($dir . '/' . $n) < time() - 30 * 86400) borrar_arbol($dir . '/' . $n);
+  }
+}
 // contar una apertura: público (la página lo envía al abrir una obra), pero solo para obras que existen
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && strpos((string) ($_SERVER['CONTENT_TYPE'] ?? ''), 'json') !== false) {
   $dv = json_decode((string) file_get_contents('php://input'), true);
@@ -128,15 +148,17 @@ function pistas_de($id) {
 // la lista de obras con su organización (categoría, orden, oculta, nueva/actualizada) y la marca 'admin'
 // (las ocultas solo se entregan a la cuenta admin, para el modo Organizar)
 function entregar_lista($correo, $admin) {
-  global $INDICE;
+  global $INDICE, $BORRADAS;
   $l = json_decode((string) @file_get_contents(__DIR__ . '/obras.json'), true);
   if (!is_array($l)) $l = ['obras' => []];
   $esAdmin = in_array($correo, $admin, true);
   $ix = leer_indice($INDICE); $ahora = time(); $cambio = false; $SEMANA = 7 * 86400;
   $obras = [];
+  $bor = leer_borradas($BORRADAS)['borradas'];
   foreach ((array) ($l['obras'] ?? []) as $o) {
     if (!is_array($o) || !isset($o['id'])) continue;
     $id = (string) $o['id'];
+    if (isset($bor[$id])) continue;   // borrada desde el índice (aunque un Taller viejo la vuelva a poner en obras.json)
     if (!isset($ix['vistas'][$id])) { $ix['vistas'][$id] = $ahora; $cambio = true; }   // primera vez que aparece
     $org = is_array($ix['obras'][$id] ?? null) ? $ix['obras'][$id] : [];
     $o['cat'] = in_array($org['cat'] ?? '', $ix['categorias'], true) ? $org['cat'] : '';
@@ -170,6 +192,34 @@ function pedir($url) {
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   $d = json_decode(file_get_contents('php://input'), true) ?: [];
   if (!empty($d['salir'])) { poner_cookie('', time() - 3600); echo '{"ok":true}'; exit; }
+  if (isset($d['borrar'])) {   // quitar una obra del Atril: solo con sesión de una cuenta 'admin'
+    $e = sesion_valida($correos, $fuera);
+    if (!$e || !in_array($e, $admin, true)) { http_response_code(403); echo '{"error":"Solo la cuenta administradora puede borrar obras"}'; exit; }
+    $id = (string) $d['borrar'];
+    if (!preg_match('/^[a-z0-9][a-z0-9-]{0,119}$/', $id)) { http_response_code(400); echo '{"error":"Obra no válida"}'; exit; }
+    $l = json_decode((string) @file_get_contents(__DIR__ . '/obras.json'), true);
+    if (!is_array($l)) $l = ['obras' => []];
+    $titulo = ''; $quedan = [];
+    foreach ((array) ($l['obras'] ?? []) as $o) { if (is_array($o) && ($o['id'] ?? '') === $id) $titulo = (string) ($o['obra'] ?? ''); else $quedan[] = $o; }
+    $dir = __DIR__ . '/obras/' . $id;
+    if (is_dir($dir)) {
+      if (!is_dir($PAPELERA) && !@mkdir($PAPELERA, 0700, true)) { http_response_code(500); echo '{"error":"No puedo crear la papelera"}'; exit; }
+      $dest = $PAPELERA . '/' . $id . '--' . date('Ymd-His');
+      if (!@rename($dir, $dest)) { http_response_code(500); echo '{"error":"No puedo mover la obra a la papelera"}'; exit; }
+      @touch($dest);
+    }
+    $l['obras'] = $quedan; $l['actualizado'] = date('c');
+    $tmp = __DIR__ . '/obras.json.tmp';
+    if (@file_put_contents($tmp, json_encode($l, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT) . "\n") === false || !@rename($tmp, __DIR__ . '/obras.json')) {
+      http_response_code(500); echo '{"error":"La obra está en la papelera, pero no puedo reescribir obras.json"}'; exit;
+    }
+    $b = leer_borradas($BORRADAS);
+    $b['borradas'][$id] = ['fecha' => date('c'), 'obra' => $titulo];
+    @file_put_contents($BORRADAS, json_encode($b, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT) . "\n", LOCK_EX);
+    $ix = leer_indice($INDICE); unset($ix['obras'][$id]); guardar_indice($INDICE, $ix);
+    vaciar_papelera($PAPELERA);
+    entregar_lista($e, $admin);
+  }
   if (isset($d['indice'])) {   // guardar la organización del índice: solo con sesión de una cuenta 'admin'
     $e = sesion_valida($correos, $fuera);
     if (!$e || !in_array($e, $admin, true)) { http_response_code(403); echo '{"error":"Solo la cuenta administradora puede organizar el índice"}'; exit; }
