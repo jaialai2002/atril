@@ -442,16 +442,34 @@ body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: v
   // En el móvil y la tableta (dedo) no se toca: allí el zoom con dos dedos no cambia estos anchos.
   (function compensarZoom() {
     const NIVELES = [0.25, 0.33, 0.5, 0.67, 0.75, 0.8, 0.9, 1, 1.1, 1.25, 1.5, 1.75, 2, 2.5, 3, 4, 5];
+    const cerca = (r, tol = 0.015) => { const n = NIVELES.reduce((a, b) => Math.abs(b - r) < Math.abs(a - r) ? b : a); return Math.abs(n - r) / n < tol ? n : null; };
+    // 1) ancho de la ventana / ancho útil: falla con el panel lateral de Chrome o las herramientas de desarrollo abiertas;
+    // 2) por eso, cuando sale limpio, se apunta la densidad de la pantalla a 100 % (devicePixelRatio / zoom) y, si otra vez
+    //    no cuadra, el zoom se saca de devicePixelRatio / esa densidad (el zoom de Chrome cambia devicePixelRatio);
+    // 3) sin nada apuntado: la densidad entera más probable (1 en pantallas normales, 2 en Retina como la del iMac).
+    const BASE = 'atril:densidad';
     const poner = () => {
       let z = 1;
-      if (matchMedia('(pointer: fine)').matches && outerWidth > 0 && innerWidth > 0) {
-        const r = outerWidth / innerWidth, n = NIVELES.reduce((a, b) => Math.abs(b - r) < Math.abs(a - r) ? b : a);
-        if (Math.abs(n - r) / n < 0.04) z = n;
+      if (matchMedia('(pointer: fine)').matches && innerWidth > 0) {
+        const dpr = devicePixelRatio || 1;
+        const porVentana = outerWidth > 0 ? cerca(outerWidth / innerWidth) : null;   // Chrome redondea: cuadra a ±1,5 %
+        let base = null; try { base = +localStorage.getItem(BASE) || null; } catch (e) {}
+        const apuntar = v => { try { localStorage.setItem(BASE, Math.round(v * 100) / 100); } catch (e) {} };
+        if (porVentana === 1) { z = 1; apuntar(dpr); }                    // a 100 %: la densidad de esta pantalla
+        else if (base && cerca(dpr / base)) z = cerca(dpr / base);         // con la densidad apuntada (aunque haya panel lateral)
+        else if (porVentana) { z = porVentana; apuntar(dpr / z); }
+        else {   // sin nada apuntado: la densidad entera que deja el zoom más cerca de 100 %
+          const c = [1, 2, 3].map(k => cerca(dpr / k, 0.04)).filter(Boolean).sort((x, y) => Math.abs(Math.log(x)) - Math.abs(Math.log(y)));
+          z = c[0] || 1;
+        }
       }
       document.documentElement.style.setProperty('--antizoom', 1 / z);
       document.documentElement.style.setProperty('--rezoom', z);
     };
     poner(); addEventListener('resize', poner);
+    // el zoom de Chrome no siempre lanza «resize» (si no cambia el ancho útil, p. ej. con la ventana a pantalla completa)
+    const vigilarDpr = () => matchMedia('(resolution: ' + devicePixelRatio + 'dppx)').addEventListener('change', () => { poner(); vigilarDpr(); }, { once: true });
+    try { vigilarDpr(); } catch (e) {}
   })();
   const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
   const slug = s => String(s).normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
@@ -489,7 +507,7 @@ body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: v
     return grupo(coro) + ' · solistas ' + (ls.includes(null) ? solos.length : ls.sort((a, b) => 'SATB'.indexOf(a) - 'SATB'.indexOf(b)).join(''));
   }
   function desentidad(s) { const t = document.createElement('textarea'); t.innerHTML = s; return t.value; }
-  const VERSION = '2026.11.23-4';   // se ve al pie del índice: sirve para saber qué programa tiene la web
+  const VERSION = '2026.11.23-5';   // se ve al pie del índice: sirve para saber qué programa tiene la web
   const VEROVIO = 'https://cdn.jsdelivr.net/npm/verovio@6.1.0/dist/verovio-toolkit-wasm.js';
   // mismas opciones que el antiguo render.js: con la misma semilla, las dos letras dan los mismos ids
   const OPC = { xmlIdSeed: 1, scale: 40, pageWidth: 2200, pageHeight: 3000, adjustPageHeight: true, breaks: 'auto', footer: 'none', header: 'auto', svgViewBox: true, condenseFirstPage: true, svgHtml5: true, svgRemoveXlink: true, lyricSize: 4.2, pageMarginTop: 40, pageMarginBottom: 20, pageMarginLeft: 40, pageMarginRight: 40 };
