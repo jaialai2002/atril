@@ -118,13 +118,17 @@ aside h2 { margin: 0; font: 600 10.5px var(--cuerpo); letter-spacing: .14em; tex
 aside h2 button { font: 500 11px var(--cuerpo); letter-spacing: 0; text-transform: none; border: 0; background: none; color: var(--laton); padding: 0; }
 .ensayo { display: grid; gap: 8px; background: rgba(22,24,29,.7); border: 1px solid var(--surco); border-radius: 9px; padding: 9px 9px 8px 11px; font-size: 12px; }
 .ensayo[hidden] { display: none; }
-/* cabecera del ensayo: icono del usuario + «MI VOZ DE ENSAYO» + selector con el color de la voz */
+/* cabecera del ensayo: «MI VOZ» + selector con el color de la voz + rotulador */
 .ens-cab { display: flex; align-items: center; gap: 8px; }
-.ico-ens { width: 28px; height: 22px; flex: none; fill: var(--texto); }
-.ens-cab label { flex: 1; min-width: 0; white-space: nowrap; font: 600 10px var(--cuerpo); letter-spacing: .12em; text-transform: uppercase; color: var(--tenue); }
-.voz-sel { display: flex; align-items: center; gap: 6px; background: var(--consola); border: 1px solid var(--surco); border-radius: 7px; padding: 3px 4px 3px 8px; flex: none; }
+/* rotulador: marca la letra de mi voz (independiente del modo) */
+#rotulador { flex: none; display: grid; place-items: center; width: 34px; height: 30px; padding: 0; border: 1px solid transparent; border-radius: 7px; background: none; color: var(--texto); cursor: pointer; }
+#rotulador:hover { border-color: var(--surco); }
+#rotulador.on { color: var(--laton); background: var(--consola); border-color: var(--surco); }
+.ico-rot { width: 20px; height: 20px; fill: currentColor; }
+.ens-cab label { flex: none; margin-right: 4px; white-space: nowrap; font: 600 10px var(--cuerpo); letter-spacing: .12em; text-transform: uppercase; color: var(--tenue); }
+.voz-sel { flex: 1; min-width: 0; display: flex; align-items: center; gap: 6px; background: var(--consola); border: 1px solid var(--surco); border-radius: 7px; padding: 3px 4px 3px 8px; }
 .voz-sel i { width: 11px; height: 11px; border-radius: 2px; flex: none; background: var(--laton); }
-.voz-sel select { border: 0; background: transparent; padding: 0 2px; font: 600 12px var(--cuerpo); letter-spacing: .06em; text-transform: uppercase; color: var(--texto); cursor: pointer; }
+.voz-sel select { flex: 1; min-width: 0; border: 0; background: transparent; padding: 0 2px; font: 600 12px var(--cuerpo); letter-spacing: .06em; text-transform: uppercase; color: var(--texto); cursor: pointer; }
 .voz-sel select option { text-transform: none; letter-spacing: 0; font-weight: 400; }
 /* «Mezcla original» con un icono de auriculares delante, del mismo color que el texto */
 #reponer { display: inline-flex; align-items: center; gap: 5px; }
@@ -389,15 +393,16 @@ body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: v
   <aside id="mezclador">
     <div class="ensayo">
       <div class="ens-cab">
-        <svg class="ico-ens" viewBox="0 0 131 105.3" aria-hidden="true"><path d="M28.7,81.9c0-0.2-0.3-0.3-0.5-0.4c-6.5-4-12.1-9.2-16.6-15.3C6.7,59.7,3,52.4,0.5,44.7 c-1.7-5.5,0.4-10.9,6.9-10.3c5.3,0.3,5.8,5.9,8,9.6c4.2,8,10.1,15.5,18.1,20c4.4,2.4,9.4,3.9,14.5,4c6.4,0,12.9,0.1,18.8,2.5 c7.4,2.8,9.5,10.6,10.9,17.6c1.3,5.4,2.7,11.9,4,17.2c-4.5,0-9.2,0-13.8,0c0,0-3-12.2-3.2-12.8c0-0.1-0.2-0.2-0.4-0.2 c-0.7,0-1.5,0.1-2.2,0.1c-0.3,0-0.3,0.2-0.3,0.4c0.2,1.6,1.9,12.5,1.9,12.5l-30.8,0C33,105.3,28.7,81.9,28.7,81.9z M102.4,105.3 c0,0,2-20.9,2.7-21.8c2.7-1.5,5.2-3.5,7.5-5.5c7.1-6.4,12.7-14.4,16.2-23.3c0.8-2.5,2.2-4.9,2.3-7.6c0.2-3.4-1.7-6.8-5.4-6.8 c-2.3-0.1-4.9,1-6.1,3.1c-0.6,1.2-1.1,2.3-1.7,3.5c-4.9,9.7-12.6,18.7-23,22.5c-4.9,1.8-9.8,1.7-14.9,2.2c-4.9,0.6-2.3-0.4,0.1,6.1 c2.5,6.4,5.3,21.2,7,27.5C87.2,105.3,100,105.3,102.4,105.3z M32.3,47.1c0,8.4,6.8,15.2,15.2,15.2s15.2-6.8,15.2-15.2 s-6.8-15.2-15.2-15.2S32.3,38.7,32.3,47.1z M73.7,51.9c0,7.7,6.2,13.9,13.9,13.9s13.9-6.2,13.9-13.9S95.3,38,87.6,38 S73.7,44.2,73.7,51.9z M97.8,0L71.5,2.5v20.9c0,0.3,0,0.4-0.4,0.4c-1.7-0.3-3.3-0.2-4.9,0.6c-2,1-3.5,2.4-3.7,4.8 c-0.1,1,0,2.1,0.6,3c1,1.4,2.3,2.2,4,2.3c1.8,0.2,3.6-0.1,5.2-1c1.9-1.1,3-2.6,3-4.8c0-5.8,0-11.9,0-17.7l18.3-1.7 c0,3.4,0,7.1,0,10.5c0,0.3-0.1,0.4-0.4,0.3c-0.2-0.1-0.4-0.2-0.6-0.2c-0.9,0-1.7,0-2.5,0.2c-1.1,0.3-2.1,0.7-3,1.4 c-1.2,0.8-2,2-2.3,3.3c-0.2,0.9-0.3,2,0.2,3c0.9,1.9,2.4,2.8,4.4,3.1c1,0.1,2.1,0.1,3.2-0.2c1-0.3,2-0.6,2.8-1.2 c1.4-1,2.5-2.3,2.4-4.2C97.8,24.4,97.8,0,97.8,0z"/></svg>
-        <label for="miVoz">Mi voz de ensayo</label>
+        
+        <label for="miVoz">Mi voz</label>
         <span class="voz-sel"><i id="miVozColor"></i><select id="miVoz"></select></span>
+        <button id="rotulador" aria-pressed="false" title="Marcar con rotulador la letra de mi voz"><svg class="ico-rot" viewBox="0 0 26 26.7" aria-hidden="true"><path d="M4,22.7C4,22.7,4.1,22.7,4,22.7l6.7-0.6c0.2,0,0.5-0.1,0.6-0.3l11.4-11.4c0,0,0,0,0,0s0,0,0,0l2.1-2.1 c1.2-1.2,1.1-3.1-0.1-4.3l-3-3C21.1,0.4,20.4,0,19.6,0c-0.8,0-1.6,0.3-2.2,0.8L3.9,14.3c-0.2,0.2-0.3,0.4-0.3,0.6L3,21.6 c0,0.3,0.1,0.6,0.3,0.8C3.5,22.5,3.7,22.7,4,22.7z M19.5,2c0.3,0,0.6,0.1,0.8,0.4l3,3c0.4,0.4,0.5,1.1,0.1,1.5L22,8.2l-4.6-4.6 l1.4-1.4C19,2,19.3,2,19.5,2z M5.6,15.5L16,5.1l4.6,4.6L10.1,20.1l-5,0.5L5.6,15.5z M26,25.7c0,0.6-0.4,1-1,1H1c-0.6,0-1-0.4-1-1 s0.4-1,1-1h24C25.6,24.7,26,25.1,26,25.7z"/></svg></button>
       </div>
       <div class="seg" role="group" aria-label="Modo de ensayo">
         <button data-modo="todas" class="on" title="La mezcla tal como está">Todas</button>
-        <button data-modo="resaltar" title="Tu voz +4 dB y todo lo demás −14 dB, de fondo">Resaltar</button>
-        <button data-modo="sin" title="Todo menos tu voz: la cantas tú">Sin ella</button>
-        <button data-modo="sola" title="Solo tu voz">Sola</button>
+        <button data-modo="resaltar" title="Tu voz +4 dB y todo lo demás −14 dB, de fondo">Destacar</button>
+        <button data-modo="sin" title="Todo menos tu voz: la cantas tú">Excluir</button>
+        <button data-modo="sola" title="Solo tu voz">Aislar</button>
       </div>
     </div>
     <h2 class="cab-mezcla"><span><svg class="ico-mez" viewBox="0 0 131.2 86.4" aria-hidden="true"><path d="M79,0h8.9v9.7H79V0z M79,30.6h8.9v55.9H79V30.6z M90.3,14.2H76.6c-2.8,0-5.1,2.3-5.1,5.1V21c0,2.8,2.3,5.1,5.1,5.1h13.7 c2.8,0,5.1-2.3,5.1-5.1v-1.8C95.4,16.4,93.1,14.2,90.3,14.2z M43.2,0h8.9v51.5h-8.9V0z M43.2,72.4h8.9v14h-8.9V72.4z M54.5,56H40.8 c-2.8,0-5.1,2.3-5.1,5.1v1.8c0,2.8,2.3,5.1,5.1,5.1h13.7c2.8,0,5.1-2.3,5.1-5.1v-1.8C59.6,58.3,57.3,56,54.5,56z M114.8,0h8.9v32 h-8.9V0z M114.8,52.9h8.9v33.5h-8.9V52.9z M126.1,36.5h-13.7c-2.8,0-5.1,2.3-5.1,5.1v1.8c0,2.8,2.3,5.1,5.1,5.1h13.7 c2.8,0,5.1-2.3,5.1-5.1v-1.8C131.2,38.8,128.9,36.5,126.1,36.5z M7.5,52.9h8.9v33.5H7.5V52.9z M7.5,0h8.9v32H7.5V0z M18.8,36.5H5.1 c-2.8,0-5.1,2.3-5.1,5.1v1.8c0,2.8,2.3,5.1,5.1,5.1h13.7c2.8,0,5.1-2.3,5.1-5.1v-1.8C23.8,38.8,21.6,36.5,18.8,36.5z"/></svg>Mezclador</span><button id="reponer" title="Volver a la mezcla de Cantāmus"><svg class="ico-auris" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12.124C2 6.53269 6.47713 2 11.9999 2C17.5228 2 21.9999 6.53269 21.9999 12.124L21.9999 17.3675C22.0002 18.1844 22.0004 18.7446 21.8568 19.2364C21.576 20.1982 20.9046 20.9937 20.01 21.4245C19.5525 21.6449 19.0059 21.732 18.2088 21.8591L18.0789 21.8799C17.7954 21.9252 17.5532 21.9639 17.3522 21.9839C17.1431 22.0047 16.9299 22.0111 16.7118 21.9676C15.9942 21.8245 15.4024 21.3126 15.1508 20.6172C15.0744 20.4059 15.0474 20.1916 15.035 19.9793C15.0232 19.7753 15.0232 19.527 15.0232 19.2365L15.0231 15.0641C15.0226 14.6386 15.0222 14.2725 15.1195 13.959C15.3422 13.2416 15.9238 12.6975 16.6477 12.5292C16.9641 12.4556 17.3246 12.4849 17.7435 12.5189L17.8367 12.5264L17.9465 12.5352C18.7302 12.5975 19.2664 12.6402 19.7216 12.8106C20.0415 12.9304 20.3381 13.0953 20.6046 13.2976V12.124C20.6046 7.31288 16.7521 3.41266 11.9999 3.41266C7.24776 3.41266 3.39534 7.31288 3.39534 12.124V13.2976C3.66176 13.0953 3.95843 12.9304 4.27829 12.8106C4.73345 12.6402 5.26965 12.5975 6.05335 12.5352L6.16318 12.5264L6.25641 12.5189C6.67534 12.4849 7.03581 12.4556 7.35224 12.5292C8.07612 12.6975 8.65766 13.2416 8.88039 13.959C8.97774 14.2725 8.9773 14.6386 8.97678 15.0641L8.97671 19.2365C8.97671 19.527 8.97672 19.7753 8.96487 19.9793C8.95254 20.1916 8.9255 20.4059 8.84906 20.6172C8.59754 21.3126 8.00574 21.8245 7.28812 21.9676C7.07001 22.0111 6.85675 22.0047 6.64768 21.9839C6.44671 21.9639 6.20449 21.9252 5.92102 21.8799L5.79106 21.8591C4.99399 21.732 4.44737 21.6449 3.98991 21.4245C3.09534 20.9937 2.42388 20.1982 2.14308 19.2364C2.02467 18.8309 2.00404 18.3788 2.0006 17.7747L2 17.5803V12.124Z"/></svg>Mezcla original</button></h2>
@@ -484,7 +489,7 @@ body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: v
     return grupo(coro) + ' · solistas ' + (ls.includes(null) ? solos.length : ls.sort((a, b) => 'SATB'.indexOf(a) - 'SATB'.indexOf(b)).join(''));
   }
   function desentidad(s) { const t = document.createElement('textarea'); t.innerHTML = s; return t.value; }
-  const VERSION = '2026.11.23-3';   // se ve al pie del índice: sirve para saber qué programa tiene la web
+  const VERSION = '2026.11.23-4';   // se ve al pie del índice: sirve para saber qué programa tiene la web
   const VEROVIO = 'https://cdn.jsdelivr.net/npm/verovio@6.1.0/dist/verovio-toolkit-wasm.js';
   // mismas opciones que el antiguo render.js: con la misma semilla, las dos letras dan los mismos ids
   const OPC = { xmlIdSeed: 1, scale: 40, pageWidth: 2200, pageHeight: 3000, adjustPageHeight: true, breaks: 'auto', footer: 'none', header: 'auto', svgViewBox: true, condenseFirstPage: true, svgHtml5: true, svgRemoveXlink: true, lyricSize: 4.2, pageMarginTop: 40, pageMarginBottom: 20, pageMarginLeft: 40, pageMarginRight: 40 };
@@ -1092,7 +1097,7 @@ body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: v
   // ---------- partitura (SVG de Verovio ya dibujado; la letra original y la cantada tienen los mismos ids)
   let letra = ({ cze: 'orig', cat: 'cant' })[leer('letra', 'orig')] || leer('letra', 'orig'), mapa = new Map(), marcados = [], sistemaVisto = null;
   let compasVisto = null, bandas = [], cabeza = null, caja = null, firmaVista = ''; const xNota = new Map();
-  let rotular = () => {}, firmaRotulador = '';   // «Resaltar»: la letra de tu voz marcada con rotulador (se define con las pistas)
+  let rotular = () => {}, firmaRotulador = '', conRotulador = false;   // botón del rotulador: la letra de tu voz marcada (se define con las pistas)
   // seguimiento y colores por voz (como la Multiconsola): azul = todo; cada voz, el suyo
   let seguimiento = leer('seg', 'linea'), colores = null, firma = '';
   // colores de las tiras del mezclador (los del usuario; el morado, aclarado para el fondo oscuro); instrumentos en gris claro
@@ -1430,16 +1435,16 @@ body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: v
     const f = seguimiento + '|' + [...colores].join(',');
     if (f !== firma) { firma = f; pintar(false); }
   }
-  // «Resaltar» con «Mi voz de ensayo»: la letra de esa voz, marcada como con un rotulador fluorescente de su color.
+  // Botón del rotulador junto a «Mi voz»: la letra de esa voz, marcada como con un rotulador fluorescente de su color.
   // Una franja por renglón de letra y sistema, de la primera a la última sílaba, detrás del texto y multiplicando sobre el papel.
   const ROTULADOR = { soprano: '#ff8f8f', alto: '#d2a6ff', tenor: '#ffc266', bajo: '#8ef58a', voz: '#ffe45c' };
   rotular = function () {
     const yo = pistas.find(p => p.id === $('miVoz').value);
-    const f = (modo === 'resaltar' && yo && yo.voz ? yo.id + '|' + yo.voz : '') + '|' + letra;
+    const f = (conRotulador && yo && yo.voz ? yo.id + '|' + yo.voz : '') + '|' + letra;
     if (f === firmaRotulador) return;
     firmaRotulador = f;
     $('paginas').querySelectorAll('.at-rotulador').forEach(r => r.remove());
-    if (modo !== 'resaltar' || !yo || !yo.voz) return;
+    if (!conRotulador || !yo || !yo.voz) return;
     const color = ROTULADOR[yo.voz] || ROTULADOR.voz;
     $('paginas').querySelectorAll('g.system').forEach(sis => {
       // tramos: compases seguidos en los que tu voz tiene notas (un compás todo de silencios corta la franja;
@@ -1481,6 +1486,9 @@ body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: v
     modo = b.dataset.modo; document.querySelectorAll('[data-modo]').forEach(x => x.classList.toggle('on', x === b)); aplicar();
   });
   $('miVoz').onchange = aplicar;
+  const ponerRotulador = v => { conRotulador = !!v; $('rotulador').classList.toggle('on', conRotulador); $('rotulador').setAttribute('aria-pressed', conRotulador); guardar('rotulador', conRotulador); rotular(); };
+  $('rotulador').onclick = () => ponerRotulador(!conRotulador);
+  ponerRotulador(leer('rotulador', false));
   $('maestro').oninput = aplicar; $('maestro').ondblclick = () => { $('maestro').value = 0; aplicar(); };
   $('reponer').onclick = () => { pistas.forEach(p => { Object.assign(p, p.orig); p.solo = false; }); modo = 'todas'; document.querySelectorAll('[data-modo]').forEach(x => x.classList.toggle('on', x.dataset.modo === 'todas')); aplicar(); };
   document.querySelectorAll('[data-sep]').forEach(b => b.onclick = () => ponerSeparacion(+b.dataset.sep));
@@ -1621,29 +1629,30 @@ body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: v
   <p><b>Para ir a un sitio concreto</b>, pulsa sobre cualquier nota o compás de la partitura: la música salta ahí.</p>
 </section>
 <section class="m-hoja">
-  <h2><span class="m-n">1</span>Mi voz de ensayo: lo más fácil</h2>
-  <p>Arriba del mezclador (botón <b>6</b>) está <b>«Mi voz de ensayo»</b>. Es el atajo pensado para el coro: eliges tu voz una vez y, con un solo botón, decides cómo quieres oírla respecto a las demás. <b>No hace falta tocar nada más del mezclador.</b></p>
+  <h2><span class="m-n">1</span>Mi voz: lo más fácil</h2>
+  <p>Arriba del mezclador (botón <b>6</b>) está <b>«Mi voz»</b>. Es el atajo pensado para el coro: eliges tu voz una vez y, con un solo botón, decides cómo quieres oírla respecto a las demás. <b>No hace falta tocar nada más del mezclador.</b></p>
   <div class="m-panel m-solo" id="mEnsayo"></div>
   <table class="m-modos">
-    <tr><td>Sola</td><td>Solo suena tu voz. Para <b>aprender las notas</b>.</td></tr>
-    <tr class="m-par"><td>Resaltar</td><td>Tu voz más fuerte y todo lo demás de fondo, más bajo. Para <b>aprenderla dentro del conjunto</b> sin perderte.</td></tr>
+    <tr><td>Aislar</td><td>Solo suena tu voz. Para <b>aprender las notas</b>.</td></tr>
+    <tr class="m-par"><td>Destacar</td><td>Tu voz más fuerte y todo lo demás de fondo, más bajo. Para <b>aprenderla dentro del conjunto</b> sin perderte.</td></tr>
     <tr><td>Todas</td><td>Todo suena tal cual, como en el concierto.</td></tr>
-    <tr class="m-par"><td>Sin ella</td><td>Suena todo <b>menos tu voz</b>: la cantas tú. Es el ensayo «de verdad».</td></tr>
+    <tr class="m-par"><td>Excluir</td><td>Suena todo <b>menos tu voz</b>: la cantas tú. Es el ensayo «de verdad».</td></tr>
+    <tr><td>Rotulador</td><td>El botón del lápiz, junto a tu voz, <b>marca su letra</b> en la partitura con un rotulador de su color. Vale con cualquiera de los cuatro modos.</td></tr>
   </table>
   <div class="m-dos">
     <div class="m-panel" id="mResaltar"></div>
     <div>
-      <h3 style="margin-top:0">Ejemplo: «Resaltar» con ${esc(resal.nombre)}</h3>
-      <p>Quien canta ${esc(nombreLargo(resal))} elige <b>${esc(resal.nombre.toUpperCase())}</b> y pulsa <b>Resaltar</b>. En su tira aparece <b>+4 dB</b> (sube un poco) y en las demás <b>−14 dB</b> (bajan bastante); además se ven más apagadas.</p>
+      <h3 style="margin-top:0">Ejemplo: «Destacar» con ${esc(resal.nombre)}</h3>
+      <p>Quien canta ${esc(nombreLargo(resal))} elige <b>${esc(resal.nombre.toUpperCase())}</b> y pulsa <b>Destacar</b>. En su tira aparece <b>+4 dB</b> (sube un poco) y en las demás <b>−14 dB</b> (bajan bastante); además se ven más apagadas.</p>
       <p>Las barras de volumen <b>no se mueven</b>: al volver a «Todas», todo suena exactamente como antes.</p>
-      <div class="m-consejo"><b>Recorrido recomendado:</b> Sola → Resaltar → Todas → Sin ella. Cuando te salga bien «Sin ella», ¡ya te la sabes!</div>
+      <div class="m-consejo"><b>Recorrido recomendado:</b> Aislar → Destacar → Todas → Excluir. Cuando te salga bien «Excluir», ¡ya te la sabes!</div>
       <p class="m-gris">El cuadradito de color junto al nombre es el color de cada voz: ${leyenda}.</p>
     </div>
   </div>
 </section>
 <section class="m-hoja">
   <h2><span class="m-n">2</span>El mezclador, voz por voz</h2>
-  <p>Debajo de «Mi voz de ensayo» está el <b>mezclador</b>: una tira por pista para ajustarlas a tu gusto. Cada tira tiene cuatro controles:</p>
+  <p>Debajo de «Mi voz» está el <b>mezclador</b>: una tira por pista para ajustarlas a tu gusto. Cada tira tiene cuatro controles:</p>
   <div class="m-dos"><div class="m-panel" id="mTira"></div><div>
     <p><b>Volumen.</b> Arrastra la bolita: a la izquierda más bajo, a la derecha más alto. La rayita gris marca el volumen original (<b>0 dB</b>).</p>
     <p><b>Balance.</b> Decide <b>por qué lado</b> suena la voz: <b>I</b> izquierda, <b>C</b> centro, <b>D</b> derecha. Pulsa o arrastra sobre las casillas; la casilla con borde blanco es la posición.</p>
