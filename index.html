@@ -21,7 +21,7 @@
 <link rel="preconnect" href="https://cdn.jsdelivr.net">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Tinos:ital@1&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Tinos:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
 <style>
 :root {
   /* Consola oscura de ensayo alrededor de una hoja de papel: la partitura manda, el mezclador acompaña a la derecha */
@@ -507,7 +507,7 @@ body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: v
     return grupo(coro) + ' · solistas ' + (ls.includes(null) ? solos.length : ls.sort((a, b) => 'SATB'.indexOf(a) - 'SATB'.indexOf(b)).join(''));
   }
   function desentidad(s) { const t = document.createElement('textarea'); t.innerHTML = s; return t.value; }
-  const VERSION = '2026.11.23-5';   // se ve al pie del índice: sirve para saber qué programa tiene la web
+  const VERSION = '2026.11.24-1';   // se ve al pie del índice: sirve para saber qué programa tiene la web
   const VEROVIO = 'https://cdn.jsdelivr.net/npm/verovio@6.1.0/dist/verovio-toolkit-wasm.js';
   // mismas opciones que el antiguo render.js: con la misma semilla, las dos letras dan los mismos ids
   const OPC = { xmlIdSeed: 1, scale: 40, pageWidth: 2200, pageHeight: 3000, adjustPageHeight: true, breaks: 'auto', footer: 'none', header: 'auto', svgViewBox: true, condenseFirstPage: true, svgHtml5: true, svgRemoveXlink: true, lyricSize: 4.2, pageMarginTop: 40, pageMarginBottom: 20, pageMarginLeft: 40, pageMarginRight: 40 };
@@ -1034,10 +1034,14 @@ body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: v
     (m, s) => s ? '<direction><direction-type><words print-object="no"></words></direction-type>' + s + '</direction>' : m);
   function dibujar(v) {
     const tk = new verovio.toolkit(); tk.setOptions(Object.assign({}, OPC, { breaks: conSaltos ? 'line' : 'auto' })); tk.loadData(tempoSuelto(unirElisiones(xmls[v])));
-    const paginas = []; for (let i = 1, n = tk.getPageCount(); i <= n; i++) paginas.push(elisiones(tk.renderToSVG(i)));
+    // texto de la partitura (letra, títulos, indicaciones) en Tinos: mismas medidas que Times New Roman y la misma en todos los
+    // sistemas (Android no trae Times); la música sigue en Leipzig
+    const paginas = []; for (let i = 1, n = tk.getPageCount(); i <= n; i++) paginas.push(elisiones(tk.renderToSVG(i).replace(/font-family="Times, serif"/g, 'font-family="Tinos, Times, serif"')));
     return { tk, paginas };
   }
   carga('Dibujando la partitura…', .08); await new Promise(r => setTimeout(r, 40));
+  // Tinos tiene que estar cargada antes de medir sílabas (rotulador, elisiones); como mucho 3 s, si no hay red sigue con Times
+  try { await Promise.race([Promise.all(['16px Tinos', 'bold 16px Tinos', 'italic 16px Tinos'].map(f => document.fonts.load(f))), new Promise(r => setTimeout(r, 3000))]); } catch (e) {}
   const d0 = dibujar(principal), svgs = { [principal]: d0.paginas };
   const tm = d0.tk.renderToTimemap({ includeMeasures: true, includeRests: false });
   // pentagrama (id del SVG) -> pista: nº de pentagrama de Verovio -> <part> (con sus <staves>) -> pista («parte» del obra.json o el mismo nombre)
