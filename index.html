@@ -484,7 +484,7 @@ body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: v
     return grupo(coro) + ' · solistas ' + (ls.includes(null) ? solos.length : ls.sort((a, b) => 'SATB'.indexOf(a) - 'SATB'.indexOf(b)).join(''));
   }
   function desentidad(s) { const t = document.createElement('textarea'); t.innerHTML = s; return t.value; }
-  const VERSION = '2026.11.23-2';   // se ve al pie del índice: sirve para saber qué programa tiene la web
+  const VERSION = '2026.11.23-3';   // se ve al pie del índice: sirve para saber qué programa tiene la web
   const VEROVIO = 'https://cdn.jsdelivr.net/npm/verovio@6.1.0/dist/verovio-toolkit-wasm.js';
   // mismas opciones que el antiguo render.js: con la misma semilla, las dos letras dan los mismos ids
   const OPC = { xmlIdSeed: 1, scale: 40, pageWidth: 2200, pageHeight: 3000, adjustPageHeight: true, breaks: 'auto', footer: 'none', header: 'auto', svgViewBox: true, condenseFirstPage: true, svgHtml5: true, svgRemoveXlink: true, lyricSize: 4.2, pageMarginTop: 40, pageMarginBottom: 20, pageMarginLeft: 40, pageMarginRight: 40 };
@@ -1005,8 +1005,12 @@ body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: v
     const a = ts[0].index, b = ts[ts.length - 1].index + ts[ts.length - 1][0].length;
     return l.slice(0, a) + '<text' + ts[0][1] + '>' + vals.join('‿').replace(/[\s‿⁀͜]{2,}/g, '‿') + '</text>' + l.slice(b);
   });
+  // <sound tempo="…"/> suelto en el compás (fuera de <direction>): Cantāmus lo toca, Verovio no lo lee (en el Gloria,
+  // los ritardandos de los c. 171, 173, 188 y 189). Se mete en una <direction> sin texto visible.
+  const tempoSuelto = xml => xml.replace(/<direction\b[\s\S]*?<\/direction>|(<sound\b[^>]*\btempo="[^"]*"[^>]*\/>)/g,
+    (m, s) => s ? '<direction><direction-type><words print-object="no"></words></direction-type>' + s + '</direction>' : m);
   function dibujar(v) {
-    const tk = new verovio.toolkit(); tk.setOptions(Object.assign({}, OPC, { breaks: conSaltos ? 'line' : 'auto' })); tk.loadData(unirElisiones(xmls[v]));
+    const tk = new verovio.toolkit(); tk.setOptions(Object.assign({}, OPC, { breaks: conSaltos ? 'line' : 'auto' })); tk.loadData(tempoSuelto(unirElisiones(xmls[v])));
     const paginas = []; for (let i = 1, n = tk.getPageCount(); i <= n; i++) paginas.push(elisiones(tk.renderToSVG(i)));
     return { tk, paginas };
   }
@@ -1042,6 +1046,31 @@ body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: v
   }
   const pentagrama = {};
   d0.paginas.forEach(s => { for (const m of s.matchAll(/data-id="([^"]+)" data-class="staff"/g)) { const pid = partes[+d0.tk.getElementAttr(m[1]).n - 1]; if (pistaDeParte[pid]) pentagrama[m[1]] = pistaDeParte[pid]; } });
+
+  // ---------- compases medidos en el audio (obra.json «compases», del Taller 2.88+): el tiempo de Verovio se estira
+  // compás a compás para que cada uno empiece donde suena de verdad (calderones, ritardandos y tempos que Cantāmus toca
+  // a su manera). Sin ellos, como antes: la cuenta de Verovio desde la primera nota del audio.
+  let medidos = null;
+  if (Array.isArray(cfg.compases) && cfg.compases.length > 1) {
+    const vIni = []; tm.forEach(e => { if (e.measureOn) vIni.push({ t: e.tstamp, n: String(d0.tk.getElementAttr(e.measureOn).n || '') }); });
+    const iguales = vIni.length === cfg.compases.length && vIni.every((c, k) => !c.n || c.n === String(cfg.compases[k][0]));
+    if (iguales) {
+      const V = vIni.map(c => c.t), A = cfg.compases.map(c => +c[1] * 1000);
+      const fin = tm.length ? tm[tm.length - 1].tstamp : V[V.length - 1];
+      const estira = ms => {
+        let k = 0, lo = 0, hi = V.length - 1;
+        while (lo <= hi) { const m = (lo + hi) >> 1; if (V[m] <= ms) { k = m; lo = m + 1; } else hi = m - 1; }
+        if (ms < V[0]) return A[0] + (ms - V[0]);
+        if (k >= V.length - 1) {   // último compás: con la proporción del anterior
+          const r = V.length > 1 && V[k] > V[k - 1] ? (A[k] - A[k - 1]) / (V[k] - V[k - 1]) : 1;
+          return A[k] + (ms - V[k]) * r;
+        }
+        return A[k] + (ms - V[k]) * (A[k + 1] - A[k]) / Math.max(1, V[k + 1] - V[k]);
+      };
+      tm.forEach(e => { e.tstamp = estira(e.tstamp); });
+      medidos = { fin: estira(fin) };
+    } else console.warn('compases de obra.json: no coinciden con la partitura', vIni.length, cfg.compases.length);
+  }
 
   // ---------- tiempos: activos por evento, comienzo de cada compás y de cada nota
   const activos = [], compases = [], inicioNota = new Map(), compasDeNota = new Map();
@@ -1120,7 +1149,8 @@ body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: v
   $('total').textContent = fmt(duracion);
 
   // sincronía: la primera nota del audio (Cantāmus deja un silencio al principio) = la primera nota de la partitura
-  (function () {
+  // (con los compases medidos, los tiempos ya son los del audio)
+  if (!medidos) (function () {
     const sr = pistas[0].buf.sampleRate, lim = Math.min(pistas[0].buf.length, sr * 6); let primero = lim;
     pistas.forEach(p => { const d = p.buf.getChannelData(0); for (let i = 0; i < Math.min(lim, primero); i++) if (Math.abs(d[i]) > 0.004) { primero = i; break; } });
     const primeraNota = (tm.find(e => e.on && e.on.length) || { tstamp: 0 }).tstamp / 1000;
@@ -1260,7 +1290,10 @@ body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: v
       const x0 = xDe(k) ?? ini, sig = eventos[k + 1];
       const x1 = sig && sig.c === ci ? (xDe(k + 1) ?? fin) : fin;
       const t1 = sig ? sig.t : eventos[k].t + 500;
-      const f = Math.max(0, Math.min(1, (ms - eventos[k].t) / Math.max(1, t1 - eventos[k].t)));
+      // se queda sobre la nota que suena y solo se desliza hacia la siguiente en el último tramo (antes iba
+      // deslizándose toda la nota y en las largas parecía adelantarse al sonido)
+      const des = Math.min(260, 0.4 * (t1 - eventos[k].t));
+      const f = Math.max(0, Math.min(1, (ms - (t1 - des)) / Math.max(1, des)));
       x = x0 + (x1 - x0) * f;
     } else if (k + 1 < eventos.length && eventos[k + 1].c === ci) {
       x = xDe(k + 1) ?? ini;
