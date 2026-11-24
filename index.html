@@ -126,6 +126,7 @@ aside h2 button { font: 500 11px var(--cuerpo); letter-spacing: 0; text-transfor
 .at-notas text { paint-order: stroke; stroke: #fffdf6; stroke-linejoin: round; font-family: 'IBM Plex Sans', sans-serif; font-weight: 500; }
 .at-notas .capa-director path, .at-notas .capa-director text { opacity: .9; }
 body.anotando .at-notas.editable [data-nid] { pointer-events: visiblePainted; }
+#paginas .elis { font-size: var(--elis, .65em); }
 body.anotando #paginas, body.anotando #paginas svg { cursor: crosshair; touch-action: none; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
 body.anotando.herr-texto #paginas { cursor: text; }
 body.anotando.herr-goma #paginas { cursor: cell; }
@@ -538,7 +539,7 @@ body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: v
     return grupo(coro) + ' · solistas ' + (ls.includes(null) ? solos.length : ls.sort((a, b) => 'SATB'.indexOf(a) - 'SATB'.indexOf(b)).join(''));
   }
   function desentidad(s) { const t = document.createElement('textarea'); t.innerHTML = s; return t.value; }
-  const VERSION = '2026.11.24-12';   // se ve al pie del índice: sirve para saber qué programa tiene la web
+  const VERSION = '2026.11.24-14';   // se ve al pie del índice: sirve para saber qué programa tiene la web
   const VEROVIO = 'https://cdn.jsdelivr.net/npm/verovio@6.1.0/dist/verovio-toolkit-wasm.js';
   // mismas opciones que el antiguo render.js: con la misma semilla, las dos letras dan los mismos ids
   const OPC = { xmlIdSeed: 1, scale: 40, pageWidth: 2200, pageHeight: 3000, adjustPageHeight: true, breaks: 'auto', footer: 'none', header: 'auto', svgViewBox: true, condenseFirstPage: true, svgHtml5: true, svgRemoveXlink: true, lyricSize: 4.2, pageMarginTop: 40, pageMarginBottom: 20, pageMarginLeft: 40, pageMarginRight: 40 };
@@ -1052,10 +1053,13 @@ body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: v
   const elisiones = svg => svg
     .replace(/‿(\s*<\/tspan>\s*<\/tspan>\s*<tspan font-family="Leipzig")/g, '$1')   // ya traía «‿»: se queda solo el del hueco
     .replace(/(<tspan font-size="([\d.]+)px">[^<]*<\/tspan>\s*<\/tspan>)\s*<tspan font-family="Leipzig"[^>]*>\s*\s*<\/tspan>/g,
-             '$1<tspan font-size="$2px">‿</tspan>')   // en el hueco que deja Verovio, al tamaño de la letra
+             '$1<tspan font-size="$2px">\uE000</tspan>')   // en el hueco que deja Verovio, al tamaño de la letra
     .replace(/<tspan font-family="Leipzig"[^>]*>\s*\s*<\/tspan>/g, '')
     .replace(//g, '‿')
-    .replace(/‿{2,}/g, '‿');
+    .replace(/‿{2,}/g, '‿')
+    // el «‿» de Tinos es ancho (como el «ancho» de MuseScore): se dibuja más pequeño, que ocupa menos (como el «estrecho»)
+    .replace(/‿/g, '<tspan class="elis">‿</tspan>')
+    .replace(/\uE000/g, '‿');
   // elisiones de MuseScore sin <elision>: una sílaba con varios <text> («ra» + glifo U+E551 + «em») y un solo <syllabic>.
   // Verovio dibuja cada trozo como una sílaba con ese <syllabic>: «ra-‿-em», «si-‿-es» o «que ‿ es» con huecos (Cantāmus
   // igual). Solo para dibujar se juntan en un <text> «ra‿em». VAL los deja separados porque así Cantāmus los canta bien.
@@ -1121,7 +1125,22 @@ body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: v
   if (Array.isArray(cfg.compases) && cfg.compases.length > 1) {
     const vIni = []; tm.forEach(e => { if (e.measureOn) vIni.push({ t: e.tstamp, n: String(d0.tk.getElementAttr(e.measureOn).n || '') }); });
     const iguales = vIni.length === cfg.compases.length && vIni.every((c, k) => !c.n || c.n === String(cfg.compases[k][0]));
-    if (iguales) {
+    // «tiempos» (Taller 2.96+): el segundo de cada ataque por su posición en negras (qstamp de Verovio); sigue también lo
+    // de dentro del compás (calderón y «a tempo» a mitad de compás). Solo si las negras de cada compás coinciden.
+    const qOk = iguales && Array.isArray(cfg.tiempos) && cfg.tiempos.length > 1 && cfg.compases.every(c => c[2] == null) === false
+      && (() => { const qs = []; tm.forEach(e => { if (e.measureOn) qs.push(e.qstamp); }); return qs.every((q, k) => Math.abs(q - +cfg.compases[k][2]) < .01); })();
+    if (qOk) {
+      const Q = cfg.tiempos.map(x => +x[0]), S = cfg.tiempos.map(x => +x[1] * 1000);
+      const porQ = q => {
+        let lo = 0, hi = Q.length - 1;
+        if (q <= Q[0]) return S[0] + (q - Q[0]) * (Q.length > 1 ? (S[1] - S[0]) / Math.max(1e-6, Q[1] - Q[0]) : 500);
+        if (q >= Q[hi]) return S[hi] + (q - Q[hi]) * (S[hi] - S[hi - 1]) / Math.max(1e-6, Q[hi] - Q[hi - 1]);
+        while (hi - lo > 1) { const m = (lo + hi) >> 1; if (Q[m] <= q) lo = m; else hi = m; }
+        return S[lo] + (q - Q[lo]) * (S[hi] - S[lo]) / Math.max(1e-6, Q[hi] - Q[lo]);
+      };
+      tm.forEach(e => { e.tstamp = porQ(e.qstamp); });
+      medidos = { fin: tm.length ? tm[tm.length - 1].tstamp : 0 };
+    } else if (iguales) {
       const V = vIni.map(c => c.t), A = cfg.compases.map(c => +c[1] * 1000);
       const fin = tm.length ? tm[tm.length - 1].tstamp : V[V.length - 1];
       const estira = ms => {
