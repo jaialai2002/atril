@@ -536,7 +536,7 @@ body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: v
     return grupo(coro) + ' · solistas ' + (ls.includes(null) ? solos.length : ls.sort((a, b) => 'SATB'.indexOf(a) - 'SATB'.indexOf(b)).join(''));
   }
   function desentidad(s) { const t = document.createElement('textarea'); t.innerHTML = s; return t.value; }
-  const VERSION = '2026.11.24-7';   // se ve al pie del índice: sirve para saber qué programa tiene la web
+  const VERSION = '2026.11.24-8';   // se ve al pie del índice: sirve para saber qué programa tiene la web
   const VEROVIO = 'https://cdn.jsdelivr.net/npm/verovio@6.1.0/dist/verovio-toolkit-wasm.js';
   // mismas opciones que el antiguo render.js: con la misma semilla, las dos letras dan los mismos ids
   const OPC = { xmlIdSeed: 1, scale: 40, pageWidth: 2200, pageHeight: 3000, adjustPageHeight: true, breaks: 'auto', footer: 'none', header: 'auto', svgViewBox: true, condenseFirstPage: true, svgHtml5: true, svgRemoveXlink: true, lyricSize: 4.2, pageMarginTop: 40, pageMarginBottom: 20, pageMarginLeft: 40, pageMarginRight: 40 };
@@ -787,6 +787,9 @@ body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: v
       };
     }
     const vocesDe = o => (o.voces || '').trim() || etiquetaVoces(o.pistas);   // la escrita en Organizar o la calculada
+    // fechas para el título emergente de cada obra: cuándo se subió al servidor y cuándo se grabó (⇧+REC)
+    const fechaHora = f => { const d = f ? new Date(f) : null; return d && !isNaN(d) ? d.toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' }) + ', ' + d.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }) : ''; };
+    const fechas = o => [o.subida && 'Subida: ' + fechaHora(o.subida), o.fecha && 'Grabada: ' + fechaHora(o.fecha)].filter(Boolean).join(' · ');
     const idiomaDe = o => (o.idioma || '').trim() || o.idioma_auto || '';      // el escrito en Organizar o el de la partitura (TRANS)
     const marca = o => o.actualizada && !o.nueva ? '<i class="ix-marca act">ACTUALIZADA</i>' : '';   // la de «NUEVA» se quitó (24-11)
 
@@ -808,7 +811,7 @@ body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: v
       const filtro = o => !o.oculta && (!q || sin(o.obra + ' ' + o.autor + ' ' + vocesDe(o) + ' ' + idiomaDe(o)).includes(q));
       const grupos = agrupar(datos, orden, filtro).filter(g => g.obras.length);
       const conCats = grupos.some(g => g.cat);
-      const fila = o => { const v = vocesDe(o); return '<a class="obra ix-fila" href="' + enlace(o.id) + '"><b>' + esc(o.obra) + '</b>' + (v ? '<em class="ix-voces">' + esc(v) + '</em>' : '') + (idiomaDe(o) ? '<em class="ix-voces">' + esc(idiomaDe(o)) + '</em>' : '') + marca(o) + (o.autor ? '<span class="ix-autor">' + esc(o.autor) + '</span>' : '') + '</a>'; };
+      const fila = o => { const v = vocesDe(o); return '<a class="obra ix-fila" href="' + enlace(o.id) + '" title="' + esc(fechas(o)) + '"><b>' + esc(o.obra) + '</b>' + (v ? '<em class="ix-voces">' + esc(v) + '</em>' : '') + (idiomaDe(o) ? '<em class="ix-voces">' + esc(idiomaDe(o)) + '</em>' : '') + marca(o) + (o.autor ? '<span class="ix-autor">' + esc(o.autor) + '</span>' : '') + '</a>'; };
       $('ixLista').innerHTML = !grupos.length ? '<p class="nota">' + (q ? 'Ninguna obra coincide con la búsqueda.' : 'Todavía no hay obras.') + '</p>'
         : grupos.map(g => {
           const plegada = !q && plegadas.has(g.cat || '·');
@@ -836,7 +839,7 @@ body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: v
             ? '<div class="ix-cat org" data-cat="' + esc(g.cat) + '"><input id="ixNombre" value="' + esc(g.cat) + '" placeholder="Nombre de la categoría" maxlength="60"></div>'
             : '<div class="ix-cat org" data-cat="' + esc(g.cat) + '"><span>' + esc(g.cat || 'Sin categoría') + '</span><span class="n">' + g.obras.length + '</span>'
               + (real ? '<span class="acc"><button data-a="sube" data-i="' + i + '" title="Subir la categoría">↑</button><button data-a="baja" data-i="' + i + '" title="Bajar la categoría">↓</button><button data-a="nombre" data-i="' + i + '" title="Cambiar el nombre">✎</button><button data-a="quita" data-i="' + i + '" title="Quitar la categoría (sus obras pasan a «Sin categoría»)">✕</button></span>' : '') + '</div>';
-          return cab + g.obras.map(o => '<div class="ix-fila org' + (o.oculta ? ' oculta' : '') + '" data-id="' + esc(o.id) + '"><span class="asa" title="Arrastra para ordenar">⋮⋮</span><b>' + esc(o.obra) + '</b>'
+          return cab + g.obras.map(o => '<div class="ix-fila org' + (o.oculta ? ' oculta' : '') + '" data-id="' + esc(o.id) + '"><span class="asa" title="Arrastra para ordenar">⋮⋮</span><b title="' + esc(fechas(o)) + '">' + esc(o.obra) + '</b>'
             + '<input class="voces" aria-label="Voces" title="Cómo se describen sus voces en el índice. Vacío: la que calcula el Atril (' + esc(etiquetaVoces(o.pistas) || 'ninguna') + ')" maxlength="60" placeholder="' + esc(etiquetaVoces(o.pistas) || 'Voces') + '" value="' + esc(o.voces || '') + '">'
             + '<input class="voces autor" aria-label="Autor" title="Autor en el índice. Vacío: el de la partitura (' + esc(o.autor_partitura || 'ninguno') + ')" maxlength="80" placeholder="' + esc(o.autor_partitura || 'Autor') + '" value="' + esc(o.autor_org || '') + '">'
             + '<input class="voces idioma" aria-label="Idioma" title="Idioma de la letra original. Vacío: el que diga la partitura (' + esc(o.idioma_auto || 'ninguno') + ')" maxlength="30" placeholder="' + esc(o.idioma_auto || 'Idioma') + '" value="' + esc(o.idioma || '') + '">'

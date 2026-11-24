@@ -182,6 +182,8 @@ function entregar_lista($correo, $admin) {
     $o['autor_org'] = trim((string) ($org['autor'] ?? ''));
     $o['idioma'] = trim((string) ($org['idioma'] ?? ''));
     $o['idioma_auto'] = idioma_de($id);
+    $t = @filemtime(__DIR__ . '/obras/' . $id . '/obra.json');   // cuándo llegó al servidor (la última subida)
+    $o['subida'] = $t ? date('c', $t) : '';
     $o['pistas'] = pistas_de($id);
     $vista = (int) $ix['vistas'][$id]; $fecha = isset($o['fecha']) ? strtotime((string) $o['fecha']) : false;
     $o['nueva'] = $ahora - $vista < $SEMANA;
