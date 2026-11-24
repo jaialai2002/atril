@@ -535,7 +535,7 @@ body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: v
     return grupo(coro) + ' · solistas ' + (ls.includes(null) ? solos.length : ls.sort((a, b) => 'SATB'.indexOf(a) - 'SATB'.indexOf(b)).join(''));
   }
   function desentidad(s) { const t = document.createElement('textarea'); t.innerHTML = s; return t.value; }
-  const VERSION = '2026.11.24-5';   // se ve al pie del índice: sirve para saber qué programa tiene la web
+  const VERSION = '2026.11.24-6';   // se ve al pie del índice: sirve para saber qué programa tiene la web
   const VEROVIO = 'https://cdn.jsdelivr.net/npm/verovio@6.1.0/dist/verovio-toolkit-wasm.js';
   // mismas opciones que el antiguo render.js: con la misma semilla, las dos letras dan los mismos ids
   const OPC = { xmlIdSeed: 1, scale: 40, pageWidth: 2200, pageHeight: 3000, adjustPageHeight: true, breaks: 'auto', footer: 'none', header: 'auto', svgViewBox: true, condenseFirstPage: true, svgHtml5: true, svgRemoveXlink: true, lyricSize: 4.2, pageMarginTop: 40, pageMarginBottom: 20, pageMarginLeft: 40, pageMarginRight: 40 };
@@ -1743,10 +1743,23 @@ body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: v
       antesDeCambiar(capa); capas[capa] = capas[capa].filter(it => it.id !== id); el.remove(); cambiado(capa); return true;
     }
     let dedo = null;   // con lápiz óptico, el dedo no pinta: desplaza la partitura
+    // sin lápiz óptico (pantallas que solo ven toques, p. ej. un lápiz capacitivo universal): un toque pinta, dos dedos
+    // desplazan la partitura (y anulan el trazo que acaba de empezar) y un toque muy grande (la palma) no cuenta
+    const toques = new Map();
+    let dos = null;
+    const mediaY = () => { let s = 0; toques.forEach(t => s += t.y); return s / Math.max(1, toques.size); };
+    const esPalma = e => e.pointerType === 'touch' && (e.width || 0) * (e.height || 0) > 45 * 45;
+    function anularTrazo() { if (trazo && trazo.el) { if (trazo.raf) cancelAnimationFrame(trazo.raf); trazo.el.remove(); } trazo = null; }
     $('paginas').addEventListener('pointerdown', e => {
       if (!anotando) return;
       if (e.pointerType === 'pen') penVisto = true;
       if (e.pointerType === 'touch' && penVisto) { dedo = { y: e.clientY, top: $('hoja').scrollTop }; return; }
+      if (e.pointerType === 'touch') {
+        toques.set(e.pointerId, { y: e.clientY, palma: esPalma(e) });
+        const dedos = [...toques.values()].filter(t => !t.palma).length;
+        if (dedos >= 2) { anularTrazo(); dos = { y: mediaY(), top: $('hoja').scrollTop }; e.preventDefault(); return; }
+        if (dos || esPalma(e)) { e.preventDefault(); return; }
+      }
       const pm = pm0(e); if (!pm) return;
       e.preventDefault(); e.stopPropagation();
       if (!editable()) { estado('Solo lectura'); return; }
@@ -1779,6 +1792,11 @@ body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: v
     }, true);
     $('paginas').addEventListener('pointermove', e => {
       if (dedo && e.pointerType === 'touch') { $('hoja').scrollTop = dedo.top - (e.clientY - dedo.y); return; }
+      if (e.pointerType === 'touch' && toques.has(e.pointerId)) {
+        toques.get(e.pointerId).y = e.clientY;
+        if (dos) { $('hoja').scrollTop = dos.top - (mediaY() - dos.y); return; }
+        if (toques.get(e.pointerId).palma) return;
+      }
       if (!trazo) return;
       e.preventDefault();
       if (trazo.goma) { borrarEn(e.clientX, e.clientY); return; }
@@ -1795,6 +1813,11 @@ body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: v
     }, true);
     const acabar = e => {
       if (dedo && e.pointerType === 'touch') { dedo = null; return; }
+      if (e.pointerType === 'touch' && toques.has(e.pointerId)) {
+        const palma = toques.get(e.pointerId).palma; toques.delete(e.pointerId);
+        if (dos) { if (toques.size < 2) dos = toques.size ? { y: mediaY(), top: $('hoja').scrollTop } : null; if (!toques.size) dos = null; return; }
+        if (palma) return;
+      }
       if (!trazo) return;
       const t = trazo; trazo = null;
       try { $('paginas').releasePointerCapture(e.pointerId); } catch (er) {}
