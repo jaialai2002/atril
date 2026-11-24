@@ -6,7 +6,7 @@
 //   POST lista.php {"salir": true}       -> cierra la sesión
 //   GET  lista.php?fondo                 -> ajustes del fondo animado de la portada (públicos; {} si no hay)
 //   POST lista.php {"fondo": {…}}        -> guarda esos ajustes (solo cuentas de 'admin', comprobado aquí con la sesión)
-//   POST lista.php {"indice": {…}}       -> guarda la organización del índice: categorías, orden, ocultas, voces (solo 'admin')
+//   POST lista.php {"indice": {…}}       -> guarda la organización del índice: categorías, orden, ocultas, voces, autor, idioma (solo 'admin')
 //   POST lista.php {"borrar": "<id>"}    -> quita una obra del Atril (solo 'admin'): su carpeta pasa a la papelera de fuera de la web
 //                                        (se vacía a los 30 días), sale de obras.json y se apunta en .htborradas.json para el Taller
 //   POST lista.php {"visita": "<obra>"}  -> cuenta una apertura de esa obra (lo envía la página; sin IP ni datos personales)
@@ -16,8 +16,9 @@
 //   <?php return ['cliente' => '….apps.googleusercontent.com', 'correos' => ['tu-correo@gmail.com'], 'admin' => ['tu-correo@gmail.com']];
 // 'correos' pueden ver la lista; 'admin' pueden además cambiar el fondo (si falta 'admin', vale el primero de 'correos').
 // El fondo guardado va en /home/sigan1/atril-fondo.json (también fuera de la web).
-// La organización del índice va en /home/sigan1/atril-indice.json: {categorias:[…], obras:{id:{cat, orden, oculta, voces}}, vistas:{id: fecha}}
-// (voces = cómo se describen sus voces en el índice, escrito a mano en Organizar; vacío = la que calcula la página)
+// La organización del índice va en /home/sigan1/atril-indice.json: {categorias:[…], obras:{id:{cat, orden, oculta, voces, autor, idioma}}, vistas:{id: fecha}}
+// (voces = cómo se describen sus voces en el índice, escrito a mano en Organizar; vacío = la que calcula la página;
+//  autor = el que se ve en el índice si el de la partitura falta o está mal; idioma = el de la letra original, vacío = el que diga la partitura)
 // (vistas = cuándo apareció cada obra por primera vez en la lista: sirve para las marcas NUEVA / ACTUALIZADA). El Taller no la toca.
 // La clave para firmar la cookie se crea sola la primera vez en /home/sigan1/.atril-secreto (solo la lee este programa).
 // Este archivo se sube a mano una vez; NO se actualiza solo desde GitHub.
@@ -145,6 +146,17 @@ function pistas_de($id) {
   }
   return $out;
 }
+// idioma de la letra original, del campo que deja TRANS en la partitura (cantamus-letra-original: {"v":1,"idioma":"cze"…})
+function idioma_de($id) {
+  if (!preg_match('/^[a-z0-9-]{1,120}$/', (string) $id)) return '';
+  $dir = __DIR__ . '/obras/' . $id;
+  $c = json_decode((string) @file_get_contents($dir . '/obra.json'), true);
+  $h = @fopen($dir . '/' . basename((string) ($c['partitura'] ?? 'partitura.musicxml')), 'r');
+  if (!$h) return '';
+  $x = (string) fread($h, 393216); fclose($h);
+  if (!preg_match('~name="cantamus-letra-original"\s*>\{"v":\d+,"idioma":"(\w+)"~', $x, $m)) return '';
+  return ['cze' => 'Checo', 'ita' => 'Italiano', 'lat' => 'Latín', 'deu' => 'Alemán', 'fra' => 'Francés', 'eng' => 'Inglés'][$m[1]] ?? '';
+}
 // la lista de obras con su organización (categoría, orden, oculta, nueva/actualizada) y la marca 'admin'
 // (las ocultas solo se entregan a la cuenta admin, para el modo Organizar)
 function entregar_lista($correo, $admin) {
@@ -165,6 +177,11 @@ function entregar_lista($correo, $admin) {
     $o['orden'] = isset($org['orden']) ? (int) $org['orden'] : null;
     $o['oculta'] = !empty($org['oculta']);
     $o['voces'] = trim((string) ($org['voces'] ?? ''));
+    $o['autor_partitura'] = (string) ($o['autor'] ?? '');                  // el de obra.json (de la partitura)
+    if (trim((string) ($org['autor'] ?? '')) !== '') $o['autor'] = trim((string) $org['autor']);
+    $o['autor_org'] = trim((string) ($org['autor'] ?? ''));
+    $o['idioma'] = trim((string) ($org['idioma'] ?? ''));
+    $o['idioma_auto'] = idioma_de($id);
     $o['pistas'] = pistas_de($id);
     $vista = (int) $ix['vistas'][$id]; $fecha = isset($o['fecha']) ? strtotime((string) $o['fecha']) : false;
     $o['nueva'] = $ahora - $vista < $SEMANA;
@@ -237,6 +254,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       if (function_exists('mb_substr')) $v = mb_substr($v, 0, 60); else $v = substr($v, 0, 60);
       $obras[$id] = ['cat' => in_array($o['cat'] ?? '', $cats, true) ? $o['cat'] : '', 'orden' => (int) ($o['orden'] ?? 0), 'oculta' => !empty($o['oculta'])];
       if ($v !== '') $obras[$id]['voces'] = $v;
+      foreach (['autor' => 80, 'idioma' => 30] as $campo => $max) {
+        $t = trim(preg_replace('/\s+/u', ' ', strip_tags((string) ($o[$campo] ?? ''))));
+        $t = function_exists('mb_substr') ? mb_substr($t, 0, $max) : substr($t, 0, $max);
+        if ($t !== '') $obras[$id][$campo] = $t;
+      }
     }
     $ix = leer_indice($INDICE); $ix['categorias'] = $cats; $ix['obras'] = $obras;
     if (!guardar_indice($INDICE, $ix)) { http_response_code(500); echo '{"error":"No puedo guardar atril-indice.json"}'; exit; }

@@ -358,6 +358,7 @@ body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: v
 .ix .ix-fila .ix-voces::before { content: "•"; font-size: .7em; letter-spacing: 0; margin-right: .6em; position: relative; top: -.12em; }
 .ix-fila.org input.voces { background: #2a2e37; border: 1px solid var(--surco); border-radius: 7px; color: var(--laton); font: 12px var(--cuerpo); padding: 4px 7px; width: 150px; flex: none; }
 .ix-fila.org input.voces::placeholder { color: #8d8a80; }
+.ix-fila.org input.autor { width: 130px; color: var(--texto); } .ix-fila.org input.idioma { width: 80px; }
 .ix-marca { font: 600 9.5px var(--cuerpo); font-style: normal; letter-spacing: .1em; color: var(--tinta); background: var(--laton); border-radius: 4px; padding: 1px 5px; align-self: center; flex: none; }
 .ix-marca.act { background: none; color: var(--laton); border: 1px solid var(--laton); }
 @media (max-width: 600px) { .ix .ix-fila { flex-wrap: wrap; row-gap: 2px; } .ix .ix-fila b { white-space: normal; } .ix .ix-fila .ix-autor { margin: 0; max-width: 100%; text-align: left; flex-basis: 100%; } }
@@ -535,7 +536,7 @@ body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: v
     return grupo(coro) + ' · solistas ' + (ls.includes(null) ? solos.length : ls.sort((a, b) => 'SATB'.indexOf(a) - 'SATB'.indexOf(b)).join(''));
   }
   function desentidad(s) { const t = document.createElement('textarea'); t.innerHTML = s; return t.value; }
-  const VERSION = '2026.11.24-6';   // se ve al pie del índice: sirve para saber qué programa tiene la web
+  const VERSION = '2026.11.24-7';   // se ve al pie del índice: sirve para saber qué programa tiene la web
   const VEROVIO = 'https://cdn.jsdelivr.net/npm/verovio@6.1.0/dist/verovio-toolkit-wasm.js';
   // mismas opciones que el antiguo render.js: con la misma semilla, las dos letras dan los mismos ids
   const OPC = { xmlIdSeed: 1, scale: 40, pageWidth: 2200, pageHeight: 3000, adjustPageHeight: true, breaks: 'auto', footer: 'none', header: 'auto', svgViewBox: true, condenseFirstPage: true, svgHtml5: true, svgRemoveXlink: true, lyricSize: 4.2, pageMarginTop: 40, pageMarginBottom: 20, pageMarginLeft: 40, pageMarginRight: 40 };
@@ -786,6 +787,7 @@ body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: v
       };
     }
     const vocesDe = o => (o.voces || '').trim() || etiquetaVoces(o.pistas);   // la escrita en Organizar o la calculada
+    const idiomaDe = o => (o.idioma || '').trim() || o.idioma_auto || '';      // el escrito en Organizar o el de la partitura (TRANS)
     const marca = o => o.actualizada && !o.nueva ? '<i class="ix-marca act">ACTUALIZADA</i>' : '';   // la de «NUEVA» se quitó (24-11)
 
     // --- vista normal (A)
@@ -803,10 +805,10 @@ body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: v
     function lista() {
       const q = busca.trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
       const sin = t => String(t || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
-      const filtro = o => !o.oculta && (!q || sin(o.obra + ' ' + o.autor + ' ' + vocesDe(o)).includes(q));
+      const filtro = o => !o.oculta && (!q || sin(o.obra + ' ' + o.autor + ' ' + vocesDe(o) + ' ' + idiomaDe(o)).includes(q));
       const grupos = agrupar(datos, orden, filtro).filter(g => g.obras.length);
       const conCats = grupos.some(g => g.cat);
-      const fila = o => { const v = vocesDe(o); return '<a class="obra ix-fila" href="' + enlace(o.id) + '"><b>' + esc(o.obra) + '</b>' + (v ? '<em class="ix-voces">' + esc(v) + '</em>' : '') + marca(o) + (o.autor ? '<span class="ix-autor">' + esc(o.autor) + '</span>' : '') + '</a>'; };
+      const fila = o => { const v = vocesDe(o); return '<a class="obra ix-fila" href="' + enlace(o.id) + '"><b>' + esc(o.obra) + '</b>' + (v ? '<em class="ix-voces">' + esc(v) + '</em>' : '') + (idiomaDe(o) ? '<em class="ix-voces">' + esc(idiomaDe(o)) + '</em>' : '') + marca(o) + (o.autor ? '<span class="ix-autor">' + esc(o.autor) + '</span>' : '') + '</a>'; };
       $('ixLista').innerHTML = !grupos.length ? '<p class="nota">' + (q ? 'Ninguna obra coincide con la búsqueda.' : 'Todavía no hay obras.') + '</p>'
         : grupos.map(g => {
           const plegada = !q && plegadas.has(g.cat || '·');
@@ -827,7 +829,7 @@ body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: v
       const opciones = sel => '<option value="">Sin categoría</option>' + borrador.categorias.filter(c => c).map(c => '<option' + (c === sel ? ' selected' : '') + '>' + esc(c) + '</option>').join('');
       const grupos = agrupar(borrador, 'propio');
       raiz.innerHTML = '<div class="ix-barra"><button class="ix-boton dor" id="ixHecho">✓ Organizando</button><button class="ix-boton" id="ixNueva">+ Nueva categoría</button></div>'
-        + '<p class="ix-aviso">Arrastra <b>⋮⋮</b> para ordenar (también a otra categoría) · escribe cómo se llaman sus voces (vacío: las calcula el Atril) · elige la categoría de cada obra · el ojo la oculta del índice · la papelera la borra del Atril</p>'
+        + '<p class="ix-aviso">Arrastra <b>⋮⋮</b> para ordenar (también a otra categoría) · escribe cómo se llaman sus voces, el autor y el idioma (vacío: los de la partitura) · elige la categoría de cada obra · el ojo la oculta del índice · la papelera la borra del Atril</p>'
         + '<div id="ixOrg" class="ix-org">' + grupos.map(g => {
           const i = g.i, real = i >= 0;
           const cab = i >= 0 && i === editando
@@ -836,6 +838,8 @@ body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: v
               + (real ? '<span class="acc"><button data-a="sube" data-i="' + i + '" title="Subir la categoría">↑</button><button data-a="baja" data-i="' + i + '" title="Bajar la categoría">↓</button><button data-a="nombre" data-i="' + i + '" title="Cambiar el nombre">✎</button><button data-a="quita" data-i="' + i + '" title="Quitar la categoría (sus obras pasan a «Sin categoría»)">✕</button></span>' : '') + '</div>';
           return cab + g.obras.map(o => '<div class="ix-fila org' + (o.oculta ? ' oculta' : '') + '" data-id="' + esc(o.id) + '"><span class="asa" title="Arrastra para ordenar">⋮⋮</span><b>' + esc(o.obra) + '</b>'
             + '<input class="voces" aria-label="Voces" title="Cómo se describen sus voces en el índice. Vacío: la que calcula el Atril (' + esc(etiquetaVoces(o.pistas) || 'ninguna') + ')" maxlength="60" placeholder="' + esc(etiquetaVoces(o.pistas) || 'Voces') + '" value="' + esc(o.voces || '') + '">'
+            + '<input class="voces autor" aria-label="Autor" title="Autor en el índice. Vacío: el de la partitura (' + esc(o.autor_partitura || 'ninguno') + ')" maxlength="80" placeholder="' + esc(o.autor_partitura || 'Autor') + '" value="' + esc(o.autor_org || '') + '">'
+            + '<input class="voces idioma" aria-label="Idioma" title="Idioma de la letra original. Vacío: el que diga la partitura (' + esc(o.idioma_auto || 'ninguno') + ')" maxlength="30" placeholder="' + esc(o.idioma_auto || 'Idioma') + '" value="' + esc(o.idioma || '') + '">'
             + '<select aria-label="Categoría">' + opciones(o.cat) + '</select><button class="ojo" title="' + (o.oculta ? 'Oculta: pulsa para mostrarla' : 'Visible: pulsa para ocultarla') + '">' + (o.oculta ? OJO_NO : OJO) + '</button><button class="ojo papelera" title="Borrar del Atril (va a la papelera del servidor 30 días)">' + PAPELERA + '</button></div>').join('');
         }).join('') + '</div>'
         + '<div class="ix-pie-org"><span id="ixEstado">' + (cambiado ? 'Cambios sin guardar' : 'Sin cambios') + '</span><span><button class="ix-boton" id="ixCancelar">Cancelar</button><button class="ix-boton pri" id="ixGuardar"' + (cambiado ? '' : ' disabled') + '>Guardar</button></span></div>' + pie();
@@ -864,9 +868,12 @@ body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: v
             $('ixEstado').textContent = '«' + o.obra + '» borrada' + (JSON.stringify(datos) !== JSON.stringify(borrador) ? ' · cambios sin guardar' : '');
           } catch (e) { $('ixEstado').textContent = 'No se ha borrado: ' + e.message; $('ixEstado').classList.add('error'); }
         };
-        const iv = f.querySelector('input.voces');
-        iv.onchange = () => { o.voces = iv.value.trim().replace(/\s+/g, ' ').slice(0, 60); organizar(); };
-        iv.onkeydown = e => { if (e.key === 'Enter') iv.blur(); if (e.key === 'Escape') { iv.value = o.voces || ''; iv.blur(); } };
+        // voces, autor e idioma: el texto escrito (vacío = el automático)
+        [['input.voces:not(.autor):not(.idioma)', 'voces', 60], ['input.autor', 'autor_org', 80], ['input.idioma', 'idioma', 30]].forEach(([sel, campo, max]) => {
+          const iv = f.querySelector(sel);
+          iv.onchange = () => { o[campo] = iv.value.trim().replace(/\s+/g, ' ').slice(0, max); organizar(); };
+          iv.onkeydown = e => { if (e.key === 'Enter') iv.blur(); if (e.key === 'Escape') { iv.value = o[campo] || ''; iv.blur(); } };
+        });
         // arrastrar por el asa (ratón y dedo)
         f.querySelector('.asa').onpointerdown = e => {
           e.preventDefault(); f.classList.add('arrastra');
@@ -912,7 +919,7 @@ body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: v
       $('ixGuardar').onclick = async () => {
         $('ixEstado').textContent = 'Guardando…';
         const env = { categorias: borrador.categorias.filter(c => c), obras: {} };
-        borrador.obras.forEach(o => { env.obras[o.id] = { cat: o.cat || '', orden: o.orden ?? 0, oculta: !!o.oculta, voces: o.voces || '' }; });
+        borrador.obras.forEach(o => { env.obras[o.id] = { cat: o.cat || '', orden: o.orden ?? 0, oculta: !!o.oculta, voces: o.voces || '', autor: o.autor_org || '', idioma: o.idioma || '' }; });
         try {
           const r = await fetch('lista.php', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ indice: env }) });
           const j = await r.json().catch(() => ({}));
