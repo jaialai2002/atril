@@ -537,7 +537,7 @@ body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: v
     return grupo(coro) + ' · solistas ' + (ls.includes(null) ? solos.length : ls.sort((a, b) => 'SATB'.indexOf(a) - 'SATB'.indexOf(b)).join(''));
   }
   function desentidad(s) { const t = document.createElement('textarea'); t.innerHTML = s; return t.value; }
-  const VERSION = '2026.11.24-10';   // se ve al pie del índice: sirve para saber qué programa tiene la web
+  const VERSION = '2026.11.24-11';   // se ve al pie del índice: sirve para saber qué programa tiene la web
   const VEROVIO = 'https://cdn.jsdelivr.net/npm/verovio@6.1.0/dist/verovio-toolkit-wasm.js';
   // mismas opciones que el antiguo render.js: con la misma semilla, las dos letras dan los mismos ids
   const OPC = { xmlIdSeed: 1, scale: 40, pageWidth: 2200, pageHeight: 3000, adjustPageHeight: true, breaks: 'auto', footer: 'none', header: 'auto', svgViewBox: true, condenseFirstPage: true, svgHtml5: true, svgRemoveXlink: true, lyricSize: 4.2, pageMarginTop: 40, pageMarginBottom: 20, pageMarginLeft: 40, pageMarginRight: 40 };
@@ -1517,6 +1517,21 @@ body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: v
         if (!st || !st.querySelector('g.note')) { actual = null; return; }
         if (!actual) tramos.push(actual = []);
         st.querySelectorAll('g.verse').forEach(v => { try { const b = v.getBBox(); if (b.width > 0) actual.push(b); } catch (e) {} });
+      });
+      // melisma que viene de la línea anterior: Verovio dibuja su raya en el sistema (g.syl.spanning), fuera de los
+      // compases; es de mi voz si la sílaba que lo empieza (mismo data-id, en otro sistema) está en mi pentagrama
+      sis.querySelectorAll('g.syl.spanning').forEach(sp => {
+        if (sp.closest('g.measure')) return;
+        const id = sp.getAttribute('data-id');
+        const orig = id && [...$('paginas').querySelectorAll('g.syl[data-id="' + CSS.escape(id) + '"]')].find(x => x.closest('g.staff'));
+        const st = orig && orig.closest('g.staff');
+        if (!st || pentagrama[st.getAttribute('data-id')] !== yo.id) return;
+        try {
+          const b = sp.getBBox(); if (!(b.width > 0)) return;
+          // solo es la raya: se le da la altura de una sílaba de verdad, con la raya cerca de su base
+          const t = orig.closest('g.verse'), h = t ? t.getBBox().height : b.height * 12;
+          (tramos[0] || (tramos[0] = [])).push({ x: b.x, y: b.y + b.height - h * .8, width: b.width, height: h });
+        } catch (e) {}
       });
       tramos.forEach(cajas => {
         if (!cajas.length) return;
