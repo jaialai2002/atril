@@ -177,6 +177,9 @@ function entregar_lista($correo, $admin) {
     $o['orden'] = isset($org['orden']) ? (int) $org['orden'] : null;
     $o['oculta'] = !empty($org['oculta']);
     $o['voces'] = trim((string) ($org['voces'] ?? ''));
+    $o['obra_partitura'] = (string) ($o['obra'] ?? '');                    // el título de obra.json (de la partitura)
+    if (trim((string) ($org['titulo'] ?? '')) !== '') $o['obra'] = trim((string) $org['titulo']);   // el del índice, solo para mostrar
+    $o['titulo_org'] = trim((string) ($org['titulo'] ?? ''));
     $o['autor_partitura'] = (string) ($o['autor'] ?? '');                  // el de obra.json (de la partitura)
     if (trim((string) ($org['autor'] ?? '')) !== '') $o['autor'] = trim((string) $org['autor']);
     $o['autor_org'] = trim((string) ($org['autor'] ?? ''));
@@ -256,7 +259,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       if (function_exists('mb_substr')) $v = mb_substr($v, 0, 60); else $v = substr($v, 0, 60);
       $obras[$id] = ['cat' => in_array($o['cat'] ?? '', $cats, true) ? $o['cat'] : '', 'orden' => (int) ($o['orden'] ?? 0), 'oculta' => !empty($o['oculta'])];
       if ($v !== '') $obras[$id]['voces'] = $v;
-      foreach (['autor' => 80, 'idioma' => 30] as $campo => $max) {
+      foreach (['titulo' => 120, 'autor' => 80, 'idioma' => 30] as $campo => $max) {
         $t = trim(preg_replace('/\s+/u', ' ', strip_tags((string) ($o[$campo] ?? ''))));
         $t = function_exists('mb_substr') ? mb_substr($t, 0, $max) : substr($t, 0, $max);
         if ($t !== '') $obras[$id][$campo] = $t;
@@ -300,6 +303,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   entregar_lista(strtolower($i['email']), $admin);
 }
 
+// título y autor del índice de una obra (Organizar), para la cabecera de la obra: solo lo que ya se ve al abrirla
+if (isset($_GET['titulo'])) {
+  $id = (string) $_GET['titulo'];
+  if (!preg_match('/^[a-z0-9-]{1,120}$/', $id)) { http_response_code(400); echo '{}'; exit; }
+  $org = leer_indice($INDICE)['obras'][$id] ?? [];
+  $r = [];
+  foreach (['titulo', 'autor'] as $c) { $t = trim((string) ($org[$c] ?? '')); if ($t !== '') $r[$c] = $t; }
+  echo json_encode((object) $r, JSON_UNESCAPED_UNICODE); exit;
+}
+
 // estadísticas: solo la cuenta admin
 if (isset($_GET['estadisticas'])) {
   $e = sesion_valida($correos, $fuera);
@@ -307,6 +320,7 @@ if (isset($_GET['estadisticas'])) {
   $est = json_decode((string) @file_get_contents($ESTAD), true); $est = is_array($est['obras'] ?? null) ? $est['obras'] : [];
   $lista = json_decode((string) @file_get_contents(__DIR__ . '/obras.json'), true); $titulos = [];
   foreach ((array) ($lista['obras'] ?? []) as $o) if (isset($o['id'])) $titulos[(string) $o['id']] = $o;
+  $ixe = leer_indice($INDICE);
   $hoy = date('Y-m-d'); $d7 = date('Y-m-d', strtotime('-6 days')); $d30 = date('Y-m-d', strtotime('-29 days'));
   $filas = [];
   foreach (array_unique(array_merge(array_keys($titulos), array_keys($est))) as $id) {
@@ -314,7 +328,8 @@ if (isset($_GET['estadisticas'])) {
     if (preg_match('/^[a-z0-9-]{1,120}$/', (string) $id) && is_dir($dir)) foreach (scandir($dir) as $f) if (is_file("$dir/$f") && strpos($f, 'tarjeta.') !== 0) $peso += filesize("$dir/$f");
     $o = $est[$id] ?? ['total' => 0, 'dias' => []]; $h = 0; $s7 = 0; $s30 = 0;
     foreach ((array) $o['dias'] as $d => $n) { if ($d === $hoy) $h += $n; if ($d >= $d7) $s7 += $n; if ($d >= $d30) $s30 += $n; }
-    $filas[] = ['id' => (string) $id, 'obra' => $titulos[$id]['obra'] ?? $id, 'autor' => $titulos[$id]['autor'] ?? '', 'existe' => is_dir($dir), 'peso' => $peso,
+    $tix = trim((string) ($ixe['obras'][$id]['titulo'] ?? ''));
+    $filas[] = ['id' => (string) $id, 'obra' => $tix !== '' ? $tix : ($titulos[$id]['obra'] ?? $id), 'autor' => $titulos[$id]['autor'] ?? '', 'existe' => is_dir($dir), 'peso' => $peso,
       'hoy' => $h, 'semana' => $s7, 'mes' => $s30, 'total' => (int) $o['total'], 'ultima' => $o['ultima'] ?? null];
   }
   echo json_encode(['obras' => $filas, 'ahora' => time()], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); exit;

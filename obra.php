@@ -13,8 +13,11 @@ $html = @file_get_contents(__DIR__ . '/index.html');
 if (!is_array($o) || $html === false) { header('Location: /#' . $id, true, 302); exit; }   // obra desconocida: como antes
 
 $h = function ($t) { return htmlspecialchars((string) $t, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'); };
-$titulo = trim((string) ($o['obra'] ?? '')) ?: 'Atril';
-$autor = trim((string) ($o['autor'] ?? ''));
+// título y autor puestos en Organizar (atril-indice.json, fuera de la web), si los hay
+$ix = json_decode((string) @file_get_contents(dirname(__DIR__) . '/atril-indice.json'), true);
+$org = is_array($ix['obras'][$id] ?? null) ? $ix['obras'][$id] : [];
+$titulo = trim((string) ($org['titulo'] ?? '')) ?: (trim((string) ($o['obra'] ?? '')) ?: 'Atril');
+$autor = trim((string) ($org['autor'] ?? '')) ?: trim((string) ($o['autor'] ?? ''));
 $desc = ($autor !== '' ? $autor . ' · ' : '') . 'Partitura y voces para ensayar';
 $url = 'https://' . $_SERVER['HTTP_HOST'] . '/' . $id;
 

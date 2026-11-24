@@ -380,6 +380,7 @@ body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: v
 .ix .ix-fila .ix-idioma { color: var(--tenue); }   /* el idioma, en el color del autor (las voces, en latón) */
 .ix-fila.org input.voces { background: #2a2e37; border: 1px solid var(--surco); border-radius: 7px; color: var(--laton); font: 12px var(--cuerpo); padding: 4px 7px; width: 150px; flex: none; }
 .ix-fila.org input.voces::placeholder { color: #8d8a80; }
+.ix-fila.org input.titulo { flex: 1 1 auto; width: auto; min-width: 140px; color: var(--texto); font: italic 400 16px/1.2 "TeX Gyre Termes", "Times New Roman", Times, serif; }
 .ix-fila.org input.autor { width: 130px; color: var(--texto); } .ix-fila.org input.idioma { width: 80px; }
 .ix-marca { font: 600 9.5px var(--cuerpo); font-style: normal; letter-spacing: .1em; color: var(--tinta); background: var(--laton); border-radius: 4px; padding: 1px 5px; align-self: center; flex: none; }
 .ix-marca.act { background: none; color: var(--laton); border: 1px solid var(--laton); }
@@ -565,7 +566,7 @@ body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: v
     return grupo(coro) + ' · solistas ' + (ls.includes(null) ? solos.length : ls.sort((a, b) => 'SATB'.indexOf(a) - 'SATB'.indexOf(b)).join(''));
   }
   function desentidad(s) { const t = document.createElement('textarea'); t.innerHTML = s; return t.value; }
-  const VERSION = '2026.11.24-15';   // se ve al pie del índice: sirve para saber qué programa tiene la web
+  const VERSION = '2026.11.24-16';   // se ve al pie del índice: sirve para saber qué programa tiene la web
   const VEROVIO = 'https://cdn.jsdelivr.net/npm/verovio@6.1.0/dist/verovio-toolkit-wasm.js';
   // mismas opciones que el antiguo render.js: con la misma semilla, las dos letras dan los mismos ids
   const OPC = { xmlIdSeed: 1, scale: 40, pageWidth: 2200, pageHeight: 3000, adjustPageHeight: true, breaks: 'auto', footer: 'none', header: 'auto', svgViewBox: true, condenseFirstPage: true, svgHtml5: true, svgRemoveXlink: true, lyricSize: 4.2, pageMarginTop: 40, pageMarginBottom: 20, pageMarginLeft: 40, pageMarginRight: 40 };
@@ -868,7 +869,8 @@ body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: v
             ? '<div class="ix-cat org" data-cat="' + esc(g.cat) + '"><input id="ixNombre" value="' + esc(g.cat) + '" placeholder="Nombre de la categoría" maxlength="60"></div>'
             : '<div class="ix-cat org" data-cat="' + esc(g.cat) + '"><span>' + esc(g.cat || 'Sin categoría') + '</span><span class="n">' + g.obras.length + '</span>'
               + (real ? '<span class="acc"><button data-a="sube" data-i="' + i + '" title="Subir la categoría">↑</button><button data-a="baja" data-i="' + i + '" title="Bajar la categoría">↓</button><button data-a="nombre" data-i="' + i + '" title="Cambiar el nombre">✎</button><button data-a="quita" data-i="' + i + '" title="Quitar la categoría (sus obras pasan a «Sin categoría»)">✕</button></span>' : '') + '</div>';
-          return cab + g.obras.map(o => '<div class="ix-fila org' + (o.oculta ? ' oculta' : '') + '" data-id="' + esc(o.id) + '"><span class="asa" title="Arrastra para ordenar">⋮⋮</span><b title="' + esc(fechas(o)) + '">' + esc(o.obra) + '</b>'
+          return cab + g.obras.map(o => '<div class="ix-fila org' + (o.oculta ? ' oculta' : '') + '" data-id="' + esc(o.id) + '"><span class="asa" title="Arrastra para ordenar">⋮⋮</span>'
+            + '<input class="voces titulo" aria-label="Título" title="Título en el Atril (no cambia la dirección ni la carpeta). Vacío: el de la partitura (' + esc(o.obra_partitura || o.obra) + ')' + (fechas(o) ? '\n' + esc(fechas(o)) : '') + '" maxlength="120" placeholder="' + esc(o.obra_partitura || o.obra) + '" value="' + esc(o.titulo_org || '') + '">'
             + '<input class="voces" aria-label="Voces" title="Cómo se describen sus voces en el índice. Vacío: la que calcula el Atril (' + esc(etiquetaVoces(o.pistas) || 'ninguna') + ')" maxlength="60" placeholder="' + esc(etiquetaVoces(o.pistas) || 'Voces') + '" value="' + esc(o.voces || '') + '">'
             + '<input class="voces autor" aria-label="Autor" title="Autor en el índice. Vacío: el de la partitura (' + esc(o.autor_partitura || 'ninguno') + ')" maxlength="80" placeholder="' + esc(o.autor_partitura || 'Autor') + '" value="' + esc(o.autor_org || '') + '">'
             + '<input class="voces idioma" aria-label="Idioma" title="Idioma de la letra original. Vacío: el que diga la partitura (' + esc(o.idioma_auto || 'ninguno') + ')" maxlength="30" placeholder="' + esc(o.idioma_auto || 'Idioma') + '" value="' + esc(o.idioma || '') + '">'
@@ -901,9 +903,13 @@ body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: v
           } catch (e) { $('ixEstado').textContent = 'No se ha borrado: ' + e.message; $('ixEstado').classList.add('error'); }
         };
         // voces, autor e idioma: el texto escrito (vacío = el automático)
-        [['input.voces:not(.autor):not(.idioma)', 'voces', 60], ['input.autor', 'autor_org', 80], ['input.idioma', 'idioma', 30]].forEach(([sel, campo, max]) => {
+        [['input.voces:not(.autor):not(.idioma):not(.titulo)', 'voces', 60], ['input.autor', 'autor_org', 80], ['input.idioma', 'idioma', 30], ['input.titulo', 'titulo_org', 120]].forEach(([sel, campo, max]) => {
           const iv = f.querySelector(sel);
-          iv.onchange = () => { o[campo] = iv.value.trim().replace(/\s+/g, ' ').slice(0, max); organizar(); };
+          iv.onchange = () => {
+            o[campo] = iv.value.trim().replace(/\s+/g, ' ').slice(0, max);
+            if (campo === 'titulo_org') o.obra = o.titulo_org || o.obra_partitura || o.obra;
+            organizar();
+          };
           iv.onkeydown = e => { if (e.key === 'Enter') iv.blur(); if (e.key === 'Escape') { iv.value = o[campo] || ''; iv.blur(); } };
         });
         // arrastrar por el asa (ratón y dedo)
@@ -951,7 +957,7 @@ body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: v
       $('ixGuardar').onclick = async () => {
         $('ixEstado').textContent = 'Guardando…';
         const env = { categorias: borrador.categorias.filter(c => c), obras: {} };
-        borrador.obras.forEach(o => { env.obras[o.id] = { cat: o.cat || '', orden: o.orden ?? 0, oculta: !!o.oculta, voces: o.voces || '', autor: o.autor_org || '', idioma: o.idioma || '' }; });
+        borrador.obras.forEach(o => { env.obras[o.id] = { cat: o.cat || '', orden: o.orden ?? 0, oculta: !!o.oculta, voces: o.voces || '', autor: o.autor_org || '', idioma: o.idioma || '', titulo: o.titulo_org || '' }; });
         try {
           const r = await fetch('lista.php', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ indice: env }) });
           const j = await r.json().catch(() => ({}));
@@ -1043,6 +1049,11 @@ body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: v
   const hayIndice = !!idPedido;   // el logo vuelve a la lista (que pedirá entrar si hace falta)
   carga('Cargando la obra…', 0);
   const cfg = await pedirJSON(base + 'obra.json');
+  // título y autor puestos en Organizar (solo para mostrar; el id, la carpeta y la dirección siguen siendo los de la partitura)
+  try {
+    const r = await Promise.race([fetch('lista.php?titulo=' + encodeURIComponent(cfg.id), { cache: 'no-store' }), new Promise((_, no) => setTimeout(no, 2500))]);
+    if (r.ok) { const t = await r.json(); if (t.titulo) cfg.obra = t.titulo; if (t.autor) cfg.autor = t.autor; }
+  } catch (e) {}
   PFX = 'atril:' + cfg.id + ':';
   $('verManual').href = (/claude/.test(location.hostname) ? '#manual-' : /(^|\.)sigan\.me$/.test(location.hostname) ? '/?manual#' : '?manual#') + encodeURIComponent(cfg.id);
   // en la web, la dirección queda como atril.sigan.me/<obra>: al copiarla y compartirla sale la tarjeta con el título de la obra (obra.php)
