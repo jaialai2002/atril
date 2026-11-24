@@ -211,7 +211,7 @@ input[type=range]::-moz-range-thumb { width: 12px; height: 12px; border: 0; bord
 .manual-link:hover { text-decoration: underline; }
 .ico-libro { width: 15px; height: 15px; flex: none; }
 .seguim { display: grid; grid-template-columns: auto 1fr; gap: 6px 8px; align-items: center; font-size: 11px; color: var(--tenue); }
-.seguim .seg { display: grid; grid-template-columns: repeat(2, 1fr); }
+.seguim .seg { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; }
 .seguim .seg button { padding: 4px 6px; font-size: 11.5px; }
 .separacion { display: flex; align-items: center; gap: 8px; padding: 3px 2px 1px; }
 .separacion .lbl { font-size: 12px; color: var(--tenue); white-space: nowrap; }
@@ -442,6 +442,7 @@ body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: v
       <div class="mando"><span>Volumen</span><span class="rv" style="--cero:0.7058823529411765"><input type="range" id="maestro" min="-24" max="10" step="0.5" value="0" aria-label="Volumen general"></span><output id="maestroV">0 dB</output></div>
       <div class="seguim"><span>Seguimiento</span>
         <div class="seg" role="group" aria-label="Seguimiento de la reproducción">
+          <button data-seg="no" title="Sin banda ni línea: solo la nota que suena en rojo">Ninguno</button>
           <button data-seg="banda" title="Banda dorada en todo el sistema">Banda</button>
           <button data-seg="linea" title="Línea rojiza que avanza de nota en nota">Línea</button>
         </div>
@@ -537,7 +538,7 @@ body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: v
     return grupo(coro) + ' · solistas ' + (ls.includes(null) ? solos.length : ls.sort((a, b) => 'SATB'.indexOf(a) - 'SATB'.indexOf(b)).join(''));
   }
   function desentidad(s) { const t = document.createElement('textarea'); t.innerHTML = s; return t.value; }
-  const VERSION = '2026.11.24-11';   // se ve al pie del índice: sirve para saber qué programa tiene la web
+  const VERSION = '2026.11.24-12';   // se ve al pie del índice: sirve para saber qué programa tiene la web
   const VEROVIO = 'https://cdn.jsdelivr.net/npm/verovio@6.1.0/dist/verovio-toolkit-wasm.js';
   // mismas opciones que el antiguo render.js: con la misma semilla, las dos letras dan los mismos ids
   const OPC = { xmlIdSeed: 1, scale: 40, pageWidth: 2200, pageHeight: 3000, adjustPageHeight: true, breaks: 'auto', footer: 'none', header: 'auto', svgViewBox: true, condenseFirstPage: true, svgHtml5: true, svgRemoveXlink: true, lyricSize: 4.2, pageMarginTop: 40, pageMarginBottom: 20, pageMarginLeft: 40, pageMarginRight: 40 };
@@ -1554,7 +1555,7 @@ body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: v
   };
   function ponerSeguimiento(v, recordar = true) {
     seguimiento = v; if (recordar) guardar('seg', v);   // solo se recuerda lo que elige quien la usa
-    ['banda', 'voces', 'linea'].forEach(x => document.body.classList.toggle('seg-' + x, x === v));
+    ['no', 'banda', 'voces', 'linea'].forEach(x => document.body.classList.toggle('seg-' + x, x === v));
     document.querySelectorAll('[data-seg]').forEach(b => b.classList.toggle('on', b.dataset.seg === v));
     calcularColores();
   }
@@ -1896,7 +1897,7 @@ body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: v
   if (ens) { if (pistas.some(p => p.id === ens.voz && p.voz)) $('miVoz').value = ens.voz; modo = ens.modo || 'todas'; document.querySelectorAll('[data-modo]').forEach(x => x.classList.toggle('on', x.dataset.modo === modo)); }
   $('maestro').value = leer('maestro', 0);
   // solo Banda y Línea (el usuario quitó «Voces» el 17-11-2026): lo guardado como «voces» pasa a Línea
-  ponerSeguimiento(['banda', 'linea'].includes(seguimiento) ? seguimiento : 'linea', false);
+  ponerSeguimiento(['no', 'banda', 'linea'].includes(seguimiento) ? seguimiento : 'linea', false);
   // ¿ha cambiado la obra con la pestaña abierta? Se mira cada 3 min y al volver a la pestaña, nunca mientras suena
   async function mirarVersion() {
     if (sonando || document.hidden || $('nuevaVersion')) return;
@@ -1933,7 +1934,7 @@ body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: v
     else if ((e.key === 'm' || e.key === 'M') && !e.metaKey && !e.ctrlKey && !e.altKey) plegarMezclador();
     else if (e.key === 'L' && e.shiftKey && !e.metaKey && !e.ctrlKey) cambiarLetra();
     else if ((e.key === 's' || e.key === 'S') && !e.metaKey && !e.ctrlKey && !e.altKey && !e.shiftKey) ponerSeguir(!seguir, true);
-    else if ((e.key === 'b' || e.key === 'B') && !e.metaKey && !e.ctrlKey && !e.altKey) { ponerSeguimiento(seguimiento === 'banda' ? 'linea' : 'banda'); aviso('Seguimiento: ' + (seguimiento === 'banda' ? 'banda' : 'línea')); }
+    else if ((e.key === 'b' || e.key === 'B') && !e.metaKey && !e.ctrlKey && !e.altKey) { const sig = { no: 'banda', banda: 'linea', linea: 'no' }[seguimiento] || 'linea'; ponerSeguimiento(sig); aviso('Seguimiento: ' + { no: 'ninguno', banda: 'banda', linea: 'línea' }[sig]); }
     else if (e.key === 'Home') { e.preventDefault(); ir(0); }
     else if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
       e.preventDefault();
@@ -2074,7 +2075,7 @@ body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: v
   <div class="m-dos"><div class="m-panel" id="mGeneral"></div><div>
     <ul>
       <li><b>Volumen:</b> el de todo a la vez.</li>
-      <li><b>Seguimiento:</b> cómo se marca por dónde va la música: una <b>Línea</b> roja que avanza de nota en nota, o una <b>Banda</b> dorada sobre el compás entero.</li>
+      <li><b>Seguimiento:</b> cómo se marca por dónde va la música: una <b>Línea</b> roja que avanza de nota en nota, una <b>Banda</b> dorada sobre el compás entero, o <b>Ninguno</b> (sin banda ni línea; la nota que suena sigue en rojo).</li>
       <li><b>Pasar página:</b> <b>Sola</b>, la partitura avanza con la música; <b>A mano</b>, se queda quieta y la mueves tú.</li>
     </ul>
     <h3>Atajos de teclado (en ordenador)</h3>
