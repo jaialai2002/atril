@@ -120,6 +120,33 @@ aside h2 button { font: 500 11px var(--cuerpo); letter-spacing: 0; text-transfor
 .ensayo[hidden] { display: none; }
 /* cabecera del ensayo: «MI VOZ» + selector con el color de la voz + rotulador */
 .ens-cab { display: flex; align-items: center; gap: 8px; }
+/* anotaciones: capa encima de la partitura (lápiz y texto); barra de herramientas abajo mientras se anota */
+.at-notas { pointer-events: none; }
+.at-notas path { fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.at-notas text { paint-order: stroke; stroke: #fffdf6; stroke-linejoin: round; font-family: 'IBM Plex Sans', sans-serif; font-weight: 500; }
+.at-notas .capa-director path, .at-notas .capa-director text { opacity: .9; }
+body.anotando .at-notas.editable [data-nid] { pointer-events: visiblePainted; }
+body.anotando #paginas { cursor: crosshair; touch-action: none; -webkit-user-select: none; user-select: none; }
+body.anotando.herr-texto #paginas { cursor: text; }
+body.anotando.herr-goma #paginas { cursor: cell; }
+#notasBarra { position: fixed; left: 50%; bottom: 14px; transform: translateX(-50%) scale(var(--antizoom, 1)); transform-origin: 50% 100%; z-index: 40;
+  display: flex; align-items: center; gap: 8px; padding: 7px 10px; border-radius: 14px; background: rgba(28, 30, 34, .96); border: 1px solid var(--surco);
+  box-shadow: 0 10px 30px rgba(0,0,0,.45); font: 500 12px var(--sans, 'IBM Plex Sans', sans-serif); color: var(--texto); max-width: calc(100vw / var(--antizoom, 1) - 20px); flex-wrap: wrap; justify-content: center; }
+#notasBarra[hidden] { display: none; }
+#notasBarra .nb { display: flex; gap: 3px; align-items: center; }
+#notasBarra .nb + .nb { padding-left: 8px; border-left: 1px solid var(--surco); }
+#notasBarra button { height: 30px; min-width: 30px; padding: 0 8px; border-radius: 8px; border: 1px solid transparent; background: none; color: var(--texto); font: inherit; cursor: pointer; display: grid; place-items: center; }
+#notasBarra button:hover { border-color: var(--surco); }
+#notasBarra button.on { border-color: var(--laton); color: var(--laton); background: var(--consola); }
+#notasBarra button svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+#notasBarra .muestra { width: 22px; min-width: 22px; height: 22px; padding: 0; border-radius: 50%; border: 2px solid transparent; }
+#notasBarra .muestra.on { border-color: var(--texto); background: none; }
+#notasBarra .muestra i { display: block; width: 14px; height: 14px; border-radius: 50%; }
+#notasBarra .nb-et { color: var(--tenue); font-size: 11px; margin-right: 2px; }
+#nbEstado { color: var(--tenue); font: 11px var(--mono); min-width: 64px; text-align: center; }
+#nbHecho { background: var(--laton) !important; color: var(--tinta) !important; font-weight: 600 !important; }
+#notaTexto { position: fixed; z-index: 45; min-width: 160px; padding: 6px 8px; border-radius: 8px; border: 1px solid var(--laton); background: #fffdf6; color: #1b1b1b;
+  font: 500 15px 'IBM Plex Sans', sans-serif; box-shadow: 0 6px 18px rgba(0,0,0,.35); outline: none; }
 /* rotulador: marca la letra de mi voz (independiente del modo) */
 #rotulador { flex: none; display: grid; place-items: center; width: 34px; height: 30px; padding: 0; border: 1px solid transparent; border-radius: 7px; background: none; color: var(--texto); cursor: pointer; }
 #rotulador:hover { border-color: var(--surco); }
@@ -381,6 +408,7 @@ body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: v
     <div id="barra" title="Ir a otro punto"><div id="hecho"></div><div id="cabezal"></div></div>
   </div>
   <div class="opciones">
+    <button class="icono" id="verNotas" title="Anotaciones: lápiz y texto sobre la partitura (tecla A)" aria-label="Anotaciones" hidden><svg viewBox="0 0 24 24"><path d="M4 20l1.2-4.6L16.6 4a2 2 0 0 1 2.8 0l.6.6a2 2 0 0 1 0 2.8L8.6 18.8z"/><path d="M14.5 6.1l3.4 3.4"/><path d="M13 20h7"/></svg></button>
     <button class="icono on" id="verMezclador" title="Mezclador (tecla M)" aria-label="Mezclador"><svg class="ico-ajustes" viewBox="0 0 142.2 86.4"><rect x="84.5" y="41.6" width="8.9" height="44.9"/> <rect x="48.7" width="8.9" height="44.8"/> <rect x="13" y="65.3" width="8.9" height="21.2"/> <rect x="13" width="8.9" height="19.7"/> <path d="M56.5,50c-0.7-0.3-1.5-0.3-3.3-0.3s-2.6,0-3.3,0.3c-0.9,0.4-1.6,1.1-2,2c-0.2,0.4-0.2,0.9-0.3,1.6c0,1-0.6,2-1.5,2.5 c-0.9,0.5-2,0.5-2.9,0c-0.6-0.3-1.1-0.5-1.5-0.6c-1-0.1-2,0.1-2.7,0.7c-0.6,0.4-1,1.2-1.9,2.7c-0.9,1.5-1.3,2.2-1.4,2.9 c-0.1,1,0.1,1.9,0.7,2.7c0.3,0.4,0.7,0.6,1.3,1c0.9,0.5,1.4,1.5,1.4,2.5c0,1-0.6,2-1.4,2.5c-0.6,0.4-1,0.7-1.3,1 c-0.6,0.8-0.9,1.7-0.7,2.7c0.1,0.7,0.5,1.5,1.4,2.9c0.9,1.5,1.3,2.2,1.9,2.7c0.8,0.6,1.8,0.9,2.7,0.7c0.4-0.1,0.9-0.2,1.5-0.6 c0.9-0.5,2-0.5,2.9,0c0.9,0.5,1.4,1.5,1.5,2.5c0,0.7,0.1,1.2,0.3,1.6c0.4,0.9,1.1,1.6,2,2c0.7,0.3,1.5,0.3,3.3,0.3s2.6,0,3.3-0.3 c0.9-0.4,1.6-1.1,2-2c0.2-0.4,0.2-0.9,0.3-1.6c0-1,0.6-2,1.5-2.5c0.9-0.5,2-0.5,2.9,0c0.6,0.3,1.1,0.5,1.5,0.6c1,0.1,2-0.1,2.7-0.7 c0.6-0.4,1-1.2,1.9-2.7c0.9-1.5,1.3-2.2,1.4-2.9c0.1-1-0.1-1.9-0.7-2.7c-0.3-0.4-0.7-0.6-1.3-1c-0.9-0.5-1.4-1.5-1.4-2.5 s0.6-2,1.4-2.5c0.6-0.4,1-0.7,1.3-1c0.6-0.8,0.9-1.7,0.7-2.7c-0.1-0.7-0.5-1.5-1.4-2.9c-0.9-1.5-1.3-2.2-1.9-2.7 c-0.8-0.6-1.8-0.9-2.7-0.7c-0.4,0.1-0.9,0.2-1.5,0.6c-0.9,0.5-2,0.5-2.9,0c-0.9-0.5-1.4-1.5-1.5-2.5c0-0.7-0.1-1.2-0.3-1.6 C58.1,51.1,57.4,50.4,56.5,50z M45.9,68.1c0-4,3.3-7.3,7.3-7.3s7.3,3.3,7.3,7.3c0,4-3.3,7.3-7.3,7.3S45.9,72.1,45.9,68.1z"/> <path d="M92.3,0.3C91.6,0,90.7,0,89,0s-2.6,0-3.3,0.3c-0.9,0.4-1.6,1.1-2,2c-0.2,0.4-0.2,0.9-0.3,1.6c0,1-0.6,2-1.5,2.5 c-0.9,0.5-2,0.5-2.9,0C78.5,6,78,5.8,77.6,5.8c-1-0.1-2,0.1-2.7,0.7c-0.6,0.4-1,1.2-1.9,2.7c-0.9,1.5-1.3,2.2-1.4,2.9 c-0.1,1,0.1,1.9,0.7,2.7c0.3,0.4,0.7,0.6,1.3,1c0.9,0.5,1.4,1.5,1.4,2.5c0,1-0.6,2-1.4,2.5c-0.6,0.4-1,0.7-1.3,1 c-0.6,0.8-0.9,1.7-0.7,2.7c0.1,0.7,0.5,1.5,1.4,2.9c0.9,1.5,1.3,2.2,1.9,2.7c0.8,0.6,1.8,0.9,2.7,0.7c0.4-0.1,0.9-0.2,1.5-0.6 c0.9-0.5,2-0.5,2.9,0c0.9,0.5,1.4,1.5,1.5,2.5c0,0.7,0.1,1.2,0.3,1.6c0.4,0.9,1.1,1.6,2,2c0.7,0.3,1.5,0.3,3.3,0.3s2.6,0,3.3-0.3 c0.9-0.4,1.6-1.1,2-2c0.2-0.4,0.2-0.9,0.3-1.6c0-1,0.6-2,1.5-2.5c0.9-0.5,2-0.5,2.9,0c0.6,0.3,1.1,0.5,1.5,0.6c1,0.1,2-0.1,2.7-0.7 c0.6-0.4,1-1.2,1.9-2.7c0.9-1.5,1.3-2.2,1.4-2.9c0.1-1-0.1-1.9-0.7-2.7c-0.3-0.4-0.7-0.6-1.3-1c-0.9-0.5-1.4-1.5-1.4-2.5 c0-1,0.6-2,1.4-2.5c0.6-0.4,1-0.7,1.3-1c0.6-0.8,0.9-1.7,0.7-2.7c-0.1-0.7-0.5-1.5-1.4-2.9s-1.3-2.2-1.9-2.7 c-0.8-0.6-1.8-0.9-2.7-0.7C100,5.8,99.5,6,98.9,6.4c-0.9,0.5-2,0.5-2.9,0c-0.9-0.5-1.4-1.5-1.5-2.5c0-0.7-0.1-1.2-0.3-1.6 C93.9,1.4,93.2,0.7,92.3,0.3z M81.7,18.4c0-4,3.3-7.3,7.3-7.3c4,0,7.3,3.3,7.3,7.3S93,25.6,89,25.6C84.9,25.6,81.7,22.4,81.7,18.4z" /> <path d="M20.7,24.4c-0.7-0.3-1.5-0.3-3.3-0.3s-2.6,0-3.3,0.3c-0.9,0.4-1.6,1.1-2,2c-0.2,0.4-0.2,0.9-0.3,1.6c0,1-0.6,2-1.5,2.5 c-0.9,0.5-2,0.5-2.9,0C6.9,30.1,6.5,30,6,29.9c-1-0.1-2,0.1-2.7,0.7c-0.6,0.4-1,1.2-1.9,2.7c-0.9,1.5-1.3,2.2-1.4,2.9 c-0.1,1,0.1,1.9,0.7,2.7C1,39.3,1.4,39.6,2,40c0.9,0.5,1.4,1.5,1.4,2.5c0,1-0.6,2-1.4,2.5c-0.6,0.4-1,0.7-1.3,1 c-0.6,0.8-0.9,1.7-0.7,2.7c0.1,0.7,0.5,1.5,1.4,2.9c0.9,1.5,1.3,2.2,1.9,2.7c0.8,0.6,1.8,0.9,2.7,0.7c0.4-0.1,0.9-0.2,1.5-0.6 c0.9-0.5,2-0.5,2.9,0c0.9,0.5,1.4,1.5,1.5,2.5c0,0.7,0.1,1.2,0.3,1.6c0.4,0.9,1.1,1.6,2,2c0.7,0.3,1.5,0.3,3.3,0.3s2.6,0,3.3-0.3 c0.9-0.4,1.6-1.1,2-2c0.2-0.4,0.2-0.9,0.3-1.6c0-1,0.6-2,1.5-2.5c0.9-0.5,2-0.5,2.9,0c0.6,0.3,1.1,0.5,1.5,0.6c1,0.1,2-0.1,2.7-0.7 c0.6-0.4,1-1.2,1.9-2.7c0.9-1.5,1.3-2.2,1.4-2.9c0.1-1-0.1-1.9-0.7-2.7c-0.3-0.4-0.7-0.6-1.3-1c-0.9-0.5-1.4-1.5-1.4-2.5 s0.6-2,1.4-2.5c0.6-0.4,1-0.7,1.3-1c0.6-0.8,0.9-1.7,0.7-2.7c-0.1-0.7-0.5-1.5-1.4-2.9c-0.9-1.5-1.3-2.2-1.9-2.7 c-0.8-0.6-1.8-0.9-2.7-0.7c-0.4,0.1-0.9,0.2-1.5,0.6c-0.9,0.5-2,0.5-2.9,0C23.6,29.9,23,29,23,28c0-0.7-0.1-1.2-0.3-1.6 C22.3,25.5,21.6,24.8,20.7,24.4z M10.1,42.5c0-4,3.3-7.3,7.3-7.3s7.3,3.3,7.3,7.3s-3.3,7.3-7.3,7.3S10.1,46.5,10.1,42.5z"/> <rect x="120.3" y="65.3" width="8.9" height="21.2"/> <rect x="120.3" width="8.9" height="19.7"/> <path d="M128,24.4c-0.7-0.3-1.5-0.3-3.3-0.3c-1.7,0-2.6,0-3.3,0.3c-0.9,0.4-1.6,1.1-2,2c-0.2,0.4-0.2,0.9-0.3,1.6c0,1-0.6,2-1.5,2.5 c-0.9,0.5-2,0.5-2.9,0c-0.6-0.3-1.1-0.5-1.5-0.6c-1-0.1-2,0.1-2.7,0.7c-0.6,0.4-1,1.2-1.9,2.7c-0.9,1.5-1.3,2.2-1.4,2.9 c-0.1,1,0.1,1.9,0.7,2.7c0.3,0.4,0.7,0.6,1.3,1c0.9,0.5,1.4,1.5,1.4,2.5c0,1-0.6,2-1.4,2.5c-0.6,0.4-1,0.7-1.3,1 c-0.6,0.8-0.9,1.7-0.7,2.7c0.1,0.7,0.5,1.5,1.4,2.9c0.9,1.5,1.3,2.2,1.9,2.7c0.8,0.6,1.8,0.9,2.7,0.7c0.4-0.1,0.9-0.2,1.5-0.6 c0.9-0.5,2-0.5,2.9,0c0.9,0.5,1.4,1.5,1.5,2.5c0,0.7,0.1,1.2,0.3,1.6c0.4,0.9,1.1,1.6,2,2c0.7,0.3,1.5,0.3,3.3,0.3 c1.7,0,2.6,0,3.3-0.3c0.9-0.4,1.6-1.1,2-2c0.2-0.4,0.2-0.9,0.3-1.6c0-1,0.6-2,1.5-2.5c0.9-0.5,2-0.5,2.9,0c0.6,0.3,1.1,0.5,1.5,0.6 c1,0.1,2-0.1,2.7-0.7c0.6-0.4,1-1.2,1.9-2.7c0.9-1.5,1.3-2.2,1.4-2.9c0.1-1-0.1-1.9-0.7-2.7c-0.3-0.4-0.7-0.6-1.3-1 c-0.9-0.5-1.4-1.5-1.4-2.5s0.6-2,1.4-2.5c0.6-0.4,1-0.7,1.3-1c0.6-0.8,0.9-1.7,0.7-2.7c-0.1-0.7-0.5-1.5-1.4-2.9 c-0.9-1.5-1.3-2.2-1.9-2.7c-0.8-0.6-1.8-0.9-2.7-0.7c-0.4,0.1-0.9,0.2-1.5,0.6c-0.9,0.5-2,0.5-2.9,0c-0.9-0.5-1.4-1.5-1.5-2.5 c0-0.7-0.1-1.2-0.3-1.6C129.7,25.5,128.9,24.8,128,24.4z M117.4,42.5c0-4,3.3-7.3,7.3-7.3s7.3,3.3,7.3,7.3s-3.3,7.3-7.3,7.3 S117.4,46.5,117.4,42.5z"/></svg></button>
   </div>
 </header>
@@ -507,7 +535,7 @@ body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: v
     return grupo(coro) + ' · solistas ' + (ls.includes(null) ? solos.length : ls.sort((a, b) => 'SATB'.indexOf(a) - 'SATB'.indexOf(b)).join(''));
   }
   function desentidad(s) { const t = document.createElement('textarea'); t.innerHTML = s; return t.value; }
-  const VERSION = '2026.11.24-3';   // se ve al pie del índice: sirve para saber qué programa tiene la web
+  const VERSION = '2026.11.24-4';   // se ve al pie del índice: sirve para saber qué programa tiene la web
   const VEROVIO = 'https://cdn.jsdelivr.net/npm/verovio@6.1.0/dist/verovio-toolkit-wasm.js';
   // mismas opciones que el antiguo render.js: con la misma semilla, las dos letras dan los mismos ids
   const OPC = { xmlIdSeed: 1, scale: 40, pageWidth: 2200, pageHeight: 3000, adjustPageHeight: true, breaks: 'auto', footer: 'none', header: 'auto', svgViewBox: true, condenseFirstPage: true, svgHtml5: true, svgRemoveXlink: true, lyricSize: 4.2, pageMarginTop: 40, pageMarginBottom: 20, pageMarginLeft: 40, pageMarginRight: 40 };
@@ -1119,6 +1147,7 @@ body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: v
   // ---------- partitura (SVG de Verovio ya dibujado; la letra original y la cantada tienen los mismos ids)
   let letra = ({ cze: 'orig', cat: 'cant' })[leer('letra', 'orig')] || leer('letra', 'orig'), mapa = new Map(), marcados = [], sistemaVisto = null;
   let compasVisto = null, bandas = [], cabeza = null, caja = null, firmaVista = ''; const xNota = new Map();
+  let pintarNotas = () => {};   // anotaciones (se define más abajo)
   let rotular = () => {}, firmaRotulador = '', conRotulador = false;   // botón del rotulador: la letra de tu voz marcada (se define con las pistas)
   // seguimiento y colores por voz (como la Multiconsola): azul = todo; cada voz, el suyo
   let seguimiento = leer('seg', 'linea'), colores = null, firma = '';
@@ -1134,7 +1163,7 @@ body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: v
     $('paginas').innerHTML = svgs[v].map(s => '<div class="pagina">' + s + '</div>').join('');
     mapa = new Map();
     $('paginas').querySelectorAll('g.note[data-id], g.measure[data-id]').forEach(g => mapa.set(g.getAttribute('data-id'), g));
-    marcados = []; sistemaVisto = null; compasVisto = null; bandas = []; cabeza = null; xNota.clear(); firmaRotulador = ''; rotular(); $('hoja').scrollTop = y; pintar(true);
+    marcados = []; sistemaVisto = null; compasVisto = null; bandas = []; cabeza = null; xNota.clear(); firmaRotulador = ''; rotular(); pintarNotas(); $('hoja').scrollTop = y; pintar(true);
   }
   // letra de pronunciación: oculta; se cambia con ⌥ + clic en el logo o con ⇧ + L
   function cambiarLetra() {
@@ -1511,6 +1540,287 @@ body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: v
   const ponerRotulador = v => { conRotulador = !!v; $('rotulador').classList.toggle('on', conRotulador); $('rotulador').setAttribute('aria-pressed', conRotulador); guardar('rotulador', conRotulador); rotular(); };
   $('rotulador').onclick = () => ponerRotulador(!conRotulador);
   ponerRotulador(leer('rotulador', false));
+
+  // ---------- anotaciones (notas.php): lápiz y texto encima de la partitura, en dos capas:
+  // «mía» (de la cuenta de Google con la que se entra: la misma en el iMac, el iPad o la tableta) y «director» (la escriben
+  // las cuentas admin y la ven todos). Cada anotación va pegada a un compás y un pentagrama: x en anchos de ese compás,
+  // y en alturas de ese pentagrama; así sigue en su sitio con la otra letra (⇧+L) o si la partitura se dibuja distinta.
+  (function anotaciones() {
+    if (modoManual || !idPedido) return;
+    const NS = 'http://www.w3.org/2000/svg';
+    const COLORES = ['#c0283f', '#1f5fbf', '#1e8a4c', '#1b1b1b'];
+    const GROSOR = { fino: .045, grueso: .11 };
+    const capas = { mia: [], director: [] };
+    let admin = false, anotando = false, herr = 'lapiz', penVisto = false;
+    let capa = leer('notasCapa', 'mia'), color = leer('notasColor', COLORES[0]), grosor = leer('notasGrosor', 'fino');
+    let ver = Object.assign({ mia: true, director: true }, leer('notasVer', {}));
+    const historia = [];     // para deshacer: {capa, items}
+    const pendiente = {};    // capa -> temporizador de guardado
+    const estado = t => { const e = $('nbEstado'); if (e) e.textContent = t; };
+
+    // --- geometría: compases en orden, pentagramas con sus líneas
+    const compases = () => [...$('paginas').querySelectorAll('g.measure')];
+    const pentagramas = m => [...m.querySelectorAll(':scope > g.staff')];
+    function geo(st) {
+      const ls = [...st.querySelectorAll(':scope > path')].map(p => /M\s*([-\d.]+)[ ,]+([-\d.]+)\s*L\s*([-\d.]+)[ ,]+([-\d.]+)/.exec(p.getAttribute('d') || '')).filter(Boolean);
+      if (!ls.length) return null;
+      const ys = ls.map(m => +m[2]);
+      const x0 = Math.min(...ls.map(m => Math.min(+m[1], +m[3]))), x1 = Math.max(...ls.map(m => Math.max(+m[1], +m[3])));
+      let y0 = Math.min(...ys), y1 = Math.max(...ys);
+      if (y1 - y0 < 50) y1 = y0 + 720;   // pentagrama de una línea: la altura de uno normal
+      return { x0, x1, y0, y1, w: Math.max(1, x1 - x0), h: y1 - y0 };
+    }
+    const margen = el => el.closest('g.page-margin') || el.closest('svg');
+    function capaSvg(pm, c) {
+      let g = pm.querySelector(':scope > g.at-notas');
+      if (!g) { g = document.createElementNS(NS, 'g'); g.setAttribute('class', 'at-notas'); pm.appendChild(g); }
+      g.classList.toggle('editable', anotando);
+      let h = g.querySelector(':scope > g.capa-' + c);
+      if (!h) { h = document.createElementNS(NS, 'g'); h.setAttribute('class', 'capa-' + c); c === 'director' ? g.insertBefore(h, g.firstChild) : g.appendChild(h); }
+      return h;
+    }
+    // punto de pantalla -> coordenadas del margen de página (las de los pentagramas)
+    function aPagina(pm, cx, cy) { const m = pm.getScreenCTM(); if (!m) return null; const p = new DOMPoint(cx, cy).matrixTransform(m.inverse()); return { x: p.x, y: p.y }; }
+    // compás y pentagrama más cercanos a un punto de esa página
+    function anclar(pm, x, y) {
+      const todos = compases(); let mejor = null;
+      todos.forEach((m, k) => {
+        if (margen(m) !== pm) return;
+        pentagramas(m).forEach((st, i) => {
+          const g = geo(st); if (!g) return;
+          const dx = x < g.x0 ? g.x0 - x : x > g.x1 ? x - g.x1 : 0, dy = y < g.y0 ? g.y0 - y : y > g.y1 ? y - g.y1 : 0;
+          const d = dx * 3 + dy;   // mejor el compás en el que cae (en horizontal) que el pentagrama más cercano
+          if (!mejor || d < mejor.d) mejor = { d, k, s: i + 1, g, m };
+        });
+      });
+      if (!mejor) return null;
+      let n = ''; try { n = String(d0.tk.getElementAttr(mejor.m.getAttribute('data-id')).n || ''); } catch (e) {}
+      return { k: mejor.k, s: mejor.s, n, g: mejor.g };
+    }
+    function sitio(it) {   // de una anotación guardada a su geometría actual
+      const m = compases()[it.k]; if (!m) return null;
+      const st = pentagramas(m)[(it.s || 1) - 1] || pentagramas(m)[0]; if (!st) return null;
+      const g = geo(st); return g ? { g, pm: margen(m) } : null;
+    }
+    const nid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+
+    // --- dibujo
+    function camino(pts) {   // curva suave por los puntos (cuadráticas por los puntos medios)
+      if (pts.length === 1) return 'M' + pts[0][0] + ' ' + pts[0][1] + 'l0.1 0';
+      let d = 'M' + pts[0][0].toFixed(1) + ' ' + pts[0][1].toFixed(1);
+      for (let i = 1; i < pts.length - 1; i++) {
+        const mx = (pts[i][0] + pts[i + 1][0]) / 2, my = (pts[i][1] + pts[i + 1][1]) / 2;
+        d += 'Q' + pts[i][0].toFixed(1) + ' ' + pts[i][1].toFixed(1) + ' ' + mx.toFixed(1) + ' ' + my.toFixed(1);
+      }
+      const u = pts[pts.length - 1]; return d + 'L' + u[0].toFixed(1) + ' ' + u[1].toFixed(1);
+    }
+    function elemento(it, c) {
+      const s = sitio(it); if (!s) return null;
+      const { g } = s;
+      if (it.t === 'l') {
+        const pts = it.p.map(q => [g.x0 + q[0] * g.w, g.y0 + q[1] * g.h]);
+        const pres = it.p.reduce((a, q) => a + (q[2] == null ? .5 : q[2]), 0) / it.p.length;
+        const el = document.createElementNS(NS, 'path');
+        el.setAttribute('d', camino(pts));
+        el.style.stroke = it.c; el.style.strokeWidth = (it.w * g.h * (.6 + .8 * pres)).toFixed(1);   // con style: el CSS de la partitura no lo pisa
+        el.setAttribute('data-nid', it.id); el.setAttribute('data-ncapa', c);
+        return { el, pm: s.pm };
+      }
+      if (it.t === 'x') {
+        const el = document.createElementNS(NS, 'text');
+        el.setAttribute('x', g.x0 + it.px * g.w); el.setAttribute('y', g.y0 + it.py * g.h);
+        el.setAttribute('font-size', (g.h * .62 * (it.z || 1)).toFixed(0)); el.style.fill = it.c;
+        el.style.strokeWidth = (g.h * .09).toFixed(0);
+        el.setAttribute('data-nid', it.id); el.setAttribute('data-ncapa', c);
+        el.textContent = it.x;
+        return { el, pm: s.pm };
+      }
+      return null;
+    }
+    pintarNotas = function () {
+      $('paginas').querySelectorAll('g.at-notas').forEach(g => g.remove());
+      ['director', 'mia'].forEach(c => {
+        if (!ver[c]) return;
+        capas[c].forEach(it => { const r = elemento(it, c); if (r) capaSvg(r.pm, c).appendChild(r.el); });
+      });
+      $('paginas').querySelectorAll('g.at-notas').forEach(g => g.classList.toggle('editable', anotando));
+    };
+
+    // --- guardar (1,2 s después del último cambio) y deshacer
+    function cambiado(c) {
+      clearTimeout(pendiente[c]); estado('…');
+      pendiente[c] = setTimeout(async () => {
+        try {
+          const r = await fetch('notas.php', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ obra: cfg.id, capa: c, items: capas[c] }) });
+          const j = await r.json().catch(() => ({}));
+          estado(r.ok ? 'Guardado' : (j.error || 'No guardado'));
+        } catch (e) { estado('Sin conexión'); }
+      }, 1200);
+    }
+    function antesDeCambiar(c) { historia.push({ capa: c, items: JSON.parse(JSON.stringify(capas[c])) }); if (historia.length > 60) historia.shift(); }
+    const editable = () => capa === 'director' ? admin : true;
+
+    // --- barra de herramientas
+    const ico = {
+      lapiz: '<svg viewBox="0 0 24 24"><path d="M4 20l1.2-4.6L16.6 4a2 2 0 0 1 2.8 0l.6.6a2 2 0 0 1 0 2.8L8.6 18.8z"/><path d="M14.5 6.1l3.4 3.4"/></svg>',
+      texto: '<svg viewBox="0 0 24 24"><path d="M5 6V4h14v2"/><path d="M12 4v16"/><path d="M9 20h6"/></svg>',
+      goma: '<svg viewBox="0 0 24 24"><path d="M8.5 19.5 3.8 14.8a2 2 0 0 1 0-2.8l8.4-8.4a2 2 0 0 1 2.8 0l5.4 5.4a2 2 0 0 1 0 2.8l-7.7 7.7z"/><path d="M8 11l6 6"/><path d="M13 20h7"/></svg>',
+      deshacer: '<svg viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>'
+    };
+    const barra = document.createElement('div');
+    barra.id = 'notasBarra'; barra.hidden = true;
+    document.body.appendChild(barra);
+    function pintarBarra() {
+      barra.innerHTML =
+        '<div class="nb">' + ['lapiz', 'texto', 'goma'].map(h => '<button data-herr="' + h + '" class="' + (herr === h ? 'on' : '') + '" title="' + { lapiz: 'Lápiz', texto: 'Texto: toca donde quieras escribir', goma: 'Goma: toca o arrastra sobre lo que quieras borrar' }[h] + '">' + ico[h] + '</button>').join('') + '</div>' +
+        '<div class="nb">' + COLORES.map(c => '<button class="muestra' + (c === color ? ' on' : '') + '" data-color="' + c + '" title="Color"><i style="background:' + c + '"></i></button>').join('') + '</div>' +
+        '<div class="nb"><button data-grosor="fino" class="' + (grosor === 'fino' ? 'on' : '') + '" title="Trazo fino">fino</button><button data-grosor="grueso" class="' + (grosor === 'grueso' ? 'on' : '') + '" title="Trazo grueso">grueso</button></div>' +
+        '<div class="nb"><button id="nbDeshacer" title="Deshacer (⌘Z)">' + ico.deshacer + '</button></div>' +
+        (admin ? '<div class="nb"><span class="nb-et">Escribo en</span><button data-capa="mia" class="' + (capa === 'mia' ? 'on' : '') + '" title="Solo las ves tú, en cualquier dispositivo con tu cuenta">las mías</button><button data-capa="director" class="' + (capa === 'director' ? 'on' : '') + '" title="Las ve todo el coro">director</button></div>' : '') +
+        '<div class="nb"><span class="nb-et">Ver</span><button data-ver="mia" class="' + (ver.mia ? 'on' : '') + '">mías</button><button data-ver="director" class="' + (ver.director ? 'on' : '') + '">director</button></div>' +
+        '<span id="nbEstado"></span><button id="nbHecho">Hecho</button>';
+      barra.querySelectorAll('[data-herr]').forEach(b => b.onclick = () => { herr = b.dataset.herr; pintarBarra(); clasesCuerpo(); });
+      barra.querySelectorAll('[data-color]').forEach(b => b.onclick = () => { color = b.dataset.color; guardar('notasColor', color); pintarBarra(); });
+      barra.querySelectorAll('[data-grosor]').forEach(b => b.onclick = () => { grosor = b.dataset.grosor; guardar('notasGrosor', grosor); pintarBarra(); });
+      barra.querySelectorAll('[data-capa]').forEach(b => b.onclick = () => { capa = b.dataset.capa; guardar('notasCapa', capa); if (!ver[capa]) { ver[capa] = true; guardar('notasVer', ver); pintarNotas(); } pintarBarra(); });
+      barra.querySelectorAll('[data-ver]').forEach(b => b.onclick = () => { ver[b.dataset.ver] = !ver[b.dataset.ver]; guardar('notasVer', ver); pintarNotas(); pintarBarra(); });
+      $('nbDeshacer').onclick = deshacerUno;
+      $('nbHecho').onclick = () => modoAnotar(false);
+    }
+    function clasesCuerpo() {
+      document.body.classList.toggle('anotando', anotando);
+      ['lapiz', 'texto', 'goma'].forEach(h => document.body.classList.toggle('herr-' + h, anotando && herr === h));
+      $('paginas').querySelectorAll('g.at-notas').forEach(g => g.classList.toggle('editable', anotando));
+    }
+    function modoAnotar(si) {
+      anotando = !!si;
+      if (!admin && capa === 'director') capa = 'mia';
+      barra.hidden = !anotando; $('verNotas').classList.toggle('on', anotando);
+      if (anotando) { pintarBarra(); if (!ver[capa]) { ver[capa] = true; guardar('notasVer', ver); pintarNotas(); } }
+      clasesCuerpo(); cerrarTexto(true);
+    }
+    function deshacerUno() {
+      const h = historia.pop(); if (!h) return;
+      capas[h.capa] = h.items; pintarNotas(); cambiado(h.capa);
+    }
+
+    // --- texto: un cuadro donde se ha tocado; Intro guarda, Esc cancela; vacío = borrar
+    let cuadro = null;
+    function cerrarTexto(cancelar) {
+      if (!cuadro) return;
+      const c = cuadro; cuadro = null;
+      if (!cancelar) c.alCerrar(c.el.value.trim());
+      c.el.remove();
+    }
+    function abrirTexto(cx, cy, valor, alCerrar) {
+      cerrarTexto(false);
+      const el = document.createElement('input');
+      el.id = 'notaTexto'; el.value = valor || ''; el.maxLength = 300; el.placeholder = 'Escribe y pulsa Intro';
+      el.style.left = Math.min(cx, innerWidth - 220) + 'px'; el.style.top = Math.max(8, cy - 18) + 'px'; el.style.color = color;
+      document.body.appendChild(el);
+      cuadro = { el, alCerrar };
+      el.addEventListener('keydown', e => { e.stopPropagation(); if (e.key === 'Enter') cerrarTexto(false); else if (e.key === 'Escape') cerrarTexto(true); });
+      el.addEventListener('blur', () => setTimeout(() => cerrarTexto(false), 0));
+      setTimeout(() => el.focus(), 0);
+    }
+
+    // --- lápiz, texto y goma sobre la partitura
+    let trazo = null;
+    const pm0 = e => { const svg = e.target.closest && e.target.closest('#paginas svg'); return svg ? (svg.querySelector('g.page-margin') || svg) : null; };
+    function borrarEn(cx, cy) {
+      const el = document.elementsFromPoint(cx, cy).find(x => x.getAttribute && x.getAttribute('data-nid') && x.getAttribute('data-ncapa') === capa);
+      if (!el || !editable()) return false;
+      const id = el.getAttribute('data-nid');
+      antesDeCambiar(capa); capas[capa] = capas[capa].filter(it => it.id !== id); el.remove(); cambiado(capa); return true;
+    }
+    let dedo = null;   // con lápiz óptico, el dedo no pinta: desplaza la partitura
+    $('paginas').addEventListener('pointerdown', e => {
+      if (!anotando) return;
+      if (e.pointerType === 'pen') penVisto = true;
+      if (e.pointerType === 'touch' && penVisto) { dedo = { y: e.clientY, top: $('hoja').scrollTop }; return; }
+      const pm = pm0(e); if (!pm) return;
+      e.preventDefault(); e.stopPropagation();
+      if (!editable()) { estado('Solo lectura'); return; }
+      if (herr === 'goma') { borrarEn(e.clientX, e.clientY); trazo = { goma: true }; $('paginas').setPointerCapture(e.pointerId); return; }
+      if (herr === 'texto') {
+        const t = e.target.closest && e.target.closest('text[data-nid]');
+        if (t && t.getAttribute('data-ncapa') === capa) {   // editar uno que ya está
+          const id = t.getAttribute('data-nid'), it = capas[capa].find(x => x.id === id);
+          if (it) abrirTexto(e.clientX, e.clientY, it.x, v => { antesDeCambiar(capa); if (v) it.x = v; else capas[capa] = capas[capa].filter(x => x !== it); pintarNotas(); cambiado(capa); });
+          return;
+        }
+        const p = aPagina(pm, e.clientX, e.clientY); if (!p) return;
+        abrirTexto(e.clientX, e.clientY, '', v => {
+          if (!v) return;
+          const a = anclar(pm, p.x, p.y); if (!a) return;
+          antesDeCambiar(capa);
+          capas[capa].push({ id: nid(), t: 'x', k: a.k, n: a.n, s: a.s, c: color, px: +((p.x - a.g.x0) / a.g.w).toFixed(4), py: +((p.y - a.g.y0) / a.g.h).toFixed(4), x: v, z: grosor === 'grueso' ? 1.4 : 1 });
+          pintarNotas(); cambiado(capa);
+        });
+        return;
+      }
+      const p = aPagina(pm, e.clientX, e.clientY); if (!p) return;
+      const el = document.createElementNS(NS, 'path');
+      const ref = anclar(pm, p.x, p.y); const h = ref ? ref.g.h : 720;
+      el.style.stroke = color; el.style.strokeWidth = (GROSOR[grosor] * h * (.6 + .8 * (e.pressure || .5))).toFixed(1);
+      capaSvg(pm, capa).appendChild(el);
+      trazo = { pm, el, pts: [[p.x, p.y, e.pointerType === 'mouse' ? .5 : (e.pressure || .5)]], h };
+      $('paginas').setPointerCapture(e.pointerId);
+    }, true);
+    $('paginas').addEventListener('pointermove', e => {
+      if (dedo && e.pointerType === 'touch') { $('hoja').scrollTop = dedo.top - (e.clientY - dedo.y); return; }
+      if (!trazo) return;
+      e.preventDefault();
+      if (trazo.goma) { borrarEn(e.clientX, e.clientY); return; }
+      const evs = e.getCoalescedEvents ? e.getCoalescedEvents() : [e];
+      evs.forEach(ev => {
+        const p = aPagina(trazo.pm, ev.clientX, ev.clientY); if (!p) return;
+        const u = trazo.pts[trazo.pts.length - 1];
+        if (Math.hypot(p.x - u[0], p.y - u[1]) < trazo.h * .02) return;
+        trazo.pts.push([p.x, p.y, e.pointerType === 'mouse' ? .5 : (ev.pressure || .5)]);
+      });
+      trazo.el.setAttribute('d', camino(trazo.pts));
+    }, true);
+    const acabar = e => {
+      if (dedo && e.pointerType === 'touch') { dedo = null; return; }
+      if (!trazo) return;
+      const t = trazo; trazo = null;
+      if (t.goma) return;
+      // anclaje: el compás y pentagrama del centro del trazo
+      const xs = t.pts.map(q => q[0]), ys = t.pts.map(q => q[1]);
+      const a = anclar(t.pm, (Math.min(...xs) + Math.max(...xs)) / 2, (Math.min(...ys) + Math.max(...ys)) / 2);
+      t.el.remove();
+      if (!a) return;
+      antesDeCambiar(capa);
+      capas[capa].push({ id: nid(), t: 'l', k: a.k, n: a.n, s: a.s, c: color, w: GROSOR[grosor],
+        p: t.pts.map(q => [+((q[0] - a.g.x0) / a.g.w).toFixed(4), +((q[1] - a.g.y0) / a.g.h).toFixed(4), +q[2].toFixed(2)]) });
+      pintarNotas(); cambiado(capa);
+    };
+    $('paginas').addEventListener('pointerup', acabar, true);
+    $('paginas').addEventListener('pointercancel', acabar, true);
+    // anotando, un clic en la partitura no mueve la reproducción
+    $('paginas').addEventListener('click', e => { if (anotando) { e.stopPropagation(); e.preventDefault(); } }, true);
+    document.addEventListener('keydown', e => {
+      if (cuadro || /input|select|textarea/i.test((e.target || {}).tagName || '')) return;
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'z' && anotando) { e.preventDefault(); deshacerUno(); }
+      else if (e.key.toLowerCase() === 'a' && !e.metaKey && !e.ctrlKey && !e.altKey && !$('verNotas').hidden) modoAnotar(!anotando);
+      else if (e.key === 'Escape' && anotando) modoAnotar(false);
+    });
+    $('verNotas').onclick = () => modoAnotar(!anotando);
+
+    // --- cargar: si no hay notas.php o no hay sesión, el botón no aparece
+    (async () => {
+      try {
+        const r = await fetch('notas.php?obra=' + encodeURIComponent(cfg.id), { cache: 'no-store', credentials: 'same-origin' });
+        if (!r.ok) return;
+        const j = await r.json();
+        admin = !!j.admin;
+        capas.mia = (j.mia && j.mia.items) || []; capas.director = (j.director && j.director.items) || [];
+        $('verNotas').hidden = false;
+        pintarNotas();
+      } catch (e) {}
+    })();
+  })();
   $('maestro').oninput = aplicar; $('maestro').ondblclick = () => { $('maestro').value = 0; aplicar(); };
   $('reponer').onclick = () => { pistas.forEach(p => { Object.assign(p, p.orig); p.solo = false; }); modo = 'todas'; document.querySelectorAll('[data-modo]').forEach(x => x.classList.toggle('on', x.dataset.modo === 'todas')); aplicar(); };
   document.querySelectorAll('[data-sep]').forEach(b => b.onclick = () => ponerSeparacion(+b.dataset.sep));
