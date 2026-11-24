@@ -126,7 +126,7 @@ aside h2 button { font: 500 11px var(--cuerpo); letter-spacing: 0; text-transfor
 .at-notas text { paint-order: stroke; stroke: #fffdf6; stroke-linejoin: round; font-family: 'IBM Plex Sans', sans-serif; font-weight: 500; }
 .at-notas .capa-director path, .at-notas .capa-director text { opacity: .9; }
 body.anotando .at-notas.editable [data-nid] { pointer-events: visiblePainted; }
-body.anotando #paginas { cursor: crosshair; touch-action: none; -webkit-user-select: none; user-select: none; }
+body.anotando #paginas, body.anotando #paginas svg { cursor: crosshair; touch-action: none; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
 body.anotando.herr-texto #paginas { cursor: text; }
 body.anotando.herr-goma #paginas { cursor: cell; }
 #notasBarra { position: fixed; left: 50%; bottom: 14px; transform: translateX(-50%) scale(var(--antizoom, 1)); transform-origin: 50% 100%; z-index: 40;
@@ -535,7 +535,7 @@ body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: v
     return grupo(coro) + ' · solistas ' + (ls.includes(null) ? solos.length : ls.sort((a, b) => 'SATB'.indexOf(a) - 'SATB'.indexOf(b)).join(''));
   }
   function desentidad(s) { const t = document.createElement('textarea'); t.innerHTML = s; return t.value; }
-  const VERSION = '2026.11.24-4';   // se ve al pie del índice: sirve para saber qué programa tiene la web
+  const VERSION = '2026.11.24-5';   // se ve al pie del índice: sirve para saber qué programa tiene la web
   const VEROVIO = 'https://cdn.jsdelivr.net/npm/verovio@6.1.0/dist/verovio-toolkit-wasm.js';
   // mismas opciones que el antiguo render.js: con la misma semilla, las dos letras dan los mismos ids
   const OPC = { xmlIdSeed: 1, scale: 40, pageWidth: 2200, pageHeight: 3000, adjustPageHeight: true, breaks: 'auto', footer: 'none', header: 'auto', svgViewBox: true, condenseFirstPage: true, svgHtml5: true, svgRemoveXlink: true, lyricSize: 4.2, pageMarginTop: 40, pageMarginBottom: 20, pageMarginLeft: 40, pageMarginRight: 40 };
@@ -1559,7 +1559,16 @@ body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: v
     const estado = t => { const e = $('nbEstado'); if (e) e.textContent = t; };
 
     // --- geometría: compases en orden, pentagramas con sus líneas
-    const compases = () => [...$('paginas').querySelectorAll('g.measure')];
+    // caché: compases y la geometría de sus pentagramas (se rehace cada vez que se dibuja la partitura); en el iPad,
+    // recorrer todos los compases a cada trazo era lento
+    let cache = null;
+    function cacheGeo() {
+      if (cache && cache.raiz === $('paginas').firstElementChild) return cache;
+      const ms = [...$('paginas').querySelectorAll('g.measure')];
+      cache = { raiz: $('paginas').firstElementChild, ms, st: ms.map(m => [...m.querySelectorAll(':scope > g.staff')].map(st => geo(st))), pm: ms.map(m => margen(m)) };
+      return cache;
+    }
+    const compases = () => cacheGeo().ms;
     const pentagramas = m => [...m.querySelectorAll(':scope > g.staff')];
     function geo(st) {
       const ls = [...st.querySelectorAll(':scope > path')].map(p => /M\s*([-\d.]+)[ ,]+([-\d.]+)\s*L\s*([-\d.]+)[ ,]+([-\d.]+)/.exec(p.getAttribute('d') || '')).filter(Boolean);
@@ -1583,11 +1592,11 @@ body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: v
     function aPagina(pm, cx, cy) { const m = pm.getScreenCTM(); if (!m) return null; const p = new DOMPoint(cx, cy).matrixTransform(m.inverse()); return { x: p.x, y: p.y }; }
     // compás y pentagrama más cercanos a un punto de esa página
     function anclar(pm, x, y) {
-      const todos = compases(); let mejor = null;
-      todos.forEach((m, k) => {
-        if (margen(m) !== pm) return;
-        pentagramas(m).forEach((st, i) => {
-          const g = geo(st); if (!g) return;
+      const C = cacheGeo(); let mejor = null;
+      C.ms.forEach((m, k) => {
+        if (C.pm[k] !== pm) return;
+        C.st[k].forEach((g, i) => {
+          if (!g) return;
           const dx = x < g.x0 ? g.x0 - x : x > g.x1 ? x - g.x1 : 0, dy = y < g.y0 ? g.y0 - y : y > g.y1 ? y - g.y1 : 0;
           const d = dx * 3 + dy;   // mejor el compás en el que cae (en horizontal) que el pentagrama más cercano
           if (!mejor || d < mejor.d) mejor = { d, k, s: i + 1, g, m };
@@ -1598,9 +1607,8 @@ body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: v
       return { k: mejor.k, s: mejor.s, n, g: mejor.g };
     }
     function sitio(it) {   // de una anotación guardada a su geometría actual
-      const m = compases()[it.k]; if (!m) return null;
-      const st = pentagramas(m)[(it.s || 1) - 1] || pentagramas(m)[0]; if (!st) return null;
-      const g = geo(st); return g ? { g, pm: margen(m) } : null;
+      const C = cacheGeo(), sts = C.st[it.k]; if (!sts) return null;
+      const g = sts[(it.s || 1) - 1] || sts[0]; return g ? { g, pm: C.pm[it.k] } : null;
     }
     const nid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 
@@ -1638,6 +1646,7 @@ body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: v
       return null;
     }
     pintarNotas = function () {
+      cache = null;
       $('paginas').querySelectorAll('g.at-notas').forEach(g => g.remove());
       ['director', 'mia'].forEach(c => {
         if (!ver[c]) return;
@@ -1764,28 +1773,33 @@ body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: v
       const ref = anclar(pm, p.x, p.y); const h = ref ? ref.g.h : 720;
       el.style.stroke = color; el.style.strokeWidth = (GROSOR[grosor] * h * (.6 + .8 * (e.pressure || .5))).toFixed(1);
       capaSvg(pm, capa).appendChild(el);
-      trazo = { pm, el, pts: [[p.x, p.y, e.pointerType === 'mouse' ? .5 : (e.pressure || .5)]], h };
-      $('paginas').setPointerCapture(e.pointerId);
+      const inv = pm.getScreenCTM().inverse();
+      trazo = { pm, el, inv, id: e.pointerId, pts: [[p.x, p.y, e.pointerType === 'mouse' ? .5 : (e.pressure || .5)]], h, raf: 0 };
+      try { $('paginas').setPointerCapture(e.pointerId); } catch (er) {}
     }, true);
     $('paginas').addEventListener('pointermove', e => {
       if (dedo && e.pointerType === 'touch') { $('hoja').scrollTop = dedo.top - (e.clientY - dedo.y); return; }
       if (!trazo) return;
       e.preventDefault();
       if (trazo.goma) { borrarEn(e.clientX, e.clientY); return; }
-      const evs = e.getCoalescedEvents ? e.getCoalescedEvents() : [e];
+      if (e.pointerId !== trazo.id) return;
+      let evs = [e]; try { if (e.getCoalescedEvents) { const c = e.getCoalescedEvents(); if (c.length) evs = c; } } catch (er) {}
       evs.forEach(ev => {
-        const p = aPagina(trazo.pm, ev.clientX, ev.clientY); if (!p) return;
+        const p = new DOMPoint(ev.clientX, ev.clientY).matrixTransform(trazo.inv);
         const u = trazo.pts[trazo.pts.length - 1];
         if (Math.hypot(p.x - u[0], p.y - u[1]) < trazo.h * .02) return;
         trazo.pts.push([p.x, p.y, e.pointerType === 'mouse' ? .5 : (ev.pressure || .5)]);
       });
-      trazo.el.setAttribute('d', camino(trazo.pts));
+      const t = trazo;   // un repintado por fotograma (el lápiz del iPad manda hasta 240 puntos por segundo)
+      if (!t.raf) t.raf = requestAnimationFrame(() => { t.raf = 0; t.el.setAttribute('d', camino(t.pts)); });
     }, true);
     const acabar = e => {
       if (dedo && e.pointerType === 'touch') { dedo = null; return; }
       if (!trazo) return;
       const t = trazo; trazo = null;
+      try { $('paginas').releasePointerCapture(e.pointerId); } catch (er) {}
       if (t.goma) return;
+      if (t.raf) cancelAnimationFrame(t.raf);
       // anclaje: el compás y pentagrama del centro del trazo
       const xs = t.pts.map(q => q[0]), ys = t.pts.map(q => q[1]);
       const a = anclar(t.pm, (Math.min(...xs) + Math.max(...xs)) / 2, (Math.min(...ys) + Math.max(...ys)) / 2);
@@ -1798,6 +1812,11 @@ body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: v
     };
     $('paginas').addEventListener('pointerup', acabar, true);
     $('paginas').addEventListener('pointercancel', acabar, true);
+    // iPad: Safari solo deja de desplazar la página si se cancela el touchmove (touch-action no basta siempre);
+    // si no, empieza a desplazar, corta el trazo y la página parece colgada
+    const tocando = e => { if (anotando && !dedo) e.preventDefault(); };
+    $('paginas').addEventListener('touchstart', tocando, { passive: false });
+    $('paginas').addEventListener('touchmove', tocando, { passive: false });
     // anotando, un clic en la partitura no mueve la reproducción
     $('paginas').addEventListener('click', e => { if (anotando) { e.stopPropagation(); e.preventDefault(); } }, true);
     document.addEventListener('keydown', e => {
