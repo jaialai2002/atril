@@ -21,7 +21,23 @@
 <link rel="preconnect" href="https://cdn.jsdelivr.net">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Tinos:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Tinos:ital,wght@0,400;0,700;1,400;1,700&family=Gelasio:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
+<style>
+/* letra de la partitura: TeX Gyre Termes (réplica libre de Times, licencia GUST, en fuentes/ del repo, servida por jsDelivr);
+   «Times»/«Georgia» del sistema: solo si el dispositivo las trae (Mac, iPad…), nunca se descargan */
+@font-face { font-family: "TeX Gyre Termes"; font-weight: 400; font-style: normal; font-display: swap; src: url(https://cdn.jsdelivr.net/gh/jaialai2002/atril@main/fuentes/texgyretermes-regular.woff2) format("woff2"); }
+@font-face { font-family: "TeX Gyre Termes"; font-weight: 700; font-style: normal; font-display: swap; src: url(https://cdn.jsdelivr.net/gh/jaialai2002/atril@main/fuentes/texgyretermes-bold.woff2) format("woff2"); }
+@font-face { font-family: "TeX Gyre Termes"; font-weight: 400; font-style: italic; font-display: swap; src: url(https://cdn.jsdelivr.net/gh/jaialai2002/atril@main/fuentes/texgyretermes-italic.woff2) format("woff2"); }
+@font-face { font-family: "TeX Gyre Termes"; font-weight: 700; font-style: italic; font-display: swap; src: url(https://cdn.jsdelivr.net/gh/jaialai2002/atril@main/fuentes/texgyretermes-bolditalic.woff2) format("woff2"); }
+@font-face { font-family: "Times Sistema"; font-weight: 400; font-style: normal; src: local("Times-Roman"), local("Times Roman"), local("Times"); }
+@font-face { font-family: "Times Sistema"; font-weight: 700; font-style: normal; src: local("Times-Bold"), local("Times Bold"); }
+@font-face { font-family: "Times Sistema"; font-weight: 400; font-style: italic; src: local("Times-Italic"), local("Times Italic"); }
+@font-face { font-family: "Times Sistema"; font-weight: 700; font-style: italic; src: local("Times-BoldItalic"), local("Times Bold Italic"); }
+@font-face { font-family: "Georgia Sistema"; font-weight: 400; font-style: normal; src: local("Georgia"); }
+@font-face { font-family: "Georgia Sistema"; font-weight: 700; font-style: normal; src: local("Georgia-Bold"), local("Georgia Bold"); }
+@font-face { font-family: "Georgia Sistema"; font-weight: 400; font-style: italic; src: local("Georgia-Italic"), local("Georgia Italic"); }
+@font-face { font-family: "Georgia Sistema"; font-weight: 700; font-style: italic; src: local("Georgia-BoldItalic"), local("Georgia Bold Italic"); }
+</style>
 <style>
 :root {
   /* Consola oscura de ensayo alrededor de una hoja de papel: la partitura manda, el mezclador acompaña a la derecha */
@@ -214,6 +230,10 @@ input[type=range]::-moz-range-thumb { width: 12px; height: 12px; border: 0; bord
 .seguim { display: grid; grid-template-columns: auto 1fr; gap: 6px 8px; align-items: center; font-size: 11px; color: var(--tenue); }
 .seguim .seg { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; }
 .seguim .seg button { padding: 4px 6px; font-size: 11.5px; }
+#letra { background: #2a2e37; border: 1px solid var(--surco); border-radius: 7px; color: var(--texto); font: 11.5px var(--cuerpo); padding: 4px 6px; min-width: 0; }
+#letra option { background: #20232a; color: var(--texto); }
+#filaLetra { margin-top: 6px; }
+#filaLetra[hidden] { display: none; }
 .separacion { display: flex; align-items: center; gap: 8px; padding: 3px 2px 1px; }
 .separacion .lbl { font-size: 12px; color: var(--tenue); white-space: nowrap; }
 .separacion .seg { flex: 1; display: grid; grid-template-columns: repeat(4, 1fr); }
@@ -453,6 +473,12 @@ body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: v
           <button data-seguir="0" title="La partitura se queda quieta: tú la mueves (tecla S)">A mano</button>
         </div>
       </div>
+      <div class="seguim" id="filaLetra" hidden><span>Letra</span>
+        <select id="letra" title="Tipo de letra del texto de esta partitura (solo tu cuenta y este dispositivo)">
+          <option value="termes">Termes (como Times)</option><option value="gelasio">Gelasio (como Georgia)</option><option value="tinos">Tinos</option>
+          <option value="times">Times del sistema</option><option value="georgia">Georgia del sistema</option>
+        </select>
+      </div>
       <p class="nota">Clic en una nota o un compás para ir ahí. <b>Espacio</b> reproduce o para; <b>← →</b> cambian de compás; <b>M</b> pliega el mezclador; <b>B</b> cambia el seguimiento; <b>S</b> pasa de página sola o a mano. Doble clic en un control lo devuelve a su valor original.</p>
       <a id="verManual" class="manual-link" target="_blank" rel="noopener"><svg class="ico-libro" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 10.4V20M12 10.4C12 8.15979 12 7.03969 11.564 6.18404C11.1805 5.43139 10.5686 4.81947 9.81596 4.43597C8.96031 4 7.84021 4 5.6 4H4.6C4.03995 4 3.75992 4 3.54601 4.10899C3.35785 4.20487 3.20487 4.35785 3.10899 4.54601C3 4.75992 3 5.03995 3 5.6V16.4C3 16.9601 3 17.2401 3.10899 17.454C3.20487 17.6422 3.35785 17.7951 3.54601 17.891C3.75992 18 4.03995 18 4.6 18H7.54668C8.08687 18 8.35696 18 8.61814 18.0466C8.84995 18.0879 9.0761 18.1563 9.29191 18.2506C9.53504 18.3567 9.75977 18.5065 10.2092 18.8062L12 20M12 10.4C12 8.15979 12 7.03969 12.436 6.18404C12.8195 5.43139 13.4314 4.81947 14.184 4.43597C15.0397 4 16.1598 4 18.4 4H19.4C19.9601 4 20.2401 4 20.454 4.10899C20.6422 4.20487 20.7951 4.35785 20.891 4.54601C21 4.75992 21 5.03995 21 5.6V16.4C21 16.9601 21 17.2401 20.891 17.454C20.7951 17.6422 20.6422 17.7951 20.454 17.891C20.2401 18 19.9601 18 19.4 18H16.4533C15.9131 18 15.643 18 15.3819 18.0466C15.15 18.0879 14.9239 18.1563 14.7081 18.2506C14.465 18.3567 14.2402 18.5065 13.7908 18.8062L12 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Manual de uso</a>
     </div>
@@ -539,7 +565,7 @@ body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: v
     return grupo(coro) + ' · solistas ' + (ls.includes(null) ? solos.length : ls.sort((a, b) => 'SATB'.indexOf(a) - 'SATB'.indexOf(b)).join(''));
   }
   function desentidad(s) { const t = document.createElement('textarea'); t.innerHTML = s; return t.value; }
-  const VERSION = '2026.11.24-14';   // se ve al pie del índice: sirve para saber qué programa tiene la web
+  const VERSION = '2026.11.24-15';   // se ve al pie del índice: sirve para saber qué programa tiene la web
   const VEROVIO = 'https://cdn.jsdelivr.net/npm/verovio@6.1.0/dist/verovio-toolkit-wasm.js';
   // mismas opciones que el antiguo render.js: con la misma semilla, las dos letras dan los mismos ids
   const OPC = { xmlIdSeed: 1, scale: 40, pageWidth: 2200, pageHeight: 3000, adjustPageHeight: true, breaks: 'auto', footer: 'none', header: 'auto', svgViewBox: true, condenseFirstPage: true, svgHtml5: true, svgRemoveXlink: true, lyricSize: 4.2, pageMarginTop: 40, pageMarginBottom: 20, pageMarginLeft: 40, pageMarginRight: 40 };
@@ -1076,16 +1102,23 @@ body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: v
   // los ritardandos de los c. 171, 173, 188 y 189). Se mete en una <direction> sin texto visible.
   const tempoSuelto = xml => xml.replace(/<direction\b[\s\S]*?<\/direction>|(<sound\b[^>]*\btempo="[^"]*"[^>]*\/>)/g,
     (m, s) => s ? '<direction><direction-type><words print-object="no"></words></direction-type>' + s + '</direction>' : m);
+  // letra del texto de la partitura: Termes por defecto; la cuenta admin puede probar otra por obra (se guarda en este dispositivo).
+  // Las «del sistema» caen a su réplica libre donde no existen (Android).
+  const LETRAS = { termes: '"TeX Gyre Termes"', gelasio: 'Gelasio', tinos: 'Tinos', times: '"Times Sistema", "TeX Gyre Termes"', georgia: '"Georgia Sistema", Gelasio' };
+  const letraElegida = LETRAS[leer('letra', 'termes')] ? leer('letra', 'termes') : 'termes';
+  const LETRA = LETRAS[letraElegida];
+  // el «‿» de Termes (y Times) ya es estrecho; el de Tinos, Gelasio y Georgia es ancho y se dibuja más pequeño
+  document.documentElement.style.setProperty('--elis', ['termes', 'times'].includes(letraElegida) ? '1em' : '.65em');
   function dibujar(v) {
     const tk = new verovio.toolkit(); tk.setOptions(Object.assign({}, OPC, { breaks: conSaltos ? 'line' : 'auto' })); tk.loadData(tempoSuelto(unirElisiones(xmls[v])));
-    // texto de la partitura (letra, títulos, indicaciones) en Tinos: mismas medidas que Times New Roman y la misma en todos los
+    // texto de la partitura (letra, títulos, indicaciones) en LETRA (Termes por defecto), la misma en todos los
     // sistemas (Android no trae Times); la música sigue en Leipzig
-    const paginas = []; for (let i = 1, n = tk.getPageCount(); i <= n; i++) paginas.push(elisiones(tk.renderToSVG(i).replace(/font-family="Times, serif"/g, 'font-family="Tinos, Times, serif"')));
+    const paginas = []; for (let i = 1, n = tk.getPageCount(); i <= n; i++) paginas.push(elisiones(tk.renderToSVG(i).replace(/font-family="Times, serif"/g, "font-family='" + LETRA + ", Times, serif'")));
     return { tk, paginas };
   }
   carga('Dibujando la partitura…', .08); await new Promise(r => setTimeout(r, 40));
-  // Tinos tiene que estar cargada antes de medir sílabas (rotulador, elisiones); como mucho 3 s, si no hay red sigue con Times
-  try { await Promise.race([Promise.all(['16px Tinos', 'bold 16px Tinos', 'italic 16px Tinos'].map(f => document.fonts.load(f))), new Promise(r => setTimeout(r, 3000))]); } catch (e) {}
+  // la letra tiene que estar cargada antes de medir sílabas (rotulador, elisiones); como mucho 3 s, si no hay red sigue con Times
+  try { await Promise.race([Promise.all(['16px ', 'bold 16px ', 'italic 16px ', 'bold italic 16px '].map(f => document.fonts.load(f + LETRA))), new Promise(r => setTimeout(r, 3000))]); } catch (e) {}
   const d0 = dibujar(principal), svgs = { [principal]: d0.paginas };
   const tm = d0.tk.renderToTimemap({ includeMeasures: true, includeRests: false });
   // pentagrama (id del SVG) -> pista: nº de pentagrama de Verovio -> <part> (con sus <staves>) -> pista («parte» del obra.json o el mismo nombre)
@@ -1903,6 +1936,10 @@ body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: v
         if (!r.ok) return;
         const j = await r.json();
         admin = !!j.admin;
+        if (admin) {
+          const sel = $('letra'); sel.value = letraElegida; $('filaLetra').hidden = false;
+          sel.onchange = () => { guardar('letra', sel.value); location.reload(); };
+        }
         capas.mia = (j.mia && j.mia.items) || []; capas.director = (j.director && j.director.items) || [];
         $('verNotas').hidden = false;
         pintarNotas();
