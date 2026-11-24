@@ -345,10 +345,10 @@ body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: v
 .ix-boton.dor { border-color: var(--laton); color: var(--laton); }
 .ix-boton.pri { background: var(--laton); color: var(--tinta); border-color: var(--laton); font-weight: 600; }
 .ix-boton:disabled { opacity: .45; cursor: default; }
-.ix-cat { display: flex; align-items: center; gap: 8px; width: 100%; margin: 18px 0 7px; padding: 0 2px; background: none; border: 0; font: 600 11px var(--cuerpo); letter-spacing: .14em; text-transform: uppercase; color: var(--tenue); cursor: pointer; text-align: left; }
+.ix-cat { display: flex; align-items: center; gap: 8px; width: 100%; margin: 18px 0 7px; padding: 0 2px; background: none; border: 0; font: 600 14px var(--cuerpo); letter-spacing: .13em; text-transform: uppercase; color: var(--tenue); cursor: pointer; text-align: left; }
 .ix-cat:first-child { margin-top: 4px; }
-.ix-cat .fl { color: var(--laton); width: 12px; font-size: 12px; }
-.ix-cat .n { font: 500 11px var(--mono); letter-spacing: 0; background: rgba(255,255,255,.06); border-radius: 10px; padding: 1px 7px; }
+.ix-cat .fl { color: var(--laton); width: 12px; font-size: 13px; }
+.ix-cat .n { font: 500 12px var(--mono); letter-spacing: 0; background: rgba(255,255,255,.06); border-radius: 10px; padding: 1px 7px; }
 .ix-cat::after { content: ""; flex: 1; height: 1px; background: rgba(255,255,255,.07); }
 .ix-cat:hover { color: var(--texto); }
 .ix .ix-fila { display: flex; align-items: baseline; gap: 14px; background: rgba(34,35,39,.82); border: 1px solid rgba(255,255,255,.07); border-radius: 9px; padding: 9px 16px; margin: 0 0 6px; -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); }
@@ -537,7 +537,7 @@ body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: v
     return grupo(coro) + ' · solistas ' + (ls.includes(null) ? solos.length : ls.sort((a, b) => 'SATB'.indexOf(a) - 'SATB'.indexOf(b)).join(''));
   }
   function desentidad(s) { const t = document.createElement('textarea'); t.innerHTML = s; return t.value; }
-  const VERSION = '2026.11.24-9';   // se ve al pie del índice: sirve para saber qué programa tiene la web
+  const VERSION = '2026.11.24-10';   // se ve al pie del índice: sirve para saber qué programa tiene la web
   const VEROVIO = 'https://cdn.jsdelivr.net/npm/verovio@6.1.0/dist/verovio-toolkit-wasm.js';
   // mismas opciones que el antiguo render.js: con la misma semilla, las dos letras dan los mismos ids
   const OPC = { xmlIdSeed: 1, scale: 40, pageWidth: 2200, pageHeight: 3000, adjustPageHeight: true, breaks: 'auto', footer: 'none', header: 'auto', svgViewBox: true, condenseFirstPage: true, svgHtml5: true, svgRemoveXlink: true, lyricSize: 4.2, pageMarginTop: 40, pageMarginBottom: 20, pageMarginLeft: 40, pageMarginRight: 40 };
