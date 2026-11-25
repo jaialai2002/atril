@@ -629,7 +629,7 @@ body.en-concierto #notasBarra { bottom: calc(66px + env(safe-area-inset-bottom, 
     return grupo(coro) + ' · solistas ' + (ls.includes(null) ? solos.length : ls.sort((a, b) => 'SATB'.indexOf(a) - 'SATB'.indexOf(b)).join(''));
   }
   function desentidad(s) { const t = document.createElement('textarea'); t.innerHTML = s; return t.value; }
-  const VERSION = '2026.11.25-09';   // se ve al pie del índice: sirve para saber qué programa tiene la web
+  const VERSION = '2026.11.25-10';   // se ve al pie del índice: sirve para saber qué programa tiene la web
   const VEROVIO = 'https://cdn.jsdelivr.net/npm/verovio@6.1.0/dist/verovio-toolkit-wasm.js';
   // mismas opciones que el antiguo render.js: con la misma semilla, las dos letras dan los mismos ids
   const OPC = { xmlIdSeed: 1, scale: 40, pageWidth: 2200, pageHeight: 3000, adjustPageHeight: true, breaks: 'auto', footer: 'none', header: 'auto', svgViewBox: true, condenseFirstPage: true, svgHtml5: true, svgRemoveXlink: true, lyricSize: 4.2, pageMarginTop: 40, pageMarginBottom: 20, pageMarginLeft: 40, pageMarginRight: 40 };
@@ -675,7 +675,16 @@ body.en-concierto #notasBarra { bottom: calc(66px + env(safe-area-inset-bottom, 
         const par = lista[k]; k += nl;
         const durN = +((/<duration>(\d+)/.exec(n) || [0, 0])[1]);
         if (par && par[2] === 'p' && prev) {
-          const tot = prev.dur + durN, fig = FIGURA.find(f => Math.abs(f[0] - tot / div) < 1e-6);
+          // blanca con puntillo (Taller 3.01): «Ci» semicorchea + «é» corchea con puntillo LIGADA a una blanca sin letra
+          let tot = prev.dur + durN, cola = null;
+          if (/<tie type="start"/.test(n)) {
+            const sig = /^\s*<note\b[\s\S]*?<\/note>/.exec(tr.slice(m.index + n.length));
+            if (sig && !/<lyric[\s>]/.test(sig[0]) && /<tie type="stop"/.test(sig[0])) {
+              const a0 = m.index + n.length + sig[0].indexOf('<note');
+              cola = [a0, a0 + sig[0].trim().length]; tot += +((/<duration>(\d+)/.exec(sig[0]) || [0, 0])[1]);
+            }
+          }
+          const fig = FIGURA.find(f => Math.abs(f[0] - tot / div) < 1e-6);
           if (fig) {
             const tx = (/<text\b[^>]*>([^<]*)<\/text>/.exec(n) || [0, ''])[1], sy = (/<syllabic>(\w+)/.exec(n) || [0, ''])[1];
             let nuevo = prev.txt.replace(/<duration>\d+<\/duration>/, '<duration>' + tot + '</duration>').replace(/\s*<dot\/>/g, '')
@@ -684,6 +693,7 @@ body.en-concierto #notasBarra { bottom: calc(66px + env(safe-area-inset-bottom, 
             const sp = (/<syllabic>(\w+)/.exec(prev.txt) || [0, ''])[1], j = JUNTA[sp + '|' + sy];
             if (j) nuevo = nuevo.replace(/<syllabic>\w+<\/syllabic>/, '<syllabic>' + j + '</syllabic>');
             cambios.push([prev.ini, prev.fin, nuevo], [m.index, m.index + n.length, '']);
+            if (cola) cambios.push([cola[0], cola[1], '']);
             prev = null; continue;
           }
         }
