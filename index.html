@@ -414,7 +414,8 @@ body.en-concierto #notasBarra { bottom: calc(66px + env(safe-area-inset-bottom, 
 #concierto .c-nombre { letter-spacing: 1px; color: #8d919a; text-transform: uppercase; }
 #concierto .c-barras { display: flex; gap: 3px; margin-top: 5px; }
 #concierto .c-barras a { flex: 1; height: 5px; border-radius: 3px; background: #3a3e47; }
-#concierto .c-barras a.hecha, #concierto .c-barras a.esta { background: var(--laton); }
+#concierto .c-barras a.hecha { background: var(--laton); }
+#concierto .c-barras a.esta { background: linear-gradient(90deg, var(--laton) var(--av, 0%), #3a3e47 var(--av, 0%)); }
 #concierto .c-barras a.esta { outline: 1px solid var(--laton); outline-offset: 1px; }
 #concierto .c-ir { display: inline-flex; align-items: center; gap: 4px; max-width: 32%; padding: 4px 9px; border: 1px solid var(--surco); border-radius: 7px; color: var(--texto); text-decoration: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 #concierto .c-ir:hover { border-color: var(--laton); }
@@ -628,7 +629,7 @@ body.en-concierto #notasBarra { bottom: calc(66px + env(safe-area-inset-bottom, 
     return grupo(coro) + ' · solistas ' + (ls.includes(null) ? solos.length : ls.sort((a, b) => 'SATB'.indexOf(a) - 'SATB'.indexOf(b)).join(''));
   }
   function desentidad(s) { const t = document.createElement('textarea'); t.innerHTML = s; return t.value; }
-  const VERSION = '2026.11.25-07';   // se ve al pie del índice: sirve para saber qué programa tiene la web
+  const VERSION = '2026.11.25-08';   // se ve al pie del índice: sirve para saber qué programa tiene la web
   const VEROVIO = 'https://cdn.jsdelivr.net/npm/verovio@6.1.0/dist/verovio-toolkit-wasm.js';
   // mismas opciones que el antiguo render.js: con la misma semilla, las dos letras dan los mismos ids
   const OPC = { xmlIdSeed: 1, scale: 40, pageWidth: 2200, pageHeight: 3000, adjustPageHeight: true, breaks: 'auto', footer: 'none', header: 'auto', svgViewBox: true, condenseFirstPage: true, svgHtml5: true, svgRemoveXlink: true, lyricSize: 4.2, pageMarginTop: 40, pageMarginBottom: 20, pageMarginLeft: 40, pageMarginRight: 40 };
@@ -1218,7 +1219,7 @@ body.en-concierto #notasBarra { bottom: calc(66px + env(safe-area-inset-bottom, 
 
   // estado (declarado antes de usarlo en pintar/ir)
   let arranque = 0, sonando = false, t0 = 0, desde = 0, fuentes = [], referencia = false, bufRef = null, duracion = 0, ctx = null;
-  let alTerminar = null, precargarSig = null;   // modo concierto: tarjeta «A continuación» y precarga de la siguiente obra
+  let alTerminar = null, precargarSig = null, barraConc = null, avConc = '';   // modo concierto: tarjeta «A continuación» y precarga de la siguiente obra
   let seguir = leer('seguir', true), ultimoIdx = -2;
   function ahora() { return sonando ? Math.min(duracion, desde + ctx.currentTime - t0) : desde; }
 
@@ -1239,6 +1240,7 @@ body.en-concierto #notasBarra { bottom: calc(66px + env(safe-area-inset-bottom, 
       + c.obras.map((x, i) => '<a href="' + url(x) + '" title="' + (i + 1) + '. ' + esc(tit(x)) + '" class="' + (i < k ? 'hecha' : i === k ? 'esta' : '') + '"></a>').join('') + '</div></div>'
       + '<a class="c-ir' + (sig ? '' : ' vacio') + '" href="' + (sig ? url(sig) : '#') + '" title="Siguiente">' + esc(sig ? tit(sig) : '') + ' ›</a>';
     document.body.appendChild(d); document.body.classList.add('en-concierto');
+    barraConc = d.querySelector('.c-barras a.esta');   // su barrita se va llenando con lo que lleva sonado la obra
     const t = document.createElement('div'); t.id = 'siguiente'; t.hidden = true;
     t.innerHTML = sig
       ? '<div class="s-de">A continuación · ' + esc(c.nombre) + ' ' + (k + 2) + ' de ' + c.obras.length + '</div><div class="s-tit">' + esc(tit(sig)) + '</div><div class="s-bot"><a href="' + url(sig) + '">▶ Ir a la siguiente</a><button type="button">Quedarme aquí</button></div>'
@@ -1681,6 +1683,7 @@ body.en-concierto #notasBarra { bottom: calc(66px + env(safe-area-inset-bottom, 
     cabeza.setAttribute('x', x - 25);
   }
   function bucle() {
+    if (barraConc && duracion) { const a = (100 * Math.min(1, ahora() / duracion)).toFixed(1) + '%'; if (a !== avConc) { avConc = a; barraConc.style.setProperty('--av', a); } }
     if (sonando && precargarSig && ahora() > duracion - 60) { const f = precargarSig; precargarSig = null; f(); }
     if (sonando && ahora() >= duracion - 0.01) { parar(); desde = duracion; if (alTerminar) alTerminar(); }
     pintar(false);
