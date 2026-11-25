@@ -396,7 +396,13 @@ body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: v
 .ix-conc-add select { width: 100%; }
 .ix-escuchar { color: var(--laton) !important; }
 .ix-cat-conc { cursor: default; }
-#concierto { display: flex; align-items: center; gap: 10px; max-width: 900px; margin: 0 auto 10px; padding: 8px 10px; background: var(--consola); border: 1px solid var(--surco); border-radius: 10px; color: var(--texto); font: 12px var(--cuerpo); }
+/* barra del concierto: fija al pie de la pantalla (no se va al hacer scroll) */
+#concierto { position: fixed; left: 50%; bottom: calc(8px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); zoom: var(--antizoom, 1); z-index: 4; width: min(900px, calc(100vw - 24px)); box-sizing: border-box; display: flex; align-items: center; gap: 10px; padding: 6px 8px; background: rgba(32, 35, 42, .92); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); border: 1px solid var(--surco); border-radius: 10px; color: var(--texto); font: 12px var(--cuerpo); box-shadow: 0 8px 24px rgba(0,0,0,.35); }
+body.en-concierto #hoja { padding-bottom: 80px; }
+@media print { #concierto, #siguiente { display: none !important; } }
+body.en-concierto #siguiente { bottom: calc(66px + env(safe-area-inset-bottom, 0px)); }
+body.en-concierto #avisito, body.en-concierto #nuevaVersion { bottom: calc(70px + env(safe-area-inset-bottom, 0px)); }
+body.en-concierto #notasBarra { bottom: calc(66px + env(safe-area-inset-bottom, 0px)); }
 #concierto .c-centro { flex: 1; min-width: 0; text-align: center; }
 #concierto .c-nombre { letter-spacing: 1px; color: #8d919a; text-transform: uppercase; }
 #concierto .c-barras { display: flex; gap: 3px; margin-top: 5px; }
@@ -614,7 +620,7 @@ body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: v
     return grupo(coro) + ' · solistas ' + (ls.includes(null) ? solos.length : ls.sort((a, b) => 'SATB'.indexOf(a) - 'SATB'.indexOf(b)).join(''));
   }
   function desentidad(s) { const t = document.createElement('textarea'); t.innerHTML = s; return t.value; }
-  const VERSION = '2026.11.25-04';   // se ve al pie del índice: sirve para saber qué programa tiene la web
+  const VERSION = '2026.11.25-05';   // se ve al pie del índice: sirve para saber qué programa tiene la web
   const VEROVIO = 'https://cdn.jsdelivr.net/npm/verovio@6.1.0/dist/verovio-toolkit-wasm.js';
   // mismas opciones que el antiguo render.js: con la misma semilla, las dos letras dan los mismos ids
   const OPC = { xmlIdSeed: 1, scale: 40, pageWidth: 2200, pageHeight: 3000, adjustPageHeight: true, breaks: 'auto', footer: 'none', header: 'auto', svgViewBox: true, condenseFirstPage: true, svgHtml5: true, svgRemoveXlink: true, lyricSize: 4.2, pageMarginTop: 40, pageMarginBottom: 20, pageMarginLeft: 40, pageMarginRight: 40 };
@@ -1221,7 +1227,7 @@ body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: v
       + '<div class="c-centro"><div class="c-nombre">♪ ' + esc(c.nombre) + ' · ' + (k + 1) + ' de ' + c.obras.length + '</div><div class="c-barras">'
       + c.obras.map((x, i) => '<a href="' + url(x) + '" title="' + (i + 1) + '. ' + esc(tit(x)) + '" class="' + (i < k ? 'hecha' : i === k ? 'esta' : '') + '"></a>').join('') + '</div></div>'
       + '<a class="c-ir' + (sig ? '' : ' vacio') + '" href="' + (sig ? url(sig) : '#') + '" title="Siguiente">' + esc(sig ? tit(sig) : '') + ' ›</a>';
-    $('paginas').before(d);
+    document.body.appendChild(d); document.body.classList.add('en-concierto');
     const t = document.createElement('div'); t.id = 'siguiente'; t.hidden = true;
     t.innerHTML = sig
       ? '<div class="s-de">A continuación · ' + esc(c.nombre) + ' ' + (k + 2) + ' de ' + c.obras.length + '</div><div class="s-tit">' + esc(tit(sig)) + '</div><div class="s-bot"><a href="' + url(sig) + '">▶ Ir a la siguiente</a><button type="button">Quedarme aquí</button></div>'
