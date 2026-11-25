@@ -629,7 +629,7 @@ body.en-concierto #notasBarra { bottom: calc(66px + env(safe-area-inset-bottom, 
     return grupo(coro) + ' · solistas ' + (ls.includes(null) ? solos.length : ls.sort((a, b) => 'SATB'.indexOf(a) - 'SATB'.indexOf(b)).join(''));
   }
   function desentidad(s) { const t = document.createElement('textarea'); t.innerHTML = s; return t.value; }
-  const VERSION = '2026.11.25-08';   // se ve al pie del índice: sirve para saber qué programa tiene la web
+  const VERSION = '2026.11.25-09';   // se ve al pie del índice: sirve para saber qué programa tiene la web
   const VEROVIO = 'https://cdn.jsdelivr.net/npm/verovio@6.1.0/dist/verovio-toolkit-wasm.js';
   // mismas opciones que el antiguo render.js: con la misma semilla, las dos letras dan los mismos ids
   const OPC = { xmlIdSeed: 1, scale: 40, pageWidth: 2200, pageHeight: 3000, adjustPageHeight: true, breaks: 'auto', footer: 'none', header: 'auto', svgViewBox: true, condenseFirstPage: true, svgHtml5: true, svgRemoveXlink: true, lyricSize: 4.2, pageMarginTop: 40, pageMarginBottom: 20, pageMarginLeft: 40, pageMarginRight: 40 };
@@ -1896,6 +1896,8 @@ body.en-concierto #notasBarra { bottom: calc(66px + env(safe-area-inset-bottom, 
     const capas = { mia: [], director: [] };
     let admin = false, anotando = false, herr = 'lapiz', penVisto = false;
     let capa = leer('notasCapa', 'mia'), color = leer('notasColor', COLORES[0]), grosor = leer('notasGrosor', 'fino');
+    const TAMS = [.6, .8, 1, 1.3, 1.7, 2.2];   // tamaño del texto (× el normal)
+    let tamTexto = TAMS.includes(+leer('notasTam', 1)) ? +leer('notasTam', 1) : 1;
     let ver = Object.assign({ mia: true, director: true }, leer('notasVer', {}));
     const historia = [];     // para deshacer: {capa, items}
     const pendiente = {};    // capa -> temporizador de guardado
@@ -2024,9 +2026,11 @@ body.en-concierto #notasBarra { bottom: calc(66px + env(safe-area-inset-bottom, 
     document.body.appendChild(barra);
     function pintarBarra() {
       barra.innerHTML =
-        '<div class="nb">' + ['lapiz', 'texto', 'goma'].map(h => '<button data-herr="' + h + '" class="' + (herr === h ? 'on' : '') + '" title="' + { lapiz: 'Lápiz', texto: 'Texto: toca donde quieras escribir', goma: 'Goma: toca o arrastra sobre lo que quieras borrar' }[h] + '">' + ico[h] + '</button>').join('') + '</div>' +
+        '<div class="nb">' + ['lapiz', 'texto', 'goma'].map(h => '<button data-herr="' + h + '" class="' + (herr === h ? 'on' : '') + '" title="' + { lapiz: 'Lápiz', texto: 'Texto: toca donde quieras escribir; arrastra un texto para moverlo, tócalo para cambiarlo', goma: 'Goma: toca o arrastra sobre lo que quieras borrar' }[h] + '">' + ico[h] + '</button>').join('') + '</div>' +
         '<div class="nb">' + COLORES.map(c => '<button class="muestra' + (c === color ? ' on' : '') + '" data-color="' + c + '" title="Color"><i style="background:' + c + '"></i></button>').join('') + '</div>' +
-        '<div class="nb"><button data-grosor="fino" class="' + (grosor === 'fino' ? 'on' : '') + '" title="Trazo fino">fino</button><button data-grosor="grueso" class="' + (grosor === 'grueso' ? 'on' : '') + '" title="Trazo grueso">grueso</button></div>' +
+        (herr === 'texto'
+          ? '<div class="nb"><button data-tam="-1" title="Letra más pequeña (la del texto que editas, o la de los nuevos)">A−</button><span class="nb-et" id="nbTam">' + Math.round(tamaTexto() * 100) + ' %</span><button data-tam="1" title="Letra más grande">A+</button></div>'
+          : '<div class="nb"><button data-grosor="fino" class="' + (grosor === 'fino' ? 'on' : '') + '" title="Trazo fino">fino</button><button data-grosor="grueso" class="' + (grosor === 'grueso' ? 'on' : '') + '" title="Trazo grueso">grueso</button></div>') +
         '<div class="nb"><button id="nbDeshacer" title="Deshacer (⌘Z)">' + ico.deshacer + '</button></div>' +
         (admin ? '<div class="nb"><span class="nb-et">Escribo en</span><button data-capa="mia" class="' + (capa === 'mia' ? 'on' : '') + '" title="Solo las ves tú, en cualquier dispositivo con tu cuenta">las mías</button><button data-capa="director" class="' + (capa === 'director' ? 'on' : '') + '" title="Las ve todo el coro">director</button></div>' : '') +
         '<div class="nb"><span class="nb-et">Ver</span><button data-ver="mia" class="' + (ver.mia ? 'on' : '') + '">mías</button><button data-ver="director" class="' + (ver.director ? 'on' : '') + '">director</button></div>' +
@@ -2034,6 +2038,16 @@ body.en-concierto #notasBarra { bottom: calc(66px + env(safe-area-inset-bottom, 
       barra.querySelectorAll('[data-herr]').forEach(b => b.onclick = () => { herr = b.dataset.herr; pintarBarra(); clasesCuerpo(); });
       barra.querySelectorAll('[data-color]').forEach(b => b.onclick = () => { color = b.dataset.color; guardar('notasColor', color); pintarBarra(); });
       barra.querySelectorAll('[data-grosor]').forEach(b => b.onclick = () => { grosor = b.dataset.grosor; guardar('notasGrosor', grosor); pintarBarra(); });
+      // A− / A+: sin quitar el foco al cuadro de texto abierto (si hay uno, cambia ese texto; si no, el de los nuevos)
+      barra.querySelectorAll('[data-tam]').forEach(b => {
+        b.onpointerdown = b.onmousedown = e => e.preventDefault();
+        b.onclick = () => {
+          const i = TAMS.indexOf(tamaTexto()), z = TAMS[Math.max(0, Math.min(TAMS.length - 1, (i < 0 ? 2 : i) + +b.dataset.tam))];
+          if (cuadro) { cuadro.z = z; cuadro.el.style.fontSize = Math.round(18 * z) + 'px'; }
+          else { tamTexto = z; guardar('notasTam', z); }
+          $('nbTam').textContent = Math.round(z * 100) + ' %';
+        };
+      });
       barra.querySelectorAll('[data-capa]').forEach(b => b.onclick = () => { capa = b.dataset.capa; guardar('notasCapa', capa); if (!ver[capa]) { ver[capa] = true; guardar('notasVer', ver); pintarNotas(); } pintarBarra(); });
       barra.querySelectorAll('[data-ver]').forEach(b => b.onclick = () => { ver[b.dataset.ver] = !ver[b.dataset.ver]; guardar('notasVer', ver); pintarNotas(); pintarBarra(); });
       $('nbDeshacer').onclick = deshacerUno;
@@ -2058,19 +2072,23 @@ body.en-concierto #notasBarra { bottom: calc(66px + env(safe-area-inset-bottom, 
 
     // --- texto: un cuadro donde se ha tocado; Intro guarda, Esc cancela; vacío = borrar
     let cuadro = null;
+    const tamaTexto = () => cuadro ? cuadro.z : tamTexto;
     function cerrarTexto(cancelar) {
       if (!cuadro) return;
       const c = cuadro; cuadro = null;
-      if (!cancelar) c.alCerrar(c.el.value.trim());
+      if (!cancelar) c.alCerrar(c.el.value.trim(), c.z);
       c.el.remove();
+      if (anotando && herr === 'texto' && $('nbTam')) $('nbTam').textContent = Math.round(tamTexto * 100) + ' %';
     }
-    function abrirTexto(cx, cy, valor, alCerrar) {
+    function abrirTexto(cx, cy, valor, alCerrar, z) {
       cerrarTexto(false);
       const el = document.createElement('input');
       el.id = 'notaTexto'; el.value = valor || ''; el.maxLength = 300; el.placeholder = 'Escribe y pulsa Intro';
       el.style.left = Math.min(cx, innerWidth - 220) + 'px'; el.style.top = Math.max(8, cy - 18) + 'px'; el.style.color = color;
+      z = z || tamTexto; el.style.fontSize = Math.round(18 * z) + 'px';
       document.body.appendChild(el);
-      cuadro = { el, alCerrar };
+      cuadro = { el, alCerrar, z };
+      if ($('nbTam')) $('nbTam').textContent = Math.round(z * 100) + ' %';
       el.addEventListener('keydown', e => { e.stopPropagation(); if (e.key === 'Enter') cerrarTexto(false); else if (e.key === 'Escape') cerrarTexto(true); });
       el.addEventListener('blur', () => setTimeout(() => cerrarTexto(false), 0));
       setTimeout(() => el.focus(), 0);
@@ -2109,17 +2127,22 @@ body.en-concierto #notasBarra { bottom: calc(66px + env(safe-area-inset-bottom, 
       if (herr === 'goma') { borrarEn(e.clientX, e.clientY); trazo = { goma: true }; $('paginas').setPointerCapture(e.pointerId); return; }
       if (herr === 'texto') {
         const t = e.target.closest && e.target.closest('text[data-nid]');
-        if (t && t.getAttribute('data-ncapa') === capa) {   // editar uno que ya está
+        if (t && t.getAttribute('data-ncapa') === capa) {   // uno que ya está: arrastrarlo lo mueve; tocarlo, lo edita
           const id = t.getAttribute('data-nid'), it = capas[capa].find(x => x.id === id);
-          if (it) abrirTexto(e.clientX, e.clientY, it.x, v => { antesDeCambiar(capa); if (v) it.x = v; else capas[capa] = capas[capa].filter(x => x !== it); pintarNotas(); cambiado(capa); });
+          if (!it) return;
+          cerrarTexto(false);
+          const tpm = t.closest('g.page-margin') || t.closest('svg');
+          trazo = { mover: true, it, el: t, pm: tpm, inv: tpm.getScreenCTM().inverse(), cx: e.clientX, cy: e.clientY,
+                    x: +t.getAttribute('x'), y: +t.getAttribute('y'), movido: false, id: e.pointerId };
+          try { $('paginas').setPointerCapture(e.pointerId); } catch (er) {}
           return;
         }
         const p = aPagina(pm, e.clientX, e.clientY); if (!p) return;
-        abrirTexto(e.clientX, e.clientY, '', v => {
+        abrirTexto(e.clientX, e.clientY, '', (v, zz) => {
           if (!v) return;
           const a = anclar(pm, p.x, p.y); if (!a) return;
           antesDeCambiar(capa);
-          capas[capa].push({ id: nid(), t: 'x', k: a.k, n: a.n, s: a.s, c: color, px: +((p.x - a.g.x0) / a.g.w).toFixed(4), py: +((p.y - a.g.y0) / a.g.h).toFixed(4), x: v, z: grosor === 'grueso' ? 1.4 : 1 });
+          capas[capa].push({ id: nid(), t: 'x', k: a.k, n: a.n, s: a.s, c: color, px: +((p.x - a.g.x0) / a.g.w).toFixed(4), py: +((p.y - a.g.y0) / a.g.h).toFixed(4), x: v, z: zz || tamTexto });
           pintarNotas(); cambiado(capa);
         });
         return;
@@ -2144,6 +2167,13 @@ body.en-concierto #notasBarra { bottom: calc(66px + env(safe-area-inset-bottom, 
       e.preventDefault();
       if (trazo.goma) { borrarEn(e.clientX, e.clientY); return; }
       if (e.pointerId !== trazo.id) return;
+      if (trazo.mover) {   // arrastrar un texto: se ve moverse; al soltar se ancla donde quede
+        const a = new DOMPoint(trazo.cx, trazo.cy).matrixTransform(trazo.inv), b = new DOMPoint(e.clientX, e.clientY).matrixTransform(trazo.inv);
+        if (!trazo.movido && Math.hypot(e.clientX - trazo.cx, e.clientY - trazo.cy) < 6) return;
+        trazo.movido = true;
+        trazo.el.setAttribute('x', trazo.x + b.x - a.x); trazo.el.setAttribute('y', trazo.y + b.y - a.y);
+        return;
+      }
       let evs = [e]; try { if (e.getCoalescedEvents) { const c = e.getCoalescedEvents(); if (c.length) evs = c; } } catch (er) {}
       evs.forEach(ev => {
         const p = new DOMPoint(ev.clientX, ev.clientY).matrixTransform(trazo.inv);
@@ -2165,6 +2195,19 @@ body.en-concierto #notasBarra { bottom: calc(66px + env(safe-area-inset-bottom, 
       const t = trazo; trazo = null;
       try { $('paginas').releasePointerCapture(e.pointerId); } catch (er) {}
       if (t.goma) return;
+      if (t.mover) {
+        const it = t.it;
+        if (!t.movido) {   // un toque: editar el texto (y su tamaño con A− / A+)
+          abrirTexto(e.clientX, e.clientY, it.x, (v, zz) => { antesDeCambiar(capa); if (v) { it.x = v; it.z = zz; } else capas[capa] = capas[capa].filter(x => x !== it); pintarNotas(); cambiado(capa); }, it.z || 1);
+          return;
+        }
+        const nx = +t.el.getAttribute('x'), ny = +t.el.getAttribute('y'), a = anclar(t.pm, nx, ny);
+        if (!a) { pintarNotas(); return; }
+        antesDeCambiar(capa);
+        Object.assign(it, { k: a.k, n: a.n, s: a.s, px: +((nx - a.g.x0) / a.g.w).toFixed(4), py: +((ny - a.g.y0) / a.g.h).toFixed(4) });
+        pintarNotas(); cambiado(capa);
+        return;
+      }
       if (t.raf) cancelAnimationFrame(t.raf);
       // anclaje: el compás y pentagrama del centro del trazo
       const xs = t.pts.map(q => q[0]), ys = t.pts.map(q => q[1]);
