@@ -27,7 +27,7 @@ $cambios = [
   '<meta property="og:description" content="Partitura y voces por separado para ensayar">' => '<meta property="og:description" content="' . $h($desc) . '">',
   '<meta name="description" content="Partitura y voces por separado para ensayar">' => '<meta name="description" content="' . $h($desc) . '">',
   // la página lee la obra del #: se lo pone antes de arrancar (y luego ella deja la dirección limpia)
-  '<head>' => '<head>' . "\n" . '<script>history.replaceState(null, "", "/#" + ' . json_encode($id) . ');</script>',
+  '<head>' => '<head>' . "\n" . '<script>history.replaceState(null, "", "/" + location.search + "#" + ' . json_encode($id) . ');</script>',
 ];
 $html = strtr($html, $cambios);
 

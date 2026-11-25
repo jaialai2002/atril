@@ -608,7 +608,7 @@ body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: v
     return grupo(coro) + ' · solistas ' + (ls.includes(null) ? solos.length : ls.sort((a, b) => 'SATB'.indexOf(a) - 'SATB'.indexOf(b)).join(''));
   }
   function desentidad(s) { const t = document.createElement('textarea'); t.innerHTML = s; return t.value; }
-  const VERSION = '2026.11.25-02';   // se ve al pie del índice: sirve para saber qué programa tiene la web
+  const VERSION = '2026.11.25-03';   // se ve al pie del índice: sirve para saber qué programa tiene la web
   const VEROVIO = 'https://cdn.jsdelivr.net/npm/verovio@6.1.0/dist/verovio-toolkit-wasm.js';
   // mismas opciones que el antiguo render.js: con la misma semilla, las dos letras dan los mismos ids
   const OPC = { xmlIdSeed: 1, scale: 40, pageWidth: 2200, pageHeight: 3000, adjustPageHeight: true, breaks: 'auto', footer: 'none', header: 'auto', svgViewBox: true, condenseFirstPage: true, svgHtml5: true, svgRemoveXlink: true, lyricSize: 4.2, pageMarginTop: 40, pageMarginBottom: 20, pageMarginLeft: 40, pageMarginRight: 40 };
@@ -828,7 +828,8 @@ body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: v
     let datos = { categorias: (l.categorias || []).slice(), obras: copia(l.obras || []), conciertos: copia(l.conciertos || []) };
     let concSel = 0;
     // enlace a una obra dentro de un concierto: lleva ?c=<concierto> (en sigan.me /obra?c=…; en local ?c=…#obra)
-    const enlaceC = (id, c) => /(^|\.)sigan\.me$/.test(location.hostname) ? '/' + encodeURIComponent(id) + '?c=' + encodeURIComponent(c) : '?c=' + encodeURIComponent(c) + '#' + encodeURIComponent(id);
+    // (siempre /?c=…#obra: el obra.php antiguo, al servir /obra, dejaba la dirección en /#obra y se perdía el ?c)
+    const enlaceC = (id, c) => (/(^|\.)sigan\.me$/.test(location.hostname) ? '/' : '') + '?c=' + encodeURIComponent(c) + '#' + encodeURIComponent(id);
     const slug = t => String(t).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 50) || 'concierto';
     let organizando = false, borrador = null, editando = -1, avisado = false;
     let orden = leer('indice-orden', 'propio'), busca = '';
@@ -1207,7 +1208,7 @@ body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: v
     const k = c ? c.obras.indexOf(id) : -1;
     if (k < 0) return;
     const tit = x => { const o = (l.obras || []).find(y => y.id === x); return o ? o.obra : x; };
-    const url = x => /(^|\.)sigan\.me$/.test(location.hostname) ? '/' + encodeURIComponent(x) + '?c=' + encodeURIComponent(cid) : '?c=' + encodeURIComponent(cid) + '#' + encodeURIComponent(x);
+    const url = x => (/(^|\.)sigan\.me$/.test(location.hostname) ? '/' : '') + '?c=' + encodeURIComponent(cid) + '#' + encodeURIComponent(x);
     const ant = c.obras[k - 1], sig = c.obras[k + 1];
     const d = document.createElement('div'); d.id = 'concierto';
     d.innerHTML = '<a class="c-ir' + (ant ? '' : ' vacio') + '" href="' + (ant ? url(ant) : '#') + '" title="Anterior">‹ ' + esc(ant ? tit(ant) : '') + '</a>'
