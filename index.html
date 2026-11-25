@@ -515,6 +515,12 @@ body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: v
           <button data-seguir="0" title="La partitura se queda quieta: tú la mueves (tecla S)">A mano</button>
         </div>
       </div>
+      <div class="seguim" id="filaTexto" hidden><span>Texto</span>
+        <div class="seg" role="group" aria-label="Letra que se ve en la partitura">
+          <button data-texto="orig" title="La letra original de la partitura (⇧ + L)">Original</button>
+          <button data-texto="cant" title="La letra que canta Cantāmus, transliterada (⇧ + L)">Pronunciación</button>
+        </div>
+      </div>
       <p class="nota" id="tiemposCarga" hidden></p>
       <div class="seguim" id="filaLetra" hidden><span>Letra</span>
         <select id="letra" title="Tipo de letra del texto de esta partitura (solo tu cuenta y este dispositivo)">
@@ -608,7 +614,7 @@ body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: v
     return grupo(coro) + ' · solistas ' + (ls.includes(null) ? solos.length : ls.sort((a, b) => 'SATB'.indexOf(a) - 'SATB'.indexOf(b)).join(''));
   }
   function desentidad(s) { const t = document.createElement('textarea'); t.innerHTML = s; return t.value; }
-  const VERSION = '2026.11.25-03';   // se ve al pie del índice: sirve para saber qué programa tiene la web
+  const VERSION = '2026.11.25-04';   // se ve al pie del índice: sirve para saber qué programa tiene la web
   const VEROVIO = 'https://cdn.jsdelivr.net/npm/verovio@6.1.0/dist/verovio-toolkit-wasm.js';
   // mismas opciones que el antiguo render.js: con la misma semilla, las dos letras dan los mismos ids
   const OPC = { xmlIdSeed: 1, scale: 40, pageWidth: 2200, pageHeight: 3000, adjustPageHeight: true, breaks: 'auto', footer: 'none', header: 'auto', svgViewBox: true, condenseFirstPage: true, svgHtml5: true, svgRemoveXlink: true, lyricSize: 4.2, pageMarginTop: 40, pageMarginBottom: 20, pageMarginLeft: 40, pageMarginRight: 40 };
@@ -1440,7 +1446,10 @@ body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: v
     mapa = new Map();
     $('paginas').querySelectorAll('g.note[data-id], g.measure[data-id]').forEach(g => mapa.set(g.getAttribute('data-id'), g));
     marcados = []; sistemaVisto = null; compasVisto = null; bandas = []; cabeza = null; xNota.clear(); firmaRotulador = ''; rotular(); pintarNotas(); $('hoja').scrollTop = y; pintar(true);
+    document.querySelectorAll('[data-texto]').forEach(b => b.classList.toggle('on', b.dataset.texto === letra));
   }
+  // en el mezclador (para el iPad, sin teclado): solo la cuenta admin y solo si la obra tiene las dos letras
+  document.querySelectorAll('[data-texto]').forEach(b => b.onclick = () => { if (b.dataset.texto !== letra) cambiarLetra(); });
   // letra de pronunciación: oculta; se cambia con ⌥ + clic en el logo o con ⇧ + L
   function cambiarLetra() {
     if (!xmls.orig) return aviso('Esta obra solo tiene una letra');
@@ -2173,6 +2182,7 @@ body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: v
         admin = !!j.admin;
         if (admin) {
           const sel = $('letra'); sel.value = letraElegida; $('filaLetra').hidden = false; $('tiemposCarga').hidden = false;
+          if (xmls.orig) $('filaTexto').hidden = false;
           sel.onchange = () => { guardar('letra', sel.value); location.reload(); };
         }
         capas.mia = (j.mia && j.mia.items) || []; capas.director = (j.director && j.director.items) || [];
