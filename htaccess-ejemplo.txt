@@ -31,7 +31,7 @@ AddCharset utf-8 .html .json .musicxml
 
 # el índice, la página y los obra.json siempre al día (sin quedarse con una copia vieja)
 <IfModule mod_headers.c>
-  <FilesMatch "^(index\.html|obras\.json|obra\.json)$">
+  <FilesMatch "^(index\.html|obras\.json|obra\.json|partitura\.musicxml)$">
     Header set Cache-Control "no-cache"
   </FilesMatch>
 </IfModule>
@@ -40,7 +40,7 @@ AddCharset utf-8 .html .json .musicxml
 # navegador las guarda un año sin volver a preguntar al servidor. Al reabrir una obra (o la siguiente de un concierto,
 # que el Atril precarga) el audio sale de la caché del iPad en vez de bajar otra vez 8 o 9 pistas.
 <IfModule mod_headers.c>
-  <FilesMatch "\.(m4a|musicxml|woff2)$">
+  <FilesMatch "\.(m4a|woff2)$">
     Header set Cache-Control "public, max-age=31536000, immutable"
   </FilesMatch>
 </IfModule>
