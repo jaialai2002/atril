@@ -608,7 +608,7 @@ body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: v
     return grupo(coro) + ' · solistas ' + (ls.includes(null) ? solos.length : ls.sort((a, b) => 'SATB'.indexOf(a) - 'SATB'.indexOf(b)).join(''));
   }
   function desentidad(s) { const t = document.createElement('textarea'); t.innerHTML = s; return t.value; }
-  const VERSION = '2026.11.25-01';   // se ve al pie del índice: sirve para saber qué programa tiene la web
+  const VERSION = '2026.11.25-02';   // se ve al pie del índice: sirve para saber qué programa tiene la web
   const VEROVIO = 'https://cdn.jsdelivr.net/npm/verovio@6.1.0/dist/verovio-toolkit-wasm.js';
   // mismas opciones que el antiguo render.js: con la misma semilla, las dos letras dan los mismos ids
   const OPC = { xmlIdSeed: 1, scale: 40, pageWidth: 2200, pageHeight: 3000, adjustPageHeight: true, breaks: 'auto', footer: 'none', header: 'auto', svgViewBox: true, condenseFirstPage: true, svgHtml5: true, svgRemoveXlink: true, lyricSize: 4.2, pageMarginTop: 40, pageMarginBottom: 20, pageMarginLeft: 40, pageMarginRight: 40 };
@@ -1458,28 +1458,42 @@ body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: v
 
   // ---------- audio
   const AC = window.AudioContext || window.webkitAudioContext;
-  ctx = new AC();
-  const maestro = ctx.createGain(); maestro.connect(ctx.destination);
   // ¿voz o instrumento? 1) "voz": true/false en la pista de obra.json (lo pone el Taller); 2) <instrument-sound> del MusicXML; 3) el nombre
   const clasificar = p => typeof p.voz === 'boolean' ? (p.voz ? tipoDeVoz(p) || 'voz' : null) : tipoDeVoz(p);
   const pistas = cfg.pistas.map(p => Object.assign({}, p, { archivo: base + p.archivo + ver, voz: clasificar(p), grupo: clasificar(p) ? 'Voces' : 'Instrumentos', orig: { vol: p.vol, pan: p.pan, muda: p.muda }, solo: false }));
   const guardadas = leer('mezcla', null);
   if (guardadas) pistas.forEach(p => { const g = guardadas[p.id]; if (g) Object.assign(p, g); });
   const decodificar = buf => new Promise((ok, mal) => { const r = ctx.decodeAudioData(buf, ok, mal); if (r && r.then) r.then(ok, mal); });
+  // 1) se bajan todas a la vez (rápido); 2) se decodifican de dos en dos. Decodificadas ocupan mucho (~11 MB por minuto
+  // y pista a 48 kHz): con 8 o 9 pistas largas eran ~600 MB y el iPad o la tablet se ahogaban (136 s). Si hay más de
+  // 20 minutos de pista en total, el audio va a 32 kHz (un tercio menos de memoria; para ensayar no se nota).
   const tc = { ini: performance.now(), bajado: 0, bytes: 0 };   // tiempos de carga (los ve la cuenta admin en el mezclador)
-  async function bajar(url, alPaso) {
-    const r = await fetch(url); if (!r.ok) throw new Error(url + ': ' + r.status);
-    const ab = await r.arrayBuffer(); tc.bytes += ab.byteLength; tc.bajado = Math.max(tc.bajado, performance.now());
-    return decodificar(ab).finally(alPaso);
-  }
   let hechas = 0;
+  if (!modoManual) try {
+    await Promise.all(pistas.map(async p => {
+      const r = await fetch(p.archivo); if (!r.ok) throw new Error(p.archivo + ': ' + r.status);
+      p.ab = await r.arrayBuffer(); tc.bytes += p.ab.byteLength; tc.bajado = Math.max(tc.bajado, performance.now());
+      carga('Descargando las pistas… ' + (++hechas) + ' de ' + pistas.length, hechas / pistas.length * .3);
+    }));
+  } catch (e) { carga('No he podido cargar el audio: ' + e.message, 1, true); throw e; }
+  const minutos = tc.bytes * 8 / 96000 / 60;   // ~minutos de pista en total (mono a 96 kbps)
+  try { ctx = !modoManual && minutos > 20 ? new AC({ sampleRate: 32000 }) : new AC(); } catch (e) { ctx = new AC(); }
+  const maestro = ctx.createGain(); maestro.connect(ctx.destination);
   if (modoManual) pistas.forEach(p => { p.buf = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate); });   // el manual no necesita el audio
   else try {
-    await Promise.all(pistas.map(p => bajar(p.archivo, () => carga('Cargando las pistas… ' + (++hechas) + ' de ' + pistas.length, hechas / pistas.length)).then(b => { p.buf = b; })));
-  } catch (e) { carga('No he podido cargar el audio: ' + e.message, 1, true); throw e; }
+    let sig = 0, listas = 0;
+    const obrero = async () => {
+      while (sig < pistas.length) {
+        const p = pistas[sig++], ab = p.ab; p.ab = null;
+        p.buf = await decodificar(ab);
+        carga('Preparando el audio… ' + (++listas) + ' de ' + pistas.length, .3 + listas / pistas.length * .7);
+      }
+    };
+    await Promise.all([obrero(), obrero()]);
+  } catch (e) { carga('No he podido preparar el audio: ' + (e && e.message || e), 1, true); throw e; }
   if (!modoManual) {
     const fin = performance.now(), f = x => (x / 1000).toLocaleString('es-ES', { maximumFractionDigits: 1 });
-    tc.txt = 'Carga de las pistas: ' + f(fin - tc.ini) + ' s (descarga ' + f(tc.bajado - tc.ini) + ' s, ' + (tc.bytes / 1048576).toLocaleString('es-ES', { maximumFractionDigits: 1 }) + ' MB · decodificar ' + f(fin - tc.bajado) + ' s más)';
+    tc.txt = 'Carga de las pistas: ' + f(fin - tc.ini) + ' s (descarga ' + f(tc.bajado - tc.ini) + ' s, ' + (tc.bytes / 1048576).toLocaleString('es-ES', { maximumFractionDigits: 1 }) + ' MB · decodificar ' + f(fin - tc.bajado) + ' s más, a ' + Math.round(ctx.sampleRate / 1000) + ' kHz)';
     console.info('Atril · ' + tc.txt);
     if ($('tiemposCarga')) $('tiemposCarga').textContent = tc.txt;
   }
