@@ -335,6 +335,8 @@ body.indice { background: #18191d; }
 #fondo { position: fixed; inset: 0; z-index: 0; pointer-events: none; display: block; }
 body.con-fondo > header, body.con-fondo > main { position: relative; z-index: 1; }
 body.con-fondo > header { background: rgba(24,25,29,.55); -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); }
+/* en pantallas estrechas se desplaza la ventana: la barra sigue fija arriba también con el fondo animado (índice) */
+@media (max-width: 860px) { body.con-fondo > header { position: fixed; top: 0; left: 0; right: 0; z-index: 6; background: rgba(24,25,29,.88); } }
 body.con-fondo .obra { background: rgba(34,35,39,.82); border: 1px solid rgba(255,255,255,.07); -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); }
 body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: var(--laton); box-shadow: 0 0 20px 2px rgba(212,176,100,.26); }
 #faldonFondo { position: fixed; right: 18px; bottom: 0; z-index: 6; width: min(320px, calc(100vw - 36px)); font-family: var(--cuerpo); transform: translateY(calc(100% - 30px)); transition: transform .28s ease; }
@@ -626,7 +628,7 @@ body.en-concierto #notasBarra { bottom: calc(66px + env(safe-area-inset-bottom, 
     return grupo(coro) + ' · solistas ' + (ls.includes(null) ? solos.length : ls.sort((a, b) => 'SATB'.indexOf(a) - 'SATB'.indexOf(b)).join(''));
   }
   function desentidad(s) { const t = document.createElement('textarea'); t.innerHTML = s; return t.value; }
-  const VERSION = '2026.11.25-06';   // se ve al pie del índice: sirve para saber qué programa tiene la web
+  const VERSION = '2026.11.25-07';   // se ve al pie del índice: sirve para saber qué programa tiene la web
   const VEROVIO = 'https://cdn.jsdelivr.net/npm/verovio@6.1.0/dist/verovio-toolkit-wasm.js';
   // mismas opciones que el antiguo render.js: con la misma semilla, las dos letras dan los mismos ids
   const OPC = { xmlIdSeed: 1, scale: 40, pageWidth: 2200, pageHeight: 3000, adjustPageHeight: true, breaks: 'auto', footer: 'none', header: 'auto', svgViewBox: true, condenseFirstPage: true, svgHtml5: true, svgRemoveXlink: true, lyricSize: 4.2, pageMarginTop: 40, pageMarginBottom: 20, pageMarginLeft: 40, pageMarginRight: 40 };
