@@ -383,6 +383,36 @@ body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: v
 .ix-fila.org input.titulo { flex: 1 1 auto; width: auto; min-width: 140px; color: var(--texto); font: italic 400 16px/1.2 "TeX Gyre Termes", "Times New Roman", Times, serif; }
 .ix-fila.org { position: relative; }
 #ixOrg.plegado .ix-fila { display: none; }
+.ix-conc { margin: 0 0 18px; display: grid; gap: 6px; }
+.ix-conc-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.ix-conc-cab { display: flex; gap: 8px; align-items: center; }
+.ix-conc-cab input, .ix-conc-add select { background: #2a2e37; border: 1px solid var(--surco); border-radius: 8px; color: var(--texto); padding: 7px 10px; }
+.ix-conc-cab input { flex: 1; font: italic 400 16px/1.2 "TeX Gyre Termes", "Times New Roman", Times, serif; }
+.ix-conc-cab input:focus, .ix-conc-add select:focus { outline: none; border-color: var(--laton); }
+.ix-conc-add select { font: 13px var(--cuerpo); color: #b9bcc4; }
+.ix-conc-add option, .ix-conc-add optgroup { background: #20232a; color: var(--texto); }
+.ix-conc-obra .n { color: #8d919a; font-size: 12px; width: 18px; text-align: right; }
+.ix-conc-obra b { flex: 1; }
+.ix-conc-add select { width: 100%; }
+.ix-escuchar { color: var(--laton) !important; }
+.ix-cat-conc { cursor: default; }
+#concierto { display: flex; align-items: center; gap: 10px; max-width: 900px; margin: 0 auto 10px; padding: 8px 10px; background: var(--consola); border: 1px solid var(--surco); border-radius: 10px; color: var(--texto); font: 12px var(--cuerpo); }
+#concierto .c-centro { flex: 1; min-width: 0; text-align: center; }
+#concierto .c-nombre { letter-spacing: 1px; color: #8d919a; text-transform: uppercase; }
+#concierto .c-barras { display: flex; gap: 3px; margin-top: 5px; }
+#concierto .c-barras a { flex: 1; height: 5px; border-radius: 3px; background: #3a3e47; }
+#concierto .c-barras a.hecha, #concierto .c-barras a.esta { background: var(--laton); }
+#concierto .c-barras a.esta { outline: 1px solid var(--laton); outline-offset: 1px; }
+#concierto .c-ir { display: inline-flex; align-items: center; gap: 4px; max-width: 32%; padding: 4px 9px; border: 1px solid var(--surco); border-radius: 7px; color: var(--texto); text-decoration: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#concierto .c-ir:hover { border-color: var(--laton); }
+#concierto .c-ir.vacio { visibility: hidden; }
+#siguiente { position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%); z-index: 8; width: min(380px, calc(100% - 24px)); background: var(--consola); border: 1px solid var(--laton); border-radius: 12px; padding: 14px 16px; color: var(--texto); box-shadow: 0 10px 30px rgba(0,0,0,.45); font: 12px var(--cuerpo); }
+#siguiente[hidden] { display: none; }
+#siguiente .s-de { letter-spacing: 1px; color: #8d919a; text-transform: uppercase; }
+#siguiente .s-tit { font: italic 400 22px/1.2 "TeX Gyre Termes", "Times New Roman", Times, serif; margin: 4px 0 12px; }
+#siguiente .s-bot { display: flex; gap: 8px; }
+#siguiente .s-bot a, #siguiente .s-bot button { padding: 5px 12px; border-radius: 7px; border: 1px solid var(--surco); background: #2a2e37; color: var(--texto); font: 12px var(--cuerpo); text-decoration: none; cursor: pointer; }
+#siguiente .s-bot a { border-color: var(--laton); color: var(--laton); }
 #ixOrg.plegado .ix-cat { border: 1px dashed var(--surco); border-radius: 8px; margin: 4px 0; }
 .ix-cat.org.arrastra { border: 1px solid var(--laton) !important; background: #2a2e37; box-shadow: 0 6px 18px rgba(0,0,0,.4); }
 .ix-cat.org .cat-asa { color: #6b707b; font-size: 15px; letter-spacing: -2px; cursor: grab; padding: 0 8px 0 2px; touch-action: none; user-select: none; }
@@ -485,6 +515,7 @@ body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: v
           <button data-seguir="0" title="La partitura se queda quieta: tú la mueves (tecla S)">A mano</button>
         </div>
       </div>
+      <p class="nota" id="tiemposCarga" hidden></p>
       <div class="seguim" id="filaLetra" hidden><span>Letra</span>
         <select id="letra" title="Tipo de letra del texto de esta partitura (solo tu cuenta y este dispositivo)">
           <option value="termes">Termes (como Times)</option><option value="gelasio">Gelasio (como Georgia)</option><option value="tinos">Tinos</option>
@@ -577,7 +608,7 @@ body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: v
     return grupo(coro) + ' · solistas ' + (ls.includes(null) ? solos.length : ls.sort((a, b) => 'SATB'.indexOf(a) - 'SATB'.indexOf(b)).join(''));
   }
   function desentidad(s) { const t = document.createElement('textarea'); t.innerHTML = s; return t.value; }
-  const VERSION = '2026.11.24-18';   // se ve al pie del índice: sirve para saber qué programa tiene la web
+  const VERSION = '2026.11.25-01';   // se ve al pie del índice: sirve para saber qué programa tiene la web
   const VEROVIO = 'https://cdn.jsdelivr.net/npm/verovio@6.1.0/dist/verovio-toolkit-wasm.js';
   // mismas opciones que el antiguo render.js: con la misma semilla, las dos letras dan los mismos ids
   const OPC = { xmlIdSeed: 1, scale: 40, pageWidth: 2200, pageHeight: 3000, adjustPageHeight: true, breaks: 'auto', footer: 'none', header: 'auto', svgViewBox: true, condenseFirstPage: true, svgHtml5: true, svgRemoveXlink: true, lyricSize: 4.2, pageMarginTop: 40, pageMarginBottom: 20, pageMarginLeft: 40, pageMarginRight: 40 };
@@ -794,7 +825,11 @@ body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: v
     $('cargando').classList.add('fuera');
     const enlace = id => (/(^|\.)sigan\.me$/.test(location.hostname) ? '/' : '#') + encodeURIComponent(id);
     const copia = x => JSON.parse(JSON.stringify(x));
-    let datos = { categorias: (l.categorias || []).slice(), obras: copia(l.obras || []) };
+    let datos = { categorias: (l.categorias || []).slice(), obras: copia(l.obras || []), conciertos: copia(l.conciertos || []) };
+    let concSel = 0;
+    // enlace a una obra dentro de un concierto: lleva ?c=<concierto> (en sigan.me /obra?c=…; en local ?c=…#obra)
+    const enlaceC = (id, c) => /(^|\.)sigan\.me$/.test(location.hostname) ? '/' + encodeURIComponent(id) + '?c=' + encodeURIComponent(c) : '?c=' + encodeURIComponent(c) + '#' + encodeURIComponent(id);
+    const slug = t => String(t).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 50) || 'concierto';
     let organizando = false, borrador = null, editando = -1, avisado = false;
     let orden = leer('indice-orden', 'propio'), busca = '';
     const plegadas = new Set(leer('indice-plegadas', []));
@@ -853,12 +888,15 @@ body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: v
       const grupos = agrupar(datos, orden, filtro).filter(g => g.obras.length);
       const conCats = grupos.some(g => g.cat);
       const fila = o => { const v = vocesDe(o); return '<a class="obra ix-fila" href="' + enlace(o.id) + '" title="' + esc(fechas(o)) + '"><b>' + esc(o.obra) + '</b>' + (v ? '<em class="ix-voces">' + esc(v) + '</em>' : '') + (idiomaDe(o) ? '<em class="ix-voces ix-idioma">' + esc(idiomaDe(o)) + '</em>' : '') + marca(o) + (o.autor ? '<span class="ix-autor">' + esc(o.autor) + '</span>' : '') + '</a>'; };
-      $('ixLista').innerHTML = !grupos.length ? '<p class="nota">' + (q ? 'Ninguna obra coincide con la búsqueda.' : 'Todavía no hay obras.') + '</p>'
+      const concs = l.admin && !q ? (datos.conciertos || []).filter(c => c.obras.length) : [];
+      const concHTML = concs.length ? '<div class="ix-cat ix-cat-conc" aria-hidden="true"><span class="fl">♪</span>Conciertos<span class="n">' + concs.length + '</span></div><div class="ix-grupo">'
+        + concs.map(c => '<a class="obra ix-fila ix-conc-fila" href="' + enlaceC(c.obras[0], c.id) + '" title="Abre la primera obra; al final de cada una, el enlace a la siguiente"><b>' + esc(c.nombre) + '</b><em class="ix-voces ix-idioma">' + c.obras.length + (c.obras.length === 1 ? ' obra' : ' obras') + '</em><span class="ix-autor ix-escuchar">▶ Escuchar en orden</span></a>').join('') + '</div>' : '';
+      $('ixLista').innerHTML = concHTML + (!grupos.length ? '<p class="nota">' + (q ? 'Ninguna obra coincide con la búsqueda.' : 'Todavía no hay obras.') + '</p>'
         : grupos.map(g => {
           const plegada = !q && plegadas.has(g.cat || '·');
           return (conCats ? '<button class="ix-cat" data-cat="' + esc(g.cat || '·') + '" aria-expanded="' + !plegada + '"><span class="fl">' + (plegada ? '▸' : '▾') + '</span>' + esc(g.cat || 'Otras obras') + '<span class="n">' + g.obras.length + '</span></button>' : '')
             + (plegada ? '' : '<div class="ix-grupo">' + g.obras.map(fila).join('') + '</div>');
-        }).join('');
+        }).join(''));
       $('ixLista').querySelectorAll('.ix-cat').forEach(b => b.onclick = () => {
         const k = b.dataset.cat; plegadas.has(k) ? plegadas.delete(k) : plegadas.add(k); guardar('indice-plegadas', [...plegadas]); lista();
       });
@@ -868,12 +906,69 @@ body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: v
     const PAPELERA = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 7h15M9.5 7V4.8h5V7M6.5 7l.9 12.2h9.2L17.5 7M10.3 10.5v5.6M13.7 10.5v5.6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
     const OJO = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="12" r="2.6" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>';
     const OJO_NO = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M4 4l16 16" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>';
+    // editor de conciertos (Organizar): pestañas por concierto, su lista ordenada (arrastrar ⋮⋮), añadir obra o una categoría entera
+    function concEditor() {
+      const cs = borrador.conciertos; if (concSel >= cs.length) concSel = cs.length - 1;
+      const c = cs[concSel], tit = id => { const o = borrador.obras.find(x => x.id === id); return o ? (o.titulo_org || o.obra_partitura || o.obra) : id; };
+      let h = '<div class="ix-conc"><div class="ix-cat org"><span>Conciertos</span><span class="n">' + cs.length + '</span></div><div class="ix-conc-chips">'
+        + cs.map((x, i) => '<button class="ix-boton' + (i === concSel ? ' dor' : '') + '" data-csel="' + i + '">' + esc(x.nombre || 'Sin nombre') + '</button>').join('')
+        + '<button class="ix-boton" id="concNuevo">+ Nuevo concierto</button></div>';
+      if (c) {
+        h += '<div class="ix-conc-cab"><input id="concNombre" class="voces" maxlength="60" value="' + esc(c.nombre) + '" placeholder="Nombre del concierto" aria-label="Nombre del concierto"><button class="ix-boton" id="concBorra" title="Borrar este concierto (las obras no se tocan)">Borrar concierto</button></div>'
+          + '<div id="concLista">' + c.obras.map((id, k) => '<div class="ix-fila org ix-conc-obra" data-k="' + k + '"><span class="asa" title="Arrastra para ordenar">⋮⋮</span><span class="n">' + (k + 1) + '</span><b>' + esc(tit(id)) + '</b><button class="ojo" data-quita="' + k + '" title="Quitar del concierto">✕</button></div>').join('') + '</div>'
+          + '<div class="ix-conc-add"><select id="concAdd" aria-label="Añadir al concierto"><option value="">Añadir obra…</option>'
+          + borrador.obras.filter(o => !c.obras.includes(o.id)).sort((a, b) => cmp(tit(a.id), tit(b.id))).map(o => '<option value="o:' + esc(o.id) + '">' + esc(tit(o.id)) + '</option>').join('')
+          + (borrador.categorias.filter(x => x).length ? '<optgroup label="Una categoría entera, en su orden">' + borrador.categorias.filter(x => x).map(x => '<option value="c:' + esc(x) + '">Toda «' + esc(x) + '»</option>').join('') + '</optgroup>' : '')
+          + '</select></div>';
+      }
+      return h + '</div>';
+    }
+    function concManejadores() {
+      const cs = borrador.conciertos, c = cs[concSel];
+      raiz.querySelectorAll('[data-csel]').forEach(b => b.onclick = () => { concSel = +b.dataset.csel; organizar(); });
+      $('concNuevo').onclick = () => {
+        let n = 1, nom = 'Concierto'; while (cs.some(x => x.nombre === nom)) nom = 'Concierto ' + (++n);
+        let id = slug(nom), k = 1; while (cs.some(x => x.id === id)) id = slug(nom) + '-' + (++k);
+        cs.push({ id, nombre: nom, obras: [] }); concSel = cs.length - 1; organizar();
+        $('concNombre').focus(); $('concNombre').select();
+      };
+      if (!c) return;
+      $('concNombre').onchange = () => {
+        c.nombre = $('concNombre').value.trim().replace(/\s+/g, ' ').slice(0, 60) || c.nombre;
+        if (!(datos.conciertos || []).some(x => x.id === c.id)) {   // aún sin guardar: su dirección sale del nombre (las guardadas no cambian)
+          let id = slug(c.nombre), k = 1; while (cs.some(x => x !== c && x.id === id)) id = slug(c.nombre) + '-' + (++k); c.id = id;
+        }
+        organizar();
+      };
+      $('concBorra').onclick = () => { cs.splice(concSel, 1); concSel = Math.max(0, concSel - 1); organizar(); };
+      $('concAdd').onchange = e => {
+        const v = e.target.value; if (!v) return;
+        if (v.startsWith('o:')) c.obras.push(v.slice(2));
+        else agrupar(borrador, 'propio').filter(g => g.cat === v.slice(2)).forEach(g => g.obras.forEach(o => { if (!c.obras.includes(o.id)) c.obras.push(o.id); }));
+        organizar();
+      };
+      $('concLista').querySelectorAll('[data-quita]').forEach(b => b.onclick = () => { c.obras.splice(+b.dataset.quita, 1); organizar(); });
+      $('concLista').querySelectorAll('.asa').forEach(asa => asa.onpointerdown = e => {
+        e.preventDefault(); const f = asa.closest('.ix-fila'); f.classList.add('arrastra');
+        const mover = ev => {
+          const bajo = document.elementFromPoint(ev.clientX, ev.clientY), dest = bajo && bajo.closest('#concLista .ix-fila');
+          if (!dest || dest === f) return;
+          const r = dest.getBoundingClientRect(); if (ev.clientY < r.top + r.height / 2) dest.before(f); else dest.after(f);
+        };
+        const soltar = () => {
+          removeEventListener('pointermove', mover); removeEventListener('pointerup', soltar); removeEventListener('pointercancel', soltar);
+          const viejo = c.obras.slice(); c.obras = [...$('concLista').querySelectorAll('.ix-fila')].map(x => viejo[+x.dataset.k]); organizar();
+        };
+        addEventListener('pointermove', mover); addEventListener('pointerup', soltar); addEventListener('pointercancel', soltar);
+      });
+    }
     function organizar() {
       const cambiado = JSON.stringify(borrador) !== JSON.stringify(datos);
       const opciones = sel => '<option value="">Sin categoría</option>' + borrador.categorias.filter(c => c).map(c => '<option' + (c === sel ? ' selected' : '') + '>' + esc(c) + '</option>').join('');
       const grupos = agrupar(borrador, 'propio');
       raiz.innerHTML = '<div class="ix-barra"><button class="ix-boton dor" id="ixHecho">✓ Organizando</button><button class="ix-boton" id="ixNueva">+ Nueva categoría</button></div>'
         + '<p class="ix-aviso">Arrastra <b>⋮⋮</b> para ordenar (también a otra categoría) · escribe cómo se llaman sus voces, el autor y el idioma (vacío: los de la partitura) · elige la categoría de cada obra · el ojo la oculta del índice · la papelera la borra del Atril</p>'
+        + concEditor()
         + '<div id="ixOrg" class="ix-org">' + grupos.map(g => {
           const i = g.i, real = i >= 0;
           const cab = i >= 0 && i === editando
@@ -895,6 +990,7 @@ body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: v
         $('ixOrg').querySelectorAll('.ix-cat, .ix-fila').forEach(e => { if (e.classList.contains('ix-cat')) cat = e.dataset.cat; else { const o = obra(e.dataset.id); o.cat = cat; o.orden = n++; } });
       };
       numerar();
+      concManejadores();
       $('ixOrg').querySelectorAll('.ix-fila').forEach(f => {
         const o = obra(f.dataset.id);
         f.querySelector('select').onchange = e => { o.cat = e.target.value; o.orden = 1e6; organizar(); };
@@ -1022,13 +1118,13 @@ body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: v
       };
       $('ixGuardar').onclick = async () => {
         $('ixEstado').textContent = 'Guardando…';
-        const env = { categorias: borrador.categorias.filter(c => c), obras: {} };
+        const env = { categorias: borrador.categorias.filter(c => c), obras: {}, conciertos: borrador.conciertos.filter(c => c.nombre) };
         borrador.obras.forEach(o => { env.obras[o.id] = { cat: o.cat || '', orden: o.orden ?? 0, oculta: !!o.oculta, voces: o.voces || '', autor: o.autor_org || '', idioma: o.idioma || '', titulo: o.titulo_org || '' }; });
         try {
           const r = await fetch('lista.php', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ indice: env }) });
           const j = await r.json().catch(() => ({}));
           if (!r.ok || !j.obras) throw new Error(j.error || ('error ' + r.status));
-          datos = { categorias: (j.categorias || []).slice(), obras: copia(j.obras) }; organizando = false; avisado = false; render();
+          datos = { categorias: (j.categorias || []).slice(), obras: copia(j.obras), conciertos: copia(j.conciertos || []) }; organizando = false; avisado = false; render();
         } catch (e) { $('ixEstado').textContent = 'No se ha guardado: ' + e.message; $('ixEstado').classList.add('error'); }
       };
     }
@@ -1098,8 +1194,44 @@ body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: v
 
   // estado (declarado antes de usarlo en pintar/ir)
   let arranque = 0, sonando = false, t0 = 0, desde = 0, fuentes = [], referencia = false, bufRef = null, duracion = 0, ctx = null;
+  let alTerminar = null, precargarSig = null;   // modo concierto: tarjeta «A continuación» y precarga de la siguiente obra
   let seguir = leer('seguir', true), ultimoIdx = -2;
   function ahora() { return sonando ? Math.min(duracion, desde + ctx.currentTime - t0) : desde; }
+
+  // ---------- modo concierto (?c=<id>): barra con anterior / siguiente y una barrita por obra; al terminar, «A continuación»
+  // (sin pasar sola). Los conciertos vienen de lista.php (de momento solo con la cuenta admin).
+  async function montarConcierto(cid, id) {
+    let l = null;
+    try { const r = await fetch('lista.php', { cache: 'no-store', credentials: 'same-origin' }); if (r.ok) l = await r.json(); } catch (e) {}
+    const c = l && (l.conciertos || []).find(x => x.id === cid);
+    const k = c ? c.obras.indexOf(id) : -1;
+    if (k < 0) return;
+    const tit = x => { const o = (l.obras || []).find(y => y.id === x); return o ? o.obra : x; };
+    const url = x => /(^|\.)sigan\.me$/.test(location.hostname) ? '/' + encodeURIComponent(x) + '?c=' + encodeURIComponent(cid) : '?c=' + encodeURIComponent(cid) + '#' + encodeURIComponent(x);
+    const ant = c.obras[k - 1], sig = c.obras[k + 1];
+    const d = document.createElement('div'); d.id = 'concierto';
+    d.innerHTML = '<a class="c-ir' + (ant ? '' : ' vacio') + '" href="' + (ant ? url(ant) : '#') + '" title="Anterior">‹ ' + esc(ant ? tit(ant) : '') + '</a>'
+      + '<div class="c-centro"><div class="c-nombre">♪ ' + esc(c.nombre) + ' · ' + (k + 1) + ' de ' + c.obras.length + '</div><div class="c-barras">'
+      + c.obras.map((x, i) => '<a href="' + url(x) + '" title="' + (i + 1) + '. ' + esc(tit(x)) + '" class="' + (i < k ? 'hecha' : i === k ? 'esta' : '') + '"></a>').join('') + '</div></div>'
+      + '<a class="c-ir' + (sig ? '' : ' vacio') + '" href="' + (sig ? url(sig) : '#') + '" title="Siguiente">' + esc(sig ? tit(sig) : '') + ' ›</a>';
+    $('paginas').before(d);
+    const t = document.createElement('div'); t.id = 'siguiente'; t.hidden = true;
+    t.innerHTML = sig
+      ? '<div class="s-de">A continuación · ' + esc(c.nombre) + ' ' + (k + 2) + ' de ' + c.obras.length + '</div><div class="s-tit">' + esc(tit(sig)) + '</div><div class="s-bot"><a href="' + url(sig) + '">▶ Ir a la siguiente</a><button type="button">Quedarme aquí</button></div>'
+      : '<div class="s-de">Fin del concierto</div><div class="s-tit">' + esc(c.nombre) + '</div><div class="s-bot"><a href="' + url(c.obras[0]) + '">Volver a la primera</a><button type="button">Cerrar</button></div>';
+    t.querySelector('button').onclick = () => { t.hidden = true; };
+    document.body.appendChild(t);
+    if (sig) precargarSig = () => precargar(sig);
+    alTerminar = () => { t.hidden = false; if (precargarSig) { const f = precargarSig; precargarSig = null; f(); } };
+  }
+  // deja en la caché del navegador la partitura y las pistas de otra obra (sin decodificar): al abrirla, el audio ya está aquí
+  async function precargar(id) {
+    try {
+      const b = 'obras/' + id + '/', o = await (await fetch(b + 'obra.json', { cache: 'no-cache' })).json();
+      const v = o.fecha ? '?v=' + encodeURIComponent(o.fecha) : '';
+      for (const p of [o.partitura].concat((o.pistas || []).map(x => x.archivo))) if (p) await fetch(b + p + v, { priority: 'low' }).then(r => r.arrayBuffer()).catch(() => {});
+    } catch (e) {}
+  }
 
   // ---------- qué abrir: el índice (obras.json) o una obra (#id, u obra.json junto a esta página)
   addEventListener('hashchange', () => location.reload());
@@ -1124,7 +1256,9 @@ body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: v
   $('verManual').href = (/claude/.test(location.hostname) ? '#manual-' : /(^|\.)sigan\.me$/.test(location.hostname) ? '/?manual#' : '?manual#') + encodeURIComponent(cfg.id);
   // en la web, la dirección queda como atril.sigan.me/<obra>: al copiarla y compartirla sale la tarjeta con el título de la obra (obra.php)
   const urlLimpia = idPedido && !modoManual && /(^|\.)sigan\.me$/.test(location.hostname);
-  if (urlLimpia) history.replaceState(null, '', '/' + encodeURIComponent(cfg.id));
+  const concId = new URLSearchParams(location.search).get('c') || '';
+  if (urlLimpia) history.replaceState(null, '', '/' + encodeURIComponent(cfg.id) + (concId ? '?c=' + encodeURIComponent(concId) : ''));
+  if (concId && !modoManual) montarConcierto(concId, cfg.id);
   if (idPedido && !modoManual && !/claude/.test(location.hostname)) try {
     const k = 'atril:visto:' + cfg.id;
     if (!sessionStorage.getItem(k)) { sessionStorage.setItem(k, '1'); fetch('lista.php', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ visita: cfg.id }), keepalive: true }).catch(() => {}); }
@@ -1332,15 +1466,23 @@ body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: v
   const guardadas = leer('mezcla', null);
   if (guardadas) pistas.forEach(p => { const g = guardadas[p.id]; if (g) Object.assign(p, g); });
   const decodificar = buf => new Promise((ok, mal) => { const r = ctx.decodeAudioData(buf, ok, mal); if (r && r.then) r.then(ok, mal); });
+  const tc = { ini: performance.now(), bajado: 0, bytes: 0 };   // tiempos de carga (los ve la cuenta admin en el mezclador)
   async function bajar(url, alPaso) {
     const r = await fetch(url); if (!r.ok) throw new Error(url + ': ' + r.status);
-    return decodificar(await r.arrayBuffer()).finally(alPaso);
+    const ab = await r.arrayBuffer(); tc.bytes += ab.byteLength; tc.bajado = Math.max(tc.bajado, performance.now());
+    return decodificar(ab).finally(alPaso);
   }
   let hechas = 0;
   if (modoManual) pistas.forEach(p => { p.buf = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate); });   // el manual no necesita el audio
   else try {
     await Promise.all(pistas.map(p => bajar(p.archivo, () => carga('Cargando las pistas… ' + (++hechas) + ' de ' + pistas.length, hechas / pistas.length)).then(b => { p.buf = b; })));
   } catch (e) { carga('No he podido cargar el audio: ' + e.message, 1, true); throw e; }
+  if (!modoManual) {
+    const fin = performance.now(), f = x => (x / 1000).toLocaleString('es-ES', { maximumFractionDigits: 1 });
+    tc.txt = 'Carga de las pistas: ' + f(fin - tc.ini) + ' s (descarga ' + f(tc.bajado - tc.ini) + ' s, ' + (tc.bytes / 1048576).toLocaleString('es-ES', { maximumFractionDigits: 1 }) + ' MB · decodificar ' + f(fin - tc.bajado) + ' s más)';
+    console.info('Atril · ' + tc.txt);
+    if ($('tiemposCarga')) $('tiemposCarga').textContent = tc.txt;
+  }
   duracion = Math.max(...pistas.map(p => p.buf.duration));
   if (modoManual) duracion = Math.max(duracion, (tm.length ? tm[tm.length - 1].tstamp / 1000 : 0) + 2);   // sin audio: la duración de la partitura
   $('total').textContent = fmt(duracion);
@@ -1498,7 +1640,8 @@ body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: v
     cabeza.setAttribute('x', x - 25);
   }
   function bucle() {
-    if (sonando && ahora() >= duracion - 0.01) { parar(); desde = duracion; }
+    if (sonando && precargarSig && ahora() > duracion - 60) { const f = precargarSig; precargarSig = null; f(); }
+    if (sonando && ahora() >= duracion - 0.01) { parar(); desde = duracion; if (alTerminar) alTerminar(); }
     pintar(false);
     pistas.forEach(p => {
       p.ana.getFloatTimeDomainData(p.datos); let m = 0; for (let k = 0; k < p.datos.length; k++) m = Math.max(m, Math.abs(p.datos[k]));
@@ -2014,7 +2157,7 @@ body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: v
         const j = await r.json();
         admin = !!j.admin;
         if (admin) {
-          const sel = $('letra'); sel.value = letraElegida; $('filaLetra').hidden = false;
+          const sel = $('letra'); sel.value = letraElegida; $('filaLetra').hidden = false; $('tiemposCarga').hidden = false;
           sel.onchange = () => { guardar('letra', sel.value); location.reload(); };
         }
         capas.mia = (j.mia && j.mia.items) || []; capas.director = (j.director && j.director.items) || [];

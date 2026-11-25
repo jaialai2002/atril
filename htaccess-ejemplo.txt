@@ -36,6 +36,15 @@ AddCharset utf-8 .html .json .musicxml
   </FilesMatch>
 </IfModule>
 
+# las pistas, la partitura y las fuentes llevan ?v=<fecha de la versión> (cambia con cada subida desde el Taller): el
+# navegador las guarda un año sin volver a preguntar al servidor. Al reabrir una obra (o la siguiente de un concierto,
+# que el Atril precarga) el audio sale de la caché del iPad en vez de bajar otra vez 8 o 9 pistas.
+<IfModule mod_headers.c>
+  <FilesMatch "\.(m4a|musicxml|woff2)$">
+    Header set Cache-Control "public, max-age=31536000, immutable"
+  </FilesMatch>
+</IfModule>
+
 # enlace limpio de cada obra: atril.sigan.me/pastorella-in-g lo sirve obra.php (con la tarjeta de la obra para WhatsApp)
 <IfModule mod_rewrite.c>
   RewriteEngine On

@@ -78,7 +78,8 @@ function leer_indice($f) {
   $i = json_decode((string) @file_get_contents($f), true);
   if (!is_array($i)) $i = [];
   return ['categorias' => array_values(array_filter((array) ($i['categorias'] ?? []), 'is_string')),
-          'obras' => is_array($i['obras'] ?? null) ? $i['obras'] : [], 'vistas' => is_array($i['vistas'] ?? null) ? $i['vistas'] : []];
+          'obras' => is_array($i['obras'] ?? null) ? $i['obras'] : [], 'vistas' => is_array($i['vistas'] ?? null) ? $i['vistas'] : [],
+          'conciertos' => array_values(array_filter((array) ($i['conciertos'] ?? []), 'is_array'))];
 }
 function guardar_indice($f, $i) { return @file_put_contents($f, json_encode($i, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT), LOCK_EX) !== false; }
 // ajustes permitidos del fondo: [mínimo, máximo] (números) o 'b' (sí/no)
@@ -196,6 +197,15 @@ function entregar_lista($correo, $admin) {
   }
   if ($cambio) guardar_indice($INDICE, $ix);
   $l['obras'] = $obras; $l['categorias'] = $ix['categorias']; $l['admin'] = $esAdmin;
+  if ($esAdmin) {   // conciertos (listas ordenadas de obras): de momento solo los ve la cuenta admin
+    $hay = []; foreach ($obras as $o) if (isset($o['id'])) $hay[(string) $o['id']] = true;
+    $l['conciertos'] = [];
+    foreach ($ix['conciertos'] as $c) {
+      $lista = [];
+      foreach ((array) ($c['obras'] ?? []) as $x) if (isset($hay[(string) $x])) $lista[] = (string) $x;
+      $l['conciertos'][] = ['id' => (string) ($c['id'] ?? ''), 'nombre' => (string) ($c['nombre'] ?? ''), 'obras' => $lista];
+    }
+  }
   echo json_encode($l, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
   exit;
 }
@@ -265,7 +275,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($t !== '') $obras[$id][$campo] = $t;
       }
     }
+    $concs = [];
+    if (isset($n['conciertos'])) {
+      foreach ((array) $n['conciertos'] as $c) {
+        if (!is_array($c) || count($concs) >= 50) continue;
+        $nom = trim(preg_replace('/\s+/u', ' ', strip_tags((string) ($c['nombre'] ?? ''))));
+        $nom = function_exists('mb_substr') ? mb_substr($nom, 0, 60) : substr($nom, 0, 60);
+        $cid = (string) ($c['id'] ?? '');
+        if ($nom === '' || !preg_match('/^[a-z0-9-]{1,60}$/', $cid) || isset($concs[$cid])) continue;
+        $lista = [];
+        foreach ((array) ($c['obras'] ?? []) as $x) { $x = (string) $x; if (preg_match('/^[a-z0-9-]{1,120}$/', $x) && !in_array($x, $lista, true) && count($lista) < 200) $lista[] = $x; }
+        $concs[$cid] = ['id' => $cid, 'nombre' => $nom, 'obras' => $lista];
+      }
+    }
     $ix = leer_indice($INDICE); $ix['categorias'] = $cats; $ix['obras'] = $obras;
+    if (isset($n['conciertos'])) $ix['conciertos'] = array_values($concs);
     if (!guardar_indice($INDICE, $ix)) { http_response_code(500); echo '{"error":"No puedo guardar atril-indice.json"}'; exit; }
     entregar_lista($e, $admin);
   }
