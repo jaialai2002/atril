@@ -228,15 +228,20 @@ function pedir($url) {
 // correo asociado a esa clave, que tiene que seguir en 'correos'. En atril-config.php:
 //   'apps' => ['una-clave-larga-de-al-menos-20-caracteres' => 'tu-correo@gmail.com'],
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['clave_app'])) {
-  $k = (string) $_POST['clave_app']; $quien = null;
-  foreach ((array) ($cfg['apps'] ?? []) as $cl => $co) {
-    if (is_string($cl) && strlen($cl) >= 20 && hash_equals($cl, $k)) { $quien = strtolower(trim((string) $co)); break; }
+  $k = (string) $_POST['clave_app']; $quien = null; $motivo = '';
+  $apps = (array) ($cfg['apps'] ?? []);
+  if (!$apps) $motivo = 'atril-config.php no tiene la línea <b>\'apps\'</b> dentro de <code>return [ … ];</code> (o el servidor aún usa la versión anterior: espera dos minutos y vuelve a probar).';
+  foreach ($apps as $cl => $co) {
+    if (!is_string($cl) || strlen($cl) < 20) { $motivo = $motivo ?: 'La clave escrita en \'apps\' tiene menos de 20 caracteres.'; continue; }
+    if (hash_equals($cl, $k)) { $quien = strtolower(trim((string) $co)); break; }
   }
-  if ($quien === null || !in_array($quien, $correos, true)) {
+  if ($quien === null && $motivo === '') $motivo = 'La clave de Repertorio no coincide con la de \'apps\'. Repertorio ha enviado una de ' . mb_strlen($k) . ' caracteres' . ($k !== trim($k) ? ', con espacios al principio o al final' : '') . '; la de atril-config.php tiene ' . implode(' / ', array_map(fn($c) => mb_strlen((string) $c), array_keys($apps))) . '. Fíjate en mayúsculas, espacios y letras parecidas.';
+  if ($quien !== null && !in_array($quien, $correos, true)) $motivo = 'La clave es correcta, pero su correo (' . htmlspecialchars($quien) . ') no está en \'correos\'.';
+  if ($motivo !== '') {
     usleep(500000);
     http_response_code(403);
     header('Content-Type: text/html; charset=utf-8');
-    echo '<!DOCTYPE html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><body style="font:18px/1.5 system-ui;background:#18191d;color:#e7e4dc;padding:40px">La clave de Atril que tiene Repertorio no es válida.<br>Revísala en Repertorio → Ajustes → Atril, o quítala para abrir solo obras sueltas.</body>';
+    echo '<!DOCTYPE html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><body style="font:18px/1.5 system-ui;background:#18191d;color:#e7e4dc;padding:40px">No se ha podido entrar en el Atril con la clave de Repertorio.<br><br>' . $motivo . '<br><br><small style="color:#9aa1ab">Ajusta la clave en Repertorio → Ajustes → Atril o en /home/sigan1/atril-config.php.</small></body>';
     exit;
   }
   $hasta = time() + $DIAS * 86400;
