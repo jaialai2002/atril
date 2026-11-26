@@ -45,6 +45,13 @@ AddCharset utf-8 .html .json .musicxml
   </FilesMatch>
 </IfModule>
 
+# portería de las obras: todo lo de obras/<obra>/ (partitura, pistas, obra.json) lo entrega archivo.php, que mira si la
+# obra es «con enlace», «solo yo» o «solo invitados» (Organizar). Va ANTES del enlace limpio.
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteRule ^obras/([a-z0-9-]+)/(.+)$ archivo.php?o=$1&f=$2 [L,QSA]
+</IfModule>
+
 # enlace limpio de cada obra: atril.sigan.me/pastorella-in-g lo sirve obra.php (con la tarjeta de la obra para WhatsApp)
 <IfModule mod_rewrite.c>
   RewriteEngine On

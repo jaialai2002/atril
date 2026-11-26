@@ -81,8 +81,27 @@ function leer_indice($f) {
   if (!is_array($i)) $i = [];
   return ['categorias' => array_values(array_filter((array) ($i['categorias'] ?? []), 'is_string')),
           'obras' => is_array($i['obras'] ?? null) ? $i['obras'] : [], 'vistas' => is_array($i['vistas'] ?? null) ? $i['vistas'] : [],
-          'conciertos' => array_values(array_filter((array) ($i['conciertos'] ?? []), 'is_array'))];
+          'conciertos' => array_values(array_filter((array) ($i['conciertos'] ?? []), 'is_array')),
+          'personas' => array_values(array_filter((array) ($i['personas'] ?? []), 'is_array')), 'acceso_v' => (int) ($i['acceso_v'] ?? 0)];
 }
+// acceso de cada obra (ver archivo.php): 'enlace' | 'yo' | 'invitados'. Sin decidir: 'yo' (obra recién subida); antes de
+// existir la portería (acceso_v = 0) todo era 'enlace', y la primera vez se apuntan así las obras que ya estaban.
+function acceso_de($ix, $id) {
+  $a = (string) ($ix['obras'][$id]['acceso'] ?? (empty($ix['acceso_v']) ? 'enlace' : 'yo'));
+  return in_array($a, ['enlace', 'yo', 'invitados'], true) ? $a : 'yo';
+}
+function migrar_acceso($INDICE) {
+  $ix = leer_indice($INDICE);
+  if (!empty($ix['acceso_v'])) return;
+  foreach (scandir(__DIR__ . '/obras') ?: [] as $id)
+    if (preg_match('/^[a-z0-9-]{1,120}$/', $id) && is_dir(__DIR__ . '/obras/' . $id)) {
+      if (!is_array($ix['obras'][$id] ?? null)) $ix['obras'][$id] = [];
+      if (!isset($ix['obras'][$id]['acceso'])) $ix['obras'][$id]['acceso'] = 'enlace';
+    }
+  $ix['acceso_v'] = 1;
+  guardar_indice($INDICE, $ix);
+}
+function correo_ok($c) { $c = strtolower(trim((string) $c)); return filter_var($c, FILTER_VALIDATE_EMAIL) ? $c : ''; }
 function guardar_indice($f, $i) { return @file_put_contents($f, json_encode($i, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT), LOCK_EX) !== false; }
 // ajustes permitidos del fondo: [mínimo, máximo] (números) o 'b' (sí/no)
 $CAMPOS = ['baseHue' => [0, 360], 'hueRange' => [0, 90], 'sat' => [0, 100], 'light' => [4, 30], 'cellSize' => [40, 160],
@@ -94,6 +113,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['fondo'])) {
   exit;
 }
 $DIAS = 30;
+migrar_acceso($INDICE);
+// pueden entrar: 'correos' de atril-config.php y las personas dadas de alta en Organizar (solo ven las obras a las que se
+// las invita; 'admin' lo ve todo)
+foreach (leer_indice($INDICE)['personas'] as $pp) if (($c = correo_ok($pp['correo'] ?? '')) !== '' && !in_array($c, $correos, true)) $correos[] = $c;
 
 function secreto($fuera) {
   $f = $fuera . '/.atril-secreto';
@@ -195,10 +218,15 @@ function entregar_lista($correo, $admin) {
     $o['nueva'] = $ahora - $vista < $SEMANA;
     $o['actualizada'] = !$o['nueva'] && $fecha && $fecha > $vista + 86400 && $ahora - $fecha < $SEMANA;
     if ($o['oculta'] && !$esAdmin) continue;
+    $o['acceso'] = acceso_de($ix, $id);
+    $inv = array_map('strtolower', (array) ($org['invitados'] ?? []));
+    if (!$esAdmin && !($o['acceso'] === 'invitados' && in_array($correo, $inv, true))) continue;   // invitados: solo sus obras
+    if ($esAdmin) $o['invitados'] = array_values($inv);
     $obras[] = $o;
   }
   if ($cambio) guardar_indice($INDICE, $ix);
   $l['obras'] = $obras; $l['categorias'] = $ix['categorias']; $l['admin'] = $esAdmin;
+  if ($esAdmin) $l['personas'] = $ix['personas'];
   if ($esAdmin) {   // conciertos (listas ordenadas de obras): de momento solo los ve la cuenta admin
     $hay = []; foreach ($obras as $o) if (isset($o['id'])) $hay[(string) $o['id']] = true;
     $l['conciertos'] = [];
@@ -318,6 +346,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       $c = trim(preg_replace('/\s+/u', ' ', (string) $c));
       if ($c !== '' && (function_exists('mb_strlen') ? mb_strlen($c) : strlen($c)) <= 60 && !in_array($c, $cats, true) && count($cats) < 100) $cats[] = $c;
     }
+    $previo = leer_indice($INDICE);
+    $personas = []; $hay = [];
+    foreach ((array) ($n['personas'] ?? $previo['personas']) as $pp) {
+      if (!is_array($pp) || count($personas) >= 500) continue;
+      $c = correo_ok($pp['correo'] ?? ''); if ($c === '' || isset($hay[$c])) continue;
+      $nom = trim(preg_replace('/\s+/u', ' ', strip_tags((string) ($pp['nombre'] ?? ''))));
+      $personas[] = ['nombre' => function_exists('mb_substr') ? mb_substr($nom, 0, 60) : substr($nom, 0, 60), 'correo' => $c]; $hay[$c] = true;
+    }
     $obras = [];
     foreach ((array) ($n['obras'] ?? []) as $id => $o) {
       if (!preg_match('/^[a-z0-9-]{1,120}$/', (string) $id) || !is_array($o) || count($obras) >= 2000) continue;
@@ -325,6 +361,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       if (function_exists('mb_substr')) $v = mb_substr($v, 0, 60); else $v = substr($v, 0, 60);
       $obras[$id] = ['cat' => in_array($o['cat'] ?? '', $cats, true) ? $o['cat'] : '', 'orden' => (int) ($o['orden'] ?? 0), 'oculta' => !empty($o['oculta'])];
       if ($v !== '') $obras[$id]['voces'] = $v;
+      // acceso: si no llega (una página antigua), se queda el que había
+      $ac = (string) ($o['acceso'] ?? ($previo['obras'][$id]['acceso'] ?? ''));
+      if (in_array($ac, ['enlace', 'yo', 'invitados'], true)) $obras[$id]['acceso'] = $ac;
+      $inv = array_key_exists('invitados', $o) ? (array) $o['invitados'] : (array) ($previo['obras'][$id]['invitados'] ?? []);
+      $inv = array_values(array_unique(array_filter(array_map('correo_ok', $inv), function ($c) use ($hay) { return $c !== '' && isset($hay[$c]); })));
+      if ($inv) $obras[$id]['invitados'] = array_slice($inv, 0, 500);
       foreach (['titulo' => 120, 'autor' => 80, 'idioma' => 30] as $campo => $max) {
         $t = trim(preg_replace('/\s+/u', ' ', strip_tags((string) ($o[$campo] ?? ''))));
         $t = function_exists('mb_substr') ? mb_substr($t, 0, $max) : substr($t, 0, $max);
@@ -344,7 +386,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $concs[$cid] = ['id' => $cid, 'nombre' => $nom, 'obras' => $lista];
       }
     }
-    $ix = leer_indice($INDICE); $ix['categorias'] = $cats; $ix['obras'] = $obras;
+    foreach ($previo['obras'] as $id => $po)   // obras que la página no ha enviado: conservan su acceso
+      if (!isset($obras[$id]) && is_array($po) && isset($po['acceso'])) $obras[$id] = array_intersect_key($po, ['acceso' => 1, 'invitados' => 1]);
+    $ix = leer_indice($INDICE); $ix['categorias'] = $cats; $ix['obras'] = $obras; $ix['personas'] = $personas;
     if (isset($n['conciertos'])) $ix['conciertos'] = array_values($concs);
     if (!guardar_indice($INDICE, $ix)) { http_response_code(500); echo '{"error":"No puedo guardar atril-indice.json"}'; exit; }
     entregar_lista($e, $admin);

@@ -390,6 +390,24 @@ body.con-fondo .obra:hover, body.con-fondo .obra:focus-visible { border-color: v
 .ix-fila.org input.titulo { flex: 1 1 auto; width: auto; min-width: 140px; color: var(--texto); font: italic 400 16px/1.2 "TeX Gyre Termes", "Times New Roman", Times, serif; }
 .ix-fila.org { position: relative; }
 #ixOrg.plegado .ix-fila { display: none; }
+.ix-fila.org .acceso { flex: none; min-width: 34px; height: 30px; padding: 0 7px; border-radius: 8px; border: 1px solid var(--surco); background: #2a2e37; color: var(--texto); font: 12px var(--cuerpo); cursor: pointer; }
+.ix-fila.org .acceso.acc-enlace { opacity: .75; }
+.ix-fila.org .acceso.acc-invitados { border-color: var(--laton); color: var(--laton); }
+.acc-panel { margin: -2px 0 8px 34px; padding: 10px 12px; background: #20232a; border: 1px solid var(--laton); border-radius: 10px; color: var(--texto); font: 13px var(--cuerpo); display: grid; gap: 8px; }
+.acc-modos { display: flex; gap: 6px; flex-wrap: wrap; }
+.acc-panel button { background: #2a2e37; border: 1px solid var(--surco); border-radius: 7px; color: var(--texto); font: 12px var(--cuerpo); padding: 5px 10px; cursor: pointer; }
+.acc-panel button.on { border-color: var(--laton); color: var(--laton); }
+.acc-lista { display: grid; gap: 4px; max-height: 240px; overflow: auto; }
+.acc-lista label { display: flex; align-items: center; gap: 8px; }
+.acc-lista label span { color: #8d919a; font-size: 12px; }
+.acc-lista .acc-quita { margin-left: auto; padding: 1px 7px; color: #8d919a; }
+.acc-nueva { display: flex; gap: 6px; flex-wrap: wrap; }
+.acc-nueva input { flex: 1 1 140px; background: #2a2e37; border: 1px solid var(--surco); border-radius: 7px; color: var(--texto); padding: 5px 8px; font: 13px var(--cuerpo); }
+.acc-ayuda, .acc-vacio { margin: 0; color: #b9bcc4; }
+.acc-err { margin: 0; color: #e07a7a; font-size: 12px; }
+.acc-err:empty { display: none; }
+.acc-pie { display: flex; justify-content: flex-end; }
+.ix-candado { font-size: 12px; margin-left: 6px; opacity: .7; }
 .ix-conc { margin: 0 0 18px; display: grid; gap: 6px; }
 .ix-conc-chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .ix-conc-cab { display: flex; gap: 8px; align-items: center; }
@@ -629,7 +647,7 @@ body.en-concierto #notasBarra { bottom: calc(66px + env(safe-area-inset-bottom, 
     return grupo(coro) + ' · solistas ' + (ls.includes(null) ? solos.length : ls.sort((a, b) => 'SATB'.indexOf(a) - 'SATB'.indexOf(b)).join(''));
   }
   function desentidad(s) { const t = document.createElement('textarea'); t.innerHTML = s; return t.value; }
-  const VERSION = '2026.11.26-01';   // se ve al pie del índice: sirve para saber qué programa tiene la web
+  const VERSION = '2026.11.26-02';   // se ve al pie del índice: sirve para saber qué programa tiene la web
   const VEROVIO = 'https://cdn.jsdelivr.net/npm/verovio@6.1.0/dist/verovio-toolkit-wasm.js';
   // mismas opciones que el antiguo render.js: con la misma semilla, las dos letras dan los mismos ids
   const OPC = { xmlIdSeed: 1, scale: 40, pageWidth: 2200, pageHeight: 3000, adjustPageHeight: true, breaks: 'auto', footer: 'none', header: 'auto', svgViewBox: true, condenseFirstPage: true, svgHtml5: true, svgRemoveXlink: true, lyricSize: 4.2, pageMarginTop: 40, pageMarginBottom: 20, pageMarginLeft: 40, pageMarginRight: 40 };
@@ -856,7 +874,7 @@ body.en-concierto #notasBarra { bottom: calc(66px + env(safe-area-inset-bottom, 
     $('cargando').classList.add('fuera');
     const enlace = id => (/(^|\.)sigan\.me$/.test(location.hostname) ? '/' : '#') + encodeURIComponent(id);
     const copia = x => JSON.parse(JSON.stringify(x));
-    let datos = { categorias: (l.categorias || []).slice(), obras: copia(l.obras || []), conciertos: copia(l.conciertos || []) };
+    let datos = { categorias: (l.categorias || []).slice(), obras: copia(l.obras || []), conciertos: copia(l.conciertos || []), personas: copia(l.personas || []) };
     let concSel = 0;
     // enlace a una obra dentro de un concierto: lleva ?c=<concierto> (en sigan.me /obra?c=…; en local ?c=…#obra)
     // (siempre /?c=…#obra: el obra.php antiguo, al servir /obra, dejaba la dirección en /#obra y se perdía el ?c)
@@ -922,7 +940,7 @@ body.en-concierto #notasBarra { bottom: calc(66px + env(safe-area-inset-bottom, 
       const filtro = o => !o.oculta && (!q || sin(o.obra + ' ' + o.autor + ' ' + vocesDe(o) + ' ' + idiomaDe(o)).includes(q));
       const grupos = agrupar(datos, orden, filtro).filter(g => g.obras.length);
       const conCats = grupos.some(g => g.cat);
-      const fila = o => { const v = vocesDe(o); return '<a class="obra ix-fila" href="' + enlace(o.id) + '" title="' + esc(fechas(o)) + '"><b>' + esc(o.obra) + '</b>' + (v ? '<em class="ix-voces">' + esc(v) + '</em>' : '') + (idiomaDe(o) ? '<em class="ix-voces ix-idioma">' + esc(idiomaDe(o)) + '</em>' : '') + marca(o) + (o.autor ? '<span class="ix-autor">' + esc(o.autor) + '</span>' : '') + '</a>'; };
+      const fila = o => { const v = vocesDe(o); return '<a class="obra ix-fila" href="' + enlace(o.id) + '" title="' + esc(fechas(o)) + '"><b>' + esc(o.obra) + (l.admin && o.acceso && o.acceso !== 'enlace' ? '<span class="ix-candado" title="' + (o.acceso === 'invitados' ? 'Solo invitados' : 'Solo yo') + '">' + (o.acceso === 'invitados' ? '👥' : '🔒') + '</span>' : '') + '</b>' + (v ? '<em class="ix-voces">' + esc(v) + '</em>' : '') + (idiomaDe(o) ? '<em class="ix-voces ix-idioma">' + esc(idiomaDe(o)) + '</em>' : '') + marca(o) + (o.autor ? '<span class="ix-autor">' + esc(o.autor) + '</span>' : '') + '</a>'; };
       const concs = l.admin && !q ? (datos.conciertos || []).filter(c => c.obras.length) : [];
       const concHTML = concs.length ? '<div class="ix-cat ix-cat-conc" aria-hidden="true"><span class="fl">♪</span>Conciertos<span class="n">' + concs.length + '</span></div><div class="ix-grupo">'
         + concs.map(c => '<a class="obra ix-fila ix-conc-fila" href="' + enlaceC(c.obras[0], c.id) + '" title="Abre la primera obra; al final de cada una, el enlace a la siguiente"><b>' + esc(c.nombre) + '</b><em class="ix-voces ix-idioma">' + c.obras.length + (c.obras.length === 1 ? ' obra' : ' obras') + '</em><span class="ix-autor ix-escuchar">▶ Escuchar en orden</span></a>').join('') + '</div>' : '';
@@ -941,6 +959,44 @@ body.en-concierto #notasBarra { bottom: calc(66px + env(safe-area-inset-bottom, 
     const PAPELERA = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 7h15M9.5 7V4.8h5V7M6.5 7l.9 12.2h9.2L17.5 7M10.3 10.5v5.6M13.7 10.5v5.6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
     const OJO = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="12" r="2.6" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>';
     const OJO_NO = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M4 4l16 16" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>';
+    // ---------- acceso de cada obra (ver archivo.php): con enlace / solo yo / invitados (personas dadas de alta aquí)
+    const iconoAcceso = o => o.acceso === 'enlace' ? '🔗' : o.acceso === 'invitados' ? '👥 ' + (o.invitados || []).length : '🔒';
+    const textoAcceso = o => o.acceso === 'enlace' ? 'Con enlace: la abre cualquiera que tenga el enlace'
+      : o.acceso === 'invitados' ? 'Solo invitados: ' + ((o.invitados || []).map(c => { const p = (borrador.personas || []).find(x => x.correo === c); return p && p.nombre || c; }).join(', ') || 'nadie todavía')
+      : 'Solo yo: nadie más puede abrirla (ni con el enlace)';
+    function abrirAcceso(o, fila) {
+      document.querySelectorAll('.acc-panel').forEach(x => x.remove());
+      const p = document.createElement('div'); p.className = 'acc-panel';
+      const pintar = () => {
+        const ps = borrador.personas || (borrador.personas = []);
+        p.innerHTML = '<div class="acc-modos">'
+          + [['enlace', '🔗 Con enlace'], ['yo', '🔒 Solo yo'], ['invitados', '👥 Solo invitados']].map(([v, t]) => '<button data-modo="' + v + '" class="' + ((o.acceso || 'yo') === v ? 'on' : '') + '">' + t + '</button>').join('') + '</div>'
+          + ((o.acceso || 'yo') === 'invitados'
+            ? '<div class="acc-lista">' + (ps.length ? ps.map(x => '<label><input type="checkbox" data-c="' + esc(x.correo) + '"' + ((o.invitados || []).includes(x.correo) ? ' checked' : '') + '> <b>' + esc(x.nombre || x.correo) + '</b> <span>' + esc(x.correo) + '</span><button class="acc-quita" data-q="' + esc(x.correo) + '" title="Quitar a esta persona del Atril (de todas las obras)">✕</button></label>').join('') : '<p class="acc-vacio">Aún no hay personas. Añade la primera:</p>') + '</div>'
+              + '<div class="acc-nueva"><input id="accNom" placeholder="Nombre" maxlength="60"><input id="accCor" placeholder="correo de Google" maxlength="120" type="email"><button id="accAdd">Añadir</button></div><p class="acc-err" id="accErr"></p>'
+            : '<p class="acc-ayuda">' + esc(textoAcceso(o)) + '</p>')
+          + '<div class="acc-pie"><button id="accListo">Listo</button></div>';
+        p.querySelectorAll('[data-modo]').forEach(b => b.onclick = () => { o.acceso = b.dataset.modo; pintar(); });
+        p.querySelectorAll('[data-c]').forEach(c => c.onchange = () => {
+          const s = new Set(o.invitados || []); if (c.checked) s.add(c.dataset.c); else s.delete(c.dataset.c); o.invitados = [...s];
+        });
+        p.querySelectorAll('[data-q]').forEach(b => b.onclick = e => {
+          e.preventDefault();
+          const c = b.dataset.q; if (!confirm('¿Quitar a ' + c + ' del Atril? Dejará de poder abrir todas las obras a las que estaba invitada.')) return;
+          borrador.personas = ps.filter(x => x.correo !== c); borrador.obras.forEach(x => { if (x.invitados) x.invitados = x.invitados.filter(y => y !== c); }); pintar();
+        });
+        const add = p.querySelector('#accAdd');
+        if (add) add.onclick = () => {
+          const nom = p.querySelector('#accNom').value.trim(), cor = p.querySelector('#accCor').value.trim().toLowerCase();
+          if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(cor)) { p.querySelector('#accErr').textContent = 'Escribe un correo válido (el de su cuenta de Google).'; return; }
+          if (!ps.some(x => x.correo === cor)) ps.push({ nombre: nom, correo: cor });
+          o.invitados = [...new Set([...(o.invitados || []), cor])]; pintar();
+        };
+        p.querySelector('#accListo').onclick = () => { p.remove(); organizar(); };
+      };
+      pintar();
+      fila.after(p);
+    }
     // editor de conciertos (Organizar): pestañas por concierto, su lista ordenada (arrastrar ⋮⋮), añadir obra o una categoría entera
     function concEditor() {
       const cs = borrador.conciertos; if (concSel >= cs.length) concSel = cs.length - 1;
@@ -1015,6 +1071,7 @@ body.en-concierto #notasBarra { bottom: calc(66px + env(safe-area-inset-bottom, 
             + '<input class="voces" aria-label="Voces" title="Cómo se describen sus voces en el índice. Vacío: la que calcula el Atril (' + esc(etiquetaVoces(o.pistas) || 'ninguna') + ')" maxlength="60" placeholder="' + esc(etiquetaVoces(o.pistas) || 'Voces') + '" value="' + esc(o.voces || '') + '">'
             + '<input class="voces autor" aria-label="Autor" title="Autor en el índice. Vacío: el de la partitura (' + esc(o.autor_partitura || 'ninguno') + ')" maxlength="80" placeholder="' + esc(o.autor_partitura || 'Autor') + '" value="' + esc(o.autor_org || '') + '">'
             + '<input class="voces idioma" aria-label="Idioma" title="Idioma de la letra original. Vacío: el que diga la partitura (' + esc(o.idioma_auto || 'ninguno') + ')" maxlength="30" placeholder="' + esc(o.idioma_auto || 'Idioma') + '" value="' + esc(o.idioma || '') + '">'
+            + '<button class="acceso acc-' + (o.acceso || 'yo') + '" title="' + esc(textoAcceso(o)) + '">' + iconoAcceso(o) + '</button>'
             + '<select aria-label="Categoría">' + opciones(o.cat) + '</select><button class="ojo" title="' + (o.oculta ? 'Oculta: pulsa para mostrarla' : 'Visible: pulsa para ocultarla') + '">' + (o.oculta ? OJO_NO : OJO) + '</button><button class="ojo papelera" title="Borrar del Atril (va a la papelera del servidor 30 días)">' + PAPELERA + '</button></div>').join('');
         }).join('') + '</div>'
         + '<div class="ix-pie-org"><span id="ixEstado">' + (cambiado ? 'Cambios sin guardar' : 'Sin cambios') + '</span><span><button class="ix-boton" id="ixCancelar">Cancelar</button><button class="ix-boton pri" id="ixGuardar"' + (cambiado ? '' : ' disabled') + '>Guardar</button></span></div>' + pie();
@@ -1030,6 +1087,7 @@ body.en-concierto #notasBarra { bottom: calc(66px + env(safe-area-inset-bottom, 
         const o = obra(f.dataset.id);
         f.querySelector('select').onchange = e => { o.cat = e.target.value; o.orden = 1e6; organizar(); };
         f.querySelector('.ojo:not(.papelera)').onclick = () => { o.oculta = !o.oculta; organizar(); };
+        f.querySelector('.acceso').onclick = () => abrirAcceso(o, f);
         f.querySelector('.papelera').onclick = async () => {
           if (!confirm('¿Borrar «' + o.obra + '» del Atril?\n\nSale del índice y su enlace deja de funcionar. Queda 30 días en la papelera del servidor. '
               + 'Tu «Atril web» del Mac no se toca: el Taller te preguntará la próxima vez si la borra también allí.')) return;
@@ -1154,12 +1212,13 @@ body.en-concierto #notasBarra { bottom: calc(66px + env(safe-area-inset-bottom, 
       $('ixGuardar').onclick = async () => {
         $('ixEstado').textContent = 'Guardando…';
         const env = { categorias: borrador.categorias.filter(c => c), obras: {}, conciertos: borrador.conciertos.filter(c => c.nombre) };
-        borrador.obras.forEach(o => { env.obras[o.id] = { cat: o.cat || '', orden: o.orden ?? 0, oculta: !!o.oculta, voces: o.voces || '', autor: o.autor_org || '', idioma: o.idioma || '', titulo: o.titulo_org || '' }; });
+        borrador.obras.forEach(o => { env.obras[o.id] = { cat: o.cat || '', orden: o.orden ?? 0, oculta: !!o.oculta, voces: o.voces || '', autor: o.autor_org || '', idioma: o.idioma || '', titulo: o.titulo_org || '', acceso: o.acceso || 'yo', invitados: o.invitados || [] }; });
+        env.personas = borrador.personas || [];
         try {
           const r = await fetch('lista.php', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ indice: env }) });
           const j = await r.json().catch(() => ({}));
           if (!r.ok || !j.obras) throw new Error(j.error || ('error ' + r.status));
-          datos = { categorias: (j.categorias || []).slice(), obras: copia(j.obras), conciertos: copia(j.conciertos || []) }; organizando = false; avisado = false; render();
+          datos = { categorias: (j.categorias || []).slice(), obras: copia(j.obras), conciertos: copia(j.conciertos || []), personas: copia(j.personas || []) }; organizando = false; avisado = false; render();
         } catch (e) { $('ixEstado').textContent = 'No se ha guardado: ' + e.message; $('ixEstado').classList.add('error'); }
       };
     }
@@ -1207,7 +1266,7 @@ body.en-concierto #notasBarra { bottom: calc(66px + env(safe-area-inset-bottom, 
       return /(^|;\s*)atril_app=repertorio(;|$)/.test(document.cookie) || /\bRepertorio\b/.test(navigator.userAgent);
     } catch (e) { return false; }
   })();
-  function pedirEntrada(cliente) {
+  function pedirEntrada(cliente, aLaObra) {
     document.title = 'Atril';
     document.body.classList.add('indice', 'plegado');
     $('cargando').classList.add('fuera');
@@ -1217,7 +1276,7 @@ body.en-concierto #notasBarra { bottom: calc(66px + env(safe-area-inset-bottom, 
       iniciarFondo();
       return;
     }
-    $('paginas').innerHTML = '<div class="obras entrar"><h1>Atril</h1><p class="nota">La lista de obras es privada. Para abrir una obra, usa su enlace.</p>'
+    $('paginas').innerHTML = '<div class="obras entrar"><h1>Atril</h1><p class="nota">' + (aLaObra ? 'Esta obra solo la pueden abrir las personas invitadas. Entra con tu cuenta de Google.' : 'La lista de obras es privada. Para abrir una obra, usa su enlace.') + '</p>'
       + '<div id="botonGoogle"></div><p class="nota" id="entrarError"></p><p class="version">Atril · versión ' + VERSION + '</p></div>';
     iniciarFondo();
     const s = document.createElement('script'); s.src = 'https://accounts.google.com/gsi/client'; s.async = true;
@@ -1228,7 +1287,7 @@ body.en-concierto #notasBarra { bottom: calc(66px + env(safe-area-inset-bottom, 
           try {
             const r = await fetch('lista.php', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ credential: resp.credential }) });
             const j = await r.json();
-            if (r.ok && j.obras) return mostrarIndice(j, true);
+            if (r.ok && j.obras) return aLaObra ? location.reload() : mostrarIndice(j, true);
             $('entrarError').textContent = j.error || 'No se ha podido entrar.';
             google.accounts.id.disableAutoSelect();
           } catch (e) { $('entrarError').textContent = 'No se ha podido entrar: ' + e.message; }
@@ -1296,6 +1355,16 @@ body.en-concierto #notasBarra { bottom: calc(66px + env(safe-area-inset-bottom, 
   const base = idPedido ? 'obras/' + idPedido + '/' : '';
   const hayIndice = !!idPedido;   // el logo vuelve a la lista (que pedirá entrar si hace falta)
   carga('Cargando la obra…', 0);
+  // obra no pública (archivo.php): sin sesión, botón de Google y vuelta a esta obra; sin permiso, aviso
+  if (idPedido) {
+    let r0 = null; try { r0 = await fetch(base + 'obra.json', { cache: 'no-cache' }); } catch (e) {}
+    if (r0 && r0.status === 401) { let j = {}; try { j = await r0.json(); } catch (e) {} return pedirEntrada(j.cliente, true); }
+    if (r0 && r0.status === 403) {
+      document.title = 'Atril'; document.body.classList.add('indice', 'plegado'); $('cargando').classList.add('fuera');
+      $('paginas').innerHTML = '<div class="obras entrar"><h1>Atril</h1><p class="nota">Esta obra no está compartida con tu cuenta. Pídele acceso a quien te pasó el enlace.</p><p class="nota"><a href="/">Ver mis obras</a></p></div>';
+      iniciarFondo(); return;
+    }
+  }
   const cfg = await pedirJSON(base + 'obra.json');
   // título y autor puestos en Organizar (solo para mostrar; el id, la carpeta y la dirección siguen siendo los de la partitura)
   try {

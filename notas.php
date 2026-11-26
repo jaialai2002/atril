@@ -22,6 +22,9 @@ if (!is_array($cfg) || empty($cfg['correos'])) { http_response_code(500); echo '
 $correos = array_map('strtolower', array_map('trim', (array) $cfg['correos']));
 $admin = array_map('strtolower', array_map('trim', (array) ($cfg['admin'] ?? [$cfg['correos'][0]])));
 $NOTAS = $fuera . '/atril-notas';
+// las personas dadas de alta en Organizar también pueden anotar (en las obras que pueden abrir; ver archivo.php)
+$IXN = json_decode((string) @file_get_contents($fuera . '/atril-indice.json'), true); if (!is_array($IXN)) $IXN = [];
+foreach ((array) ($IXN['personas'] ?? []) as $pp) { $c = strtolower(trim((string) ($pp['correo'] ?? ''))); if ($c !== '' && !in_array($c, $correos, true)) $correos[] = $c; }
 date_default_timezone_set('Europe/Madrid');
 
 // --- la sesión de lista.php (misma cookie, misma firma)
@@ -43,7 +46,14 @@ $e = sesion_n($correos, $fuera);
 if (!$e) { http_response_code(401); echo '{"entrar":true}'; exit; }
 $esAdmin = in_array($e, $admin, true);
 
-function obra_valida($id) { return is_string($id) && preg_match('/^[a-z0-9][a-z0-9-]{0,119}$/', $id) && is_file(__DIR__ . '/obras/' . $id . '/obra.json'); }
+function obra_valida($id) {
+  global $IXN, $e, $esAdmin;
+  if (!(is_string($id) && preg_match('/^[a-z0-9][a-z0-9-]{0,119}$/', $id) && is_file(__DIR__ . '/obras/' . $id . '/obra.json'))) return false;
+  if ($esAdmin) return true;
+  $org = is_array($IXN['obras'][$id] ?? null) ? $IXN['obras'][$id] : [];
+  $acc = (string) ($org['acceso'] ?? (empty($IXN['acceso_v']) ? 'enlace' : 'yo'));
+  return $acc === 'enlace' || ($acc === 'invitados' && in_array($e, array_map('strtolower', (array) ($org['invitados'] ?? [])), true));
+}
 function archivo_capa($dir, $capa, $correo) { return $dir . '/' . ($capa === 'director' ? 'director' : 'p-' . substr(hash('sha256', 'atril-notas|' . $correo), 0, 24)) . '.json'; }
 function leer_capa($f) {
   $d = json_decode((string) @file_get_contents($f), true);

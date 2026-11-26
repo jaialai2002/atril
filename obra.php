@@ -18,6 +18,9 @@ $ix = json_decode((string) @file_get_contents(dirname(__DIR__) . '/atril-indice.
 $org = is_array($ix['obras'][$id] ?? null) ? $ix['obras'][$id] : [];
 $titulo = trim((string) ($org['titulo'] ?? '')) ?: (trim((string) ($o['obra'] ?? '')) ?: 'Atril');
 $autor = trim((string) ($org['autor'] ?? '')) ?: trim((string) ($o['autor'] ?? ''));
+// obra no pública (ver archivo.php): la tarjeta del enlace no cuenta qué obra es
+$privada = (string) ($org['acceso'] ?? (empty($ix['acceso_v']) ? 'enlace' : 'yo')) !== 'enlace';
+if ($privada) { $titulo = 'Atril'; $autor = ''; }
 $desc = ($autor !== '' ? $autor . ' · ' : '') . 'Partitura y voces para ensayar';
 $url = 'https://' . $_SERVER['HTTP_HOST'] . '/' . $id;
 
@@ -32,7 +35,7 @@ $cambios = [
 $html = strtr($html, $cambios);
 
 // imagen propia de la obra, si la hay; ?v= con la fecha del archivo: al cambiarla, WhatsApp y compañía la leen como nueva
-foreach (['jpg' => 'image/jpeg', 'jpeg' => 'image/jpeg', 'png' => 'image/png', 'webp' => 'image/webp'] as $ext => $tipo) {
+foreach ($privada ? [] : ['jpg' => 'image/jpeg', 'jpeg' => 'image/jpeg', 'png' => 'image/png', 'webp' => 'image/webp'] as $ext => $tipo) {
   $f = __DIR__ . '/obras/' . $id . '/tarjeta.' . $ext;
   if (!is_file($f)) continue;
   $img = 'https://' . $_SERVER['HTTP_HOST'] . '/obras/' . $id . '/tarjeta.' . $ext . '?v=' . filemtime($f);
