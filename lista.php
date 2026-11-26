@@ -2,6 +2,7 @@
 // Atril · lista de obras privada: solo se entrega obras.json a quien ha entrado con una cuenta de Google autorizada.
 //
 //   GET  lista.php                       -> obras.json si la sesión es válida; si no, 401 {"entrar": true, "cliente": "<ID de cliente>"}
+//   POST lista.php clave_app=…&ir=<id> -> entrada desde la app Repertorio (formulario, no JSON): sesión y vuelta a la portada u obra
 //   POST lista.php {"credential": "…"}  -> comprueba con Google el justificante del botón «Iniciar sesión con Google» y abre sesión (30 días)
 //   POST lista.php {"salir": true}       -> cierra la sesión
 //   GET  lista.php?fondo                 -> ajustes del fondo animado de la portada (públicos; {} si no hay)
@@ -15,6 +16,7 @@
 // Configuración FUERA de la web, en /home/sigan1/atril-config.php (un nivel por encima de esta carpeta):
 //   <?php return ['cliente' => '….apps.googleusercontent.com', 'correos' => ['tu-correo@gmail.com'], 'admin' => ['tu-correo@gmail.com']];
 // 'correos' pueden ver la lista; 'admin' pueden además cambiar el fondo (si falta 'admin', vale el primero de 'correos').
+// Opcional, para la app Repertorio: 'apps' => ['clave-larga (20+ caracteres)' => 'correo de la lista'] (ver «entrada desde la app»).
 // El fondo guardado va en /home/sigan1/atril-fondo.json (también fuera de la web).
 // La organización del índice va en /home/sigan1/atril-indice.json: {categorias:[…], obras:{id:{cat, orden, oculta, voces, autor, idioma}}, vistas:{id: fecha}}
 // (voces = cómo se describen sus voces en el índice, escrito a mano en Organizar; vacío = la que calcula la página;
@@ -219,6 +221,30 @@ function pedir($url) {
   $r = @file_get_contents($url, false, stream_context_create(['http' => ['timeout' => 10, 'ignore_errors' => true]]));
   if ($r === false) return false;
   return (isset($http_response_header[0]) && strpos($http_response_header[0], ' 200') !== false) ? $r : '';
+}
+
+// entrada desde la app Repertorio: su navegador integrado no puede usar el botón de Google (Google lo prohíbe en apps).
+// La app envía un formulario  clave_app=…&ir=<id>  y aquí se abre la misma sesión de 30 días que con Google para el
+// correo asociado a esa clave, que tiene que seguir en 'correos'. En atril-config.php:
+//   'apps' => ['una-clave-larga-de-al-menos-20-caracteres' => 'tu-correo@gmail.com'],
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['clave_app'])) {
+  $k = (string) $_POST['clave_app']; $quien = null;
+  foreach ((array) ($cfg['apps'] ?? []) as $cl => $co) {
+    if (is_string($cl) && strlen($cl) >= 20 && hash_equals($cl, $k)) { $quien = strtolower(trim((string) $co)); break; }
+  }
+  if ($quien === null || !in_array($quien, $correos, true)) {
+    usleep(500000);
+    http_response_code(403);
+    header('Content-Type: text/html; charset=utf-8');
+    echo '<!DOCTYPE html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><body style="font:18px/1.5 system-ui;background:#18191d;color:#e7e4dc;padding:40px">La clave de Atril que tiene Repertorio no es válida.<br>Revísala en Repertorio → Ajustes → Atril, o quítala para abrir solo obras sueltas.</body>';
+    exit;
+  }
+  $hasta = time() + $DIAS * 86400;
+  $correo = b64($quien);
+  poner_cookie($correo . '.' . $hasta . '.' . firma($correo . '.' . $hasta, $fuera), $hasta);
+  $ir = (string) ($_POST['ir'] ?? '');
+  header('Location: /' . (preg_match('/^[a-z0-9-]{1,120}$/', $ir) ? $ir : ''), true, 303);
+  exit;
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
