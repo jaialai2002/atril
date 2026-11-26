@@ -16,7 +16,7 @@
 // Configuración FUERA de la web, en /home/sigan1/atril-config.php (un nivel por encima de esta carpeta):
 //   <?php return ['cliente' => '….apps.googleusercontent.com', 'correos' => ['tu-correo@gmail.com'], 'admin' => ['tu-correo@gmail.com']];
 // 'correos' pueden ver la lista; 'admin' pueden además cambiar el fondo (si falta 'admin', vale el primero de 'correos').
-// Opcional, para la app Repertorio: 'apps' => ['clave-larga (20+ caracteres)' => 'correo de la lista'] (ver «entrada desde la app»).
+// Opcional, para la app Repertorio: 'apps' => ['clave (8+ caracteres)' => 'correo de la lista'] (ver «entrada desde la app»).
 // El fondo guardado va en /home/sigan1/atril-fondo.json (también fuera de la web).
 // La organización del índice va en /home/sigan1/atril-indice.json: {categorias:[…], obras:{id:{cat, orden, oculta, voces, autor, idioma}}, vistas:{id: fecha}}
 // (voces = cómo se describen sus voces en el índice, escrito a mano en Organizar; vacío = la que calcula la página;
@@ -226,18 +226,40 @@ function pedir($url) {
 // entrada desde la app Repertorio: su navegador integrado no puede usar el botón de Google (Google lo prohíbe en apps).
 // La app envía un formulario  clave_app=…&ir=<id>  y aquí se abre la misma sesión de 30 días que con Google para el
 // correo asociado a esa clave, que tiene que seguir en 'correos'. En atril-config.php:
-//   'apps' => ['una-clave-larga-de-al-menos-20-caracteres' => 'tu-correo@gmail.com'],
+//   'apps' => ['una-clave-de-al-menos-8-caracteres' => 'tu-correo@gmail.com'],
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['clave_app'])) {
   $k = (string) $_POST['clave_app']; $quien = null; $motivo = '';
   $apps = (array) ($cfg['apps'] ?? []);
+  // freno contra quien pruebe claves: 5 fallos desde la misma conexión = 1 hora bloqueada.
+  // Se guarda en /home/sigan1/atril-intentos.json solo un resumen cifrado de la conexión, nunca la IP.
+  $INTENTOS = $fuera . '/atril-intentos.json';
+  $quienIp = substr(hash_hmac('sha256', (string) ($_SERVER['REMOTE_ADDR'] ?? ''), secreto($fuera)), 0, 24);
+  $fi = fopen($INTENTOS, 'c+');
+  if ($fi) { flock($fi, LOCK_EX); $int = json_decode((string) stream_get_contents($fi), true); if (!is_array($int)) $int = []; } else $int = [];
+  $ahora = time();
+  foreach ($int as $h => $v) if (($v['hasta'] ?? 0) < $ahora && ($v['ultimo'] ?? 0) < $ahora - 3600) unset($int[$h]);
+  $yo = $int[$quienIp] ?? ['n' => 0, 'ultimo' => 0, 'hasta' => 0];
+  $guardarIntentos = function ($int) use ($fi) { if ($fi) { ftruncate($fi, 0); rewind($fi); fwrite($fi, json_encode($int)); fflush($fi); flock($fi, LOCK_UN); fclose($fi); } };
+  if ($yo['hasta'] > $ahora) {
+    $guardarIntentos($int);
+    http_response_code(429);
+    header('Content-Type: text/html; charset=utf-8');
+    echo '<!DOCTYPE html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><body style="font:18px/1.5 system-ui;background:#18191d;color:#e7e4dc;padding:40px">Demasiados intentos con una clave equivocada.<br>La entrada desde Repertorio está bloqueada en esta conexión durante ' . ceil(($yo['hasta'] - $ahora) / 60) . ' minutos más.</body>';
+    exit;
+  }
   if (!$apps) $motivo = 'atril-config.php no tiene la línea <b>\'apps\'</b> dentro de <code>return [ … ];</code> (o el servidor aún usa la versión anterior: espera dos minutos y vuelve a probar).';
   foreach ($apps as $cl => $co) {
-    if (!is_string($cl) || strlen($cl) < 20) { $motivo = $motivo ?: 'La clave escrita en \'apps\' tiene menos de 20 caracteres.'; continue; }
+    if (!is_string($cl) || mb_strlen($cl) < 8) { $motivo = $motivo ?: 'La clave escrita en \'apps\' tiene menos de 8 caracteres.'; continue; }
     if (hash_equals($cl, $k)) { $quien = strtolower(trim((string) $co)); break; }
   }
   if ($quien === null && $motivo === '') $motivo = 'La clave de Repertorio no coincide con la de \'apps\'. Repertorio ha enviado una de ' . mb_strlen($k) . ' caracteres' . ($k !== trim($k) ? ', con espacios al principio o al final' : '') . '; la de atril-config.php tiene ' . implode(' / ', array_map(fn($c) => mb_strlen((string) $c), array_keys($apps))) . '. Fíjate en mayúsculas, espacios y letras parecidas.';
   if ($quien !== null && !in_array($quien, $correos, true)) $motivo = 'La clave es correcta, pero su correo (' . htmlspecialchars($quien) . ') no está en \'correos\'.';
+  if ($motivo === '') { unset($int[$quienIp]); $guardarIntentos($int); }
   if ($motivo !== '') {
+    $yo['n'] = ($yo['ultimo'] > $ahora - 3600 ? $yo['n'] : 0) + 1; $yo['ultimo'] = $ahora;
+    if ($yo['n'] >= 5) { $yo['hasta'] = $ahora + 3600; $yo['n'] = 0; }
+    $int[$quienIp] = $yo; $guardarIntentos($int);
+    $motivo .= $yo['hasta'] > $ahora ? '<br><br><b>Era el quinto intento fallido: la entrada desde Repertorio queda bloqueada una hora en esta conexión.</b>' : '<br><br>Intentos fallidos: ' . $yo['n'] . ' de 5 (al quinto se bloquea una hora).';
     usleep(500000);
     http_response_code(403);
     header('Content-Type: text/html; charset=utf-8');
