@@ -269,6 +269,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['clave_app'])) {
   $hasta = time() + $DIAS * 86400;
   $correo = b64($quien);
   poner_cookie($correo . '.' . $hasta . '.' . firma($correo . '.' . $hasta, $fuera), $hasta);
+  // marca «esto es Repertorio» en su navegador: si la sesión caduca, la página de entrada no enseña el botón de Google
+  // (dentro de la app no funciona) sino cómo volver a entrar desde Repertorio. La lee index.html (no es httponly).
+  setcookie('atril_app', 'repertorio', ['expires' => time() + 5 * 365 * 86400, 'path' => '/', 'secure' => true, 'samesite' => 'Lax']);
   $ir = (string) ($_POST['ir'] ?? '');
   header('Location: /' . (preg_match('/^[a-z0-9-]{1,120}$/', $ir) ? $ir : ''), true, 303);
   exit;

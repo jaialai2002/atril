@@ -629,7 +629,7 @@ body.en-concierto #notasBarra { bottom: calc(66px + env(safe-area-inset-bottom, 
     return grupo(coro) + ' · solistas ' + (ls.includes(null) ? solos.length : ls.sort((a, b) => 'SATB'.indexOf(a) - 'SATB'.indexOf(b)).join(''));
   }
   function desentidad(s) { const t = document.createElement('textarea'); t.innerHTML = s; return t.value; }
-  const VERSION = '2026.11.25-10';   // se ve al pie del índice: sirve para saber qué programa tiene la web
+  const VERSION = '2026.11.26-01';   // se ve al pie del índice: sirve para saber qué programa tiene la web
   const VEROVIO = 'https://cdn.jsdelivr.net/npm/verovio@6.1.0/dist/verovio-toolkit-wasm.js';
   // mismas opciones que el antiguo render.js: con la misma semilla, las dos letras dan los mismos ids
   const OPC = { xmlIdSeed: 1, scale: 40, pageWidth: 2200, pageHeight: 3000, adjustPageHeight: true, breaks: 'auto', footer: 'none', header: 'auto', svgViewBox: true, condenseFirstPage: true, svgHtml5: true, svgRemoveXlink: true, lyricSize: 4.2, pageMarginTop: 40, pageMarginBottom: 20, pageMarginLeft: 40, pageMarginRight: 40 };
@@ -1199,10 +1199,24 @@ body.en-concierto #notasBarra { bottom: calc(66px + env(safe-area-inset-bottom, 
     } catch (e) {}
     try { return { lista: await pedirJSON('obras.json') }; } catch (e) { return {}; }   // sin lista.php (prueba de Claude): como antes
   }
+  // ¿dentro de la app Repertorio? (la marca la deja lista.php al entrar con su clave; o Repertorio abre con ?app=repertorio)
+  const enRepertorio = (() => {
+    try {
+      if (new URLSearchParams(location.search).get('app') === 'repertorio')
+        document.cookie = 'atril_app=repertorio; max-age=157680000; path=/; secure; samesite=lax';
+      return /(^|;\s*)atril_app=repertorio(;|$)/.test(document.cookie) || /\bRepertorio\b/.test(navigator.userAgent);
+    } catch (e) { return false; }
+  })();
   function pedirEntrada(cliente) {
     document.title = 'Atril';
     document.body.classList.add('indice', 'plegado');
     $('cargando').classList.add('fuera');
+    if (enRepertorio) {   // el botón de Google no funciona dentro de la app: no se enseña
+      $('paginas').innerHTML = '<div class="obras entrar"><h1>Atril</h1><p class="nota">Estás en Repertorio. Para entrar en el Atril, vuelve atrás y ábrelo desde Repertorio: entra solo con el usuario y la clave de Repertorio → Ajustes → Atril.</p>'
+        + '<p class="version">Atril · versión ' + VERSION + '</p></div>';
+      iniciarFondo();
+      return;
+    }
     $('paginas').innerHTML = '<div class="obras entrar"><h1>Atril</h1><p class="nota">La lista de obras es privada. Para abrir una obra, usa su enlace.</p>'
       + '<div id="botonGoogle"></div><p class="nota" id="entrarError"></p><p class="version">Atril · versión ' + VERSION + '</p></div>';
     iniciarFondo();
