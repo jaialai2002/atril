@@ -239,6 +239,10 @@ input[type=range]::-moz-range-thumb { width: 12px; height: 12px; border: 0; bord
 #filaLetra { margin-top: 6px; }
 #filaLetra[hidden] { display: none; }
 .separacion { display: flex; align-items: center; gap: 8px; padding: 3px 2px 1px; }
+.recordar { position: fixed; left: 50%; bottom: calc(18px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); zoom: var(--antizoom, 1); z-index: 9; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: center; max-width: calc(100vw - 24px); box-sizing: border-box; padding: 10px 12px; background: #20232a; border: 1px solid var(--laton); border-radius: 12px; color: var(--texto); font: 13px var(--cuerpo); box-shadow: 0 10px 30px rgba(0,0,0,.45); }
+.recordar button { background: #2a2e37; border: 1px solid var(--surco); border-radius: 7px; color: var(--texto); font: 12px var(--cuerpo); padding: 5px 10px; cursor: pointer; }
+.recordar button:first-of-type { border-color: var(--laton); color: var(--laton); }
+body.en-concierto .recordar { bottom: calc(70px + env(safe-area-inset-bottom, 0px)); }
 .separacion .lbl { font-size: 12px; color: var(--tenue); white-space: nowrap; }
 .separacion .seg { flex: 1; display: grid; grid-template-columns: repeat(4, 1fr); }
 .separacion .seg button { padding: 5px 2px 4px; font-size: 10.5px; display: grid; justify-items: center; gap: 3px; }
@@ -652,7 +656,7 @@ body.en-concierto #notasBarra { bottom: calc(66px + env(safe-area-inset-bottom, 
     return grupo(coro) + ' · solistas ' + (ls.includes(null) ? solos.length : ls.sort((a, b) => 'SATB'.indexOf(a) - 'SATB'.indexOf(b)).join(''));
   }
   function desentidad(s) { const t = document.createElement('textarea'); t.innerHTML = s; return t.value; }
-  const VERSION = '2026.11.26-04';   // se ve al pie del índice: sirve para saber qué programa tiene la web
+  const VERSION = '2026.11.27-01';   // se ve al pie del índice: sirve para saber qué programa tiene la web
   const VEROVIO = 'https://cdn.jsdelivr.net/npm/verovio@6.1.0/dist/verovio-toolkit-wasm.js';
   // mismas opciones que el antiguo render.js: con la misma semilla, las dos letras dan los mismos ids
   const OPC = { xmlIdSeed: 1, scale: 40, pageWidth: 2200, pageHeight: 3000, adjustPageHeight: true, breaks: 'auto', footer: 'none', header: 'auto', svgViewBox: true, condenseFirstPage: true, svgHtml5: true, svgRemoveXlink: true, lyricSize: 4.2, pageMarginTop: 40, pageMarginBottom: 20, pageMarginLeft: 40, pageMarginRight: 40 };
@@ -1977,7 +1981,7 @@ body.en-concierto #notasBarra { bottom: calc(66px + env(safe-area-inset-bottom, 
   document.querySelectorAll('[data-modo]').forEach(b => b.onclick = () => {
     modo = b.dataset.modo; document.querySelectorAll('[data-modo]').forEach(x => x.classList.toggle('on', x === b)); aplicar();
   });
-  $('miVoz').onchange = aplicar;
+  $('miVoz').onchange = () => { aplicar(); const v = pistas.find(q => q.id === $('miVoz').value); if (v) preguntarRecordar('voz', v.nombre, '«' + v.nombre + '» como tu voz'); };
   const ponerRotulador = v => { conRotulador = !!v; $('rotulador').classList.toggle('on', conRotulador); $('rotulador').setAttribute('aria-pressed', conRotulador); guardar('rotulador', conRotulador); rotular(); };
   $('rotulador').onclick = () => ponerRotulador(!conRotulador);
   ponerRotulador(leer('rotulador', false));
@@ -2354,9 +2358,50 @@ body.en-concierto #notasBarra { bottom: calc(66px + env(safe-area-inset-bottom, 
   })();
   $('maestro').oninput = aplicar; $('maestro').ondblclick = () => { $('maestro').value = 0; aplicar(); };
   $('reponer').onclick = () => { pistas.forEach(p => { Object.assign(p, p.orig); p.solo = false; }); modo = 'todas'; document.querySelectorAll('[data-modo]').forEach(x => x.classList.toggle('on', x.dataset.modo === 'todas')); aplicar(); };
-  document.querySelectorAll('[data-sep]').forEach(b => b.onclick = () => ponerSeparacion(+b.dataset.sep));
+  document.querySelectorAll('[data-sep]').forEach(b => b.onclick = () => {
+    ponerSeparacion(+b.dataset.sep);
+    preguntarRecordar('sep', +b.dataset.sep, 'la separación «' + b.textContent.trim() + '»');
+  });
   const ens = leer('ensayo', null);
   if (ens) { if (pistas.some(p => p.id === ens.voz && p.voz)) $('miVoz').value = ens.voz; modo = ens.modo || 'todas'; document.querySelectorAll('[data-modo]').forEach(x => x.classList.toggle('on', x.dataset.modo === modo)); }
+  // ---------- «¿Recordar…?»: Mi voz y Separación para todas las obras o solo las de este concierto (en este dispositivo).
+  // Lo recordado manda al abrir una obra (el concierto antes que «todas»); si lo cambias en una obra, vuelve a preguntar.
+  const clavePref = (k, amb) => 'atril:' + (amb === 'todas' ? 'global' : 'conc:' + amb) + ':' + k;
+  const leerPref = k => { if (modoManual) return null; try { for (const amb of [concId, 'todas']) { if (!amb) continue; const v = localStorage.getItem(clavePref(k, amb)); if (v != null) return JSON.parse(v); } } catch (e) {} return null; };
+  const normVoz = t => String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\b(coro|chorus|choir)\b/g, '').replace(/\s+/g, ' ').trim();
+  function vozParecida(nombre) {   // la voz recordada en esta obra: mismo nombre, o la misma cuerda («Tenor» ~ «Tenor 1», «Tenor Coro»)
+    const vs = pistas.filter(p => p.voz), n = normVoz(nombre), cuerda = n.split(' ')[0], solo = /\bsolo\b/.test(n);
+    const misma = vs.filter(p => normVoz(p.nombre).split(' ')[0] === cuerda);
+    return vs.find(p => normVoz(p.nombre) === n) || misma.find(p => /\bsolo\b/.test(normVoz(p.nombre)) === solo) || misma[0] || null;
+  }
+  let yaPreguntado = {};
+  function preguntarRecordar(k, valor, texto) {
+    if (modoManual || yaPreguntado[k] === JSON.stringify(valor)) return;
+    const actual = leerPref(k); if (actual != null && JSON.stringify(actual) === JSON.stringify(valor)) return;
+    yaPreguntado[k] = JSON.stringify(valor);
+    document.querySelectorAll('.recordar').forEach(x => x.remove());
+    const d = document.createElement('div'); d.className = 'recordar';
+    d.innerHTML = '<span>¿Recordar ' + esc(texto) + '?</span><button data-amb="todas">En todas las obras</button>'
+      + (concId ? '<button data-amb="' + esc(concId) + '">En este concierto</button>' : '') + '<button data-amb="">No</button>';
+    d.querySelectorAll('button').forEach(b => b.onclick = () => {
+      if (b.dataset.amb) {
+        try {
+          localStorage.setItem(clavePref(k, b.dataset.amb), JSON.stringify(valor));
+          if (b.dataset.amb === 'todas' && concId) localStorage.removeItem(clavePref(k, concId));   // que no lo tape uno de concierto
+        } catch (e) {}
+      }
+      d.remove();
+    });
+    document.body.appendChild(d);
+    setTimeout(() => d.remove(), 15000);
+  }
+  {
+    const pv = leerPref('voz'), v = pv != null && vozParecida(pv);
+    if (v) $('miVoz').value = v.id;
+    const ps = leerPref('sep');
+    if (ps != null && document.querySelector('[data-sep]') && SEPARACIONES.includes(+ps)) ponerSeparacion(+ps);
+    else if (v) aplicar();
+  }
   $('maestro').value = leer('maestro', 0);
   // solo Banda y Línea (el usuario quitó «Voces» el 17-11-2026): lo guardado como «voces» pasa a Línea
   ponerSeguimiento(['no', 'banda', 'linea'].includes(seguimiento) ? seguimiento : 'linea', false);
