@@ -28,7 +28,9 @@ copiar la versión buscada y volver a subirla (o pedírselo a Claude).
 
 Formato de las obras y detalles: skill «atril» de Claude.
 
-## Dentro de la app Repertorio (Android)
+## Dentro de la app Repertoriüm (Android)
+
+(Desde el 28-11-2026 la app se llama **Repertoriüm**; el identificador interno, el repositorio `jaialai2002/repertorio` y la marca `Repertorio/<versión>` del user agent **no cambian**: la detección sigue buscando `Repertorio/`.)
 
 Repertorio (repositorio privado `jaialai2002/repertorio`, otro chat de Claude) es el lector de partituras del
 usuario para Android. Abre el Atril en **su propio navegador integrado**: pantalla completa, sin barras, en una
