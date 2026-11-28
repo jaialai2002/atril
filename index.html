@@ -163,6 +163,10 @@ body.anotando.herr-goma #paginas { cursor: cell; }
 #notasBarra .muestra { width: 22px; min-width: 22px; height: 22px; padding: 0; border-radius: 50%; border: 2px solid transparent; }
 #notasBarra .muestra.on { border-color: var(--texto); background: none; }
 #notasBarra .muestra i { display: block; width: 14px; height: 14px; border-radius: 50%; }
+#notasBarra .muestra.libre { position: relative; display: inline-grid; place-items: center; cursor: pointer; }
+#notasBarra .muestra.libre i { background: conic-gradient(#e33, #ec3, #3c5, #3be, #36e, #c3e, #e33); }
+#notasBarra .muestra.libre input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; border: 0; padding: 0; }
+#notasBarra .nb-op input[type=range] { width: 90px; accent-color: var(--laton); }
 #notasBarra .nb-et { color: var(--tenue); font-size: 11px; margin-right: 2px; }
 #nbEstado { color: var(--tenue); font: 11px var(--mono); min-width: 64px; text-align: center; }
 #nbHecho { background: var(--laton) !important; color: var(--tinta) !important; font-weight: 600 !important; }
@@ -1998,6 +2002,8 @@ body.en-concierto #notasBarra { bottom: calc(66px + env(safe-area-inset-bottom, 
     const capas = { mia: [], director: [] };
     let admin = false, anotando = false, herr = 'lapiz', penVisto = false;
     let capa = leer('notasCapa', 'mia'), color = leer('notasColor', COLORES[0]), grosor = leer('notasGrosor', 'fino');
+    // color libre (selector del sistema; el último elegido queda como una muestra más) y opacidad, de 10 a 100 %
+    let colorLibre = leer('notasColorLibre', '#8a3ffc'), opac = Math.min(100, Math.max(10, +leer('notasOpac', 100) || 100));
     const TAMS = [.6, .8, 1, 1.3, 1.7, 2.2];   // tamaño del texto (× el normal)
     let tamTexto = TAMS.includes(+leer('notasTam', 1)) ? +leer('notasTam', 1) : 1;
     let ver = Object.assign({ mia: true, director: true }, leer('notasVer', {}));
@@ -2078,6 +2084,7 @@ body.en-concierto #notasBarra { bottom: calc(66px + env(safe-area-inset-bottom, 
         const el = document.createElementNS(NS, 'path');
         el.setAttribute('d', camino(pts));
         el.style.stroke = it.c; el.style.strokeWidth = (it.w * g.h * (.6 + .8 * pres)).toFixed(1);   // con style: el CSS de la partitura no lo pisa
+        if (it.o != null && it.o < 1) el.style.opacity = it.o;
         el.setAttribute('data-nid', it.id); el.setAttribute('data-ncapa', c);
         return { el, pm: s.pm };
       }
@@ -2085,6 +2092,7 @@ body.en-concierto #notasBarra { bottom: calc(66px + env(safe-area-inset-bottom, 
         const el = document.createElementNS(NS, 'text');
         el.setAttribute('x', g.x0 + it.px * g.w); el.setAttribute('y', g.y0 + it.py * g.h);
         el.setAttribute('font-size', (g.h * .62 * (it.z || 1)).toFixed(0)); el.style.fill = it.c;
+        if (it.o != null && it.o < 1) el.style.opacity = it.o;
         el.style.strokeWidth = (g.h * .09).toFixed(0);
         el.setAttribute('data-nid', it.id); el.setAttribute('data-ncapa', c);
         el.textContent = it.x;
@@ -2129,7 +2137,10 @@ body.en-concierto #notasBarra { bottom: calc(66px + env(safe-area-inset-bottom, 
     function pintarBarra() {
       barra.innerHTML =
         '<div class="nb">' + ['lapiz', 'texto', 'goma'].map(h => '<button data-herr="' + h + '" class="' + (herr === h ? 'on' : '') + '" title="' + { lapiz: 'Lápiz', texto: 'Texto: toca donde quieras escribir; arrastra un texto para moverlo, tócalo para cambiarlo', goma: 'Goma: toca o arrastra sobre lo que quieras borrar' }[h] + '">' + ico[h] + '</button>').join('') + '</div>' +
-        '<div class="nb">' + COLORES.map(c => '<button class="muestra' + (c === color ? ' on' : '') + '" data-color="' + c + '" title="Color"><i style="background:' + c + '"></i></button>').join('') + '</div>' +
+        '<div class="nb">' + COLORES.map(c => '<button class="muestra' + (c === color ? ' on' : '') + '" data-color="' + c + '" title="Color"><i style="background:' + c + '"></i></button>').join('')
+          + '<button class="muestra' + (color === colorLibre && !COLORES.includes(color) ? ' on' : '') + '" data-color="' + colorLibre + '" title="Tu último color"><i style="background:' + colorLibre + '"></i></button>'
+          + '<label class="muestra libre" title="Elegir otro color"><i></i><input type="color" id="nbColor" value="' + colorLibre + '"></label></div>'
+          + '<div class="nb nb-op"><span class="nb-et">Opacidad</span><input type="range" id="nbOpac" min="10" max="100" step="5" value="' + opac + '" aria-label="Opacidad"><span class="nb-et" id="nbOpacV">' + opac + ' %</span></div>' +
         (herr === 'texto'
           ? '<div class="nb"><button data-tam="-1" title="Letra más pequeña (la del texto que editas, o la de los nuevos)">A−</button><span class="nb-et" id="nbTam">' + Math.round(tamaTexto() * 100) + ' %</span><button data-tam="1" title="Letra más grande">A+</button></div>'
           : '<div class="nb"><button data-grosor="fino" class="' + (grosor === 'fino' ? 'on' : '') + '" title="Trazo fino">fino</button><button data-grosor="grueso" class="' + (grosor === 'grueso' ? 'on' : '') + '" title="Trazo grueso">grueso</button></div>') +
@@ -2139,6 +2150,11 @@ body.en-concierto #notasBarra { bottom: calc(66px + env(safe-area-inset-bottom, 
         '<span id="nbEstado"></span><button id="nbHecho">Hecho</button>';
       barra.querySelectorAll('[data-herr]').forEach(b => b.onclick = () => { herr = b.dataset.herr; pintarBarra(); clasesCuerpo(); });
       barra.querySelectorAll('[data-color]').forEach(b => b.onclick = () => { color = b.dataset.color; guardar('notasColor', color); pintarBarra(); });
+      const sc = barra.querySelector('#nbColor');
+      sc.onchange = () => { color = colorLibre = sc.value; guardar('notasColorLibre', colorLibre); guardar('notasColor', color); pintarBarra(); };
+      const so = barra.querySelector('#nbOpac');
+      so.oninput = () => { opac = +so.value; barra.querySelector('#nbOpacV').textContent = opac + ' %'; };
+      so.onchange = () => guardar('notasOpac', opac);
       barra.querySelectorAll('[data-grosor]').forEach(b => b.onclick = () => { grosor = b.dataset.grosor; guardar('notasGrosor', grosor); pintarBarra(); });
       // A− / A+: sin quitar el foco al cuadro de texto abierto (si hay uno, cambia ese texto; si no, el de los nuevos)
       barra.querySelectorAll('[data-tam]').forEach(b => {
@@ -2244,7 +2260,7 @@ body.en-concierto #notasBarra { bottom: calc(66px + env(safe-area-inset-bottom, 
           if (!v) return;
           const a = anclar(pm, p.x, p.y); if (!a) return;
           antesDeCambiar(capa);
-          capas[capa].push({ id: nid(), t: 'x', k: a.k, n: a.n, s: a.s, c: color, px: +((p.x - a.g.x0) / a.g.w).toFixed(4), py: +((p.y - a.g.y0) / a.g.h).toFixed(4), x: v, z: zz || tamTexto });
+          capas[capa].push({ id: nid(), t: 'x', k: a.k, n: a.n, s: a.s, c: color, ...(opac < 100 ? { o: opac / 100 } : {}), px: +((p.x - a.g.x0) / a.g.w).toFixed(4), py: +((p.y - a.g.y0) / a.g.h).toFixed(4), x: v, z: zz || tamTexto });
           pintarNotas(); cambiado(capa);
         });
         return;
@@ -2253,6 +2269,7 @@ body.en-concierto #notasBarra { bottom: calc(66px + env(safe-area-inset-bottom, 
       const el = document.createElementNS(NS, 'path');
       const ref = anclar(pm, p.x, p.y); const h = ref ? ref.g.h : 720;
       el.style.stroke = color; el.style.strokeWidth = (GROSOR[grosor] * h * (.6 + .8 * (e.pressure || .5))).toFixed(1);
+      if (opac < 100) el.style.opacity = opac / 100;
       capaSvg(pm, capa).appendChild(el);
       const inv = pm.getScreenCTM().inverse();
       trazo = { pm, el, inv, id: e.pointerId, pts: [[p.x, p.y, e.pointerType === 'mouse' ? .5 : (e.pressure || .5)]], h, raf: 0 };
@@ -2317,7 +2334,7 @@ body.en-concierto #notasBarra { bottom: calc(66px + env(safe-area-inset-bottom, 
       t.el.remove();
       if (!a) return;
       antesDeCambiar(capa);
-      capas[capa].push({ id: nid(), t: 'l', k: a.k, n: a.n, s: a.s, c: color, w: GROSOR[grosor],
+      capas[capa].push({ id: nid(), t: 'l', k: a.k, n: a.n, s: a.s, c: color, ...(opac < 100 ? { o: opac / 100 } : {}), w: GROSOR[grosor],
         p: t.pts.map(q => [+((q[0] - a.g.x0) / a.g.w).toFixed(4), +((q[1] - a.g.y0) / a.g.h).toFixed(4), +q[2].toFixed(2)]) });
       pintarNotas(); cambiado(capa);
     };

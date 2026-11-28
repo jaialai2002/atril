@@ -74,6 +74,7 @@ function limpiar($it) {
     's' => (int) num($it['s'] ?? 1, 1, 200, 0),           // pentagrama dentro del compás
     'c' => color_ok($it['c'] ?? ''),
   ];
+  if (isset($it['o']) && is_numeric($it['o']) && (float) $it['o'] < 1) $base['o'] = num($it['o'], .1, 1, 2);   // opacidad
   if ($t === 'l') {   // trazo: puntos [x, y, presión] relativos al compás (x) y al pentagrama (y)
     $p = [];
     foreach (array_slice((array) ($it['p'] ?? []), 0, 4000) as $q) {
